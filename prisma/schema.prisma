@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  users      User[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  username   String   @unique
+  password   String
+  role_id    Int
+  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Company {
+  id         Int         @id @default(autoincrement())
+  name       String
+  email      String?
+  phone_no   String
+  address    String
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  passengers Passenger[]
+  routes     Route[]
+
+  @@map("companies")
+}
+
+model Car {
+  id                  Int               @id @default(autoincrement())
+  name                String
+  engine_capacity     String
+  model               String
+  car_no              String
+  car_color           String
+  fuel_per_km         String?
+  car_front_image_url String
+  car_back_image_url  String
+  car_front_card_url  String
+  car_back_card_url   String
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+  driver_assign_cars  DriverAssignCar[]
+
+  @@map("cars")
+}
+
+model Driver {
+  id                       Int               @id @default(autoincrement())
+  name                     String
+  phone_no                 String
+  address                  String
+  emergency_phone_no       String
+  driver_image_url         String
+  rate_per_km              Float
+  driver_cnic_front_url    String
+  driver_cnic_back_url     String
+  salary                   String
+  driver_license_front_url String
+  driver_license_back_url  String
+  created_at               DateTime          @default(now())
+  updated_at               DateTime          @updatedAt
+  driver_assign_cars       DriverAssignCar[]
+  routes                   Route[]
+
+  @@map("drivers")
+}
+
+model DriverAssignCar {
+  id         Int      @id @default(autoincrement())
+  driver_id  Int
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  car_id     Int
+  car        Car      @relation(fields: [car_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("driver_assign_cars")
+}
+
+model Passenger {
+  id             Int        @id @default(autoincrement())
+  name           String
+  phone_no       String
+  office_address String
+  company_id     Int
+  company        Company    @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  pick_up_time   String?
+  drop_off_time  String?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+  routeLegs      RouteLeg[]
+
+  @@map("passengers")
+}
+
+model DriverConfiguration {
+  id                             Int      @id @default(autoincrement())
+  availability_time              String
+  still_waiting_button_appear_in String
+  remaining_start_time           String
+  passenger_waiting_time         String
+  skip_button_appear_in          String
+  created_at                     DateTime @default(now())
+  updated_at                     DateTime @updatedAt
+
+  @@map("driver_configurations")
+}
+
+model Route {
+  id             Int         @id @default(autoincrement())
+  company_id     Int
+  company        Company     @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  driver_id      Int
+  driver         Driver      @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  office_address String
+  office_lat     Float
+  office_long    Float
+  status         RouteStatus @default(PENDING)
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  legs           RouteLeg[]
+
+  @@map("routes")
+}
+
+model RouteLeg {
+  id              Int         @id @default(autoincrement())
+  route_id        Int
+  route           Route       @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  passenger_id    Int
+  passenger       Passenger   @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  pickup_address  String
+  pickup_lat      Float
+  pickup_long     Float
+  pickup_time     String
+  pickup_status   RouteStatus @default(PENDING)
+  dropoff_address String
+  dropoff_lat     Float
+  dropoff_long    Float
+  dropoff_time    String
+  dropoff_status  RouteStatus @default(PENDING)
+  toll_amount     Float?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+
+  @@map("route_legs")
+}
+
+enum RouteStatus {
+  PENDING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
