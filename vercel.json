@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run build && mkdir -p public",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "public",
   "installCommand": "pnpm install",
   "framework": null,
