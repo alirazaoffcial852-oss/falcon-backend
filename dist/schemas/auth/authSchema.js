@@ -11,6 +11,7 @@ exports.loginSchema = joi_1.default.object({
 }).required();
 exports.registerSchema = joi_1.default.object({
     username: joi_1.default.string().required(),
-    password: joi_1.default.string().required(),
-    role: joi_1.default.string().required(),
+    password: joi_1.default.string().min(6).required(),
+    role: joi_1.default.string().valid("admin", "driver", "passenger").required(),
+    adminSecret: joi_1.default.string().optional(), // required when creating admin and DB already has users
 }).required();

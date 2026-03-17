@@ -32,6 +32,20 @@ const swaggerDocument = {
 					password: { type: "string" },
 				},
 			},
+			RegisterBody: {
+				type: "object",
+				required: ["username", "password", "role"],
+				properties: {
+					username: { type: "string" },
+					password: { type: "string", minLength: 6 },
+					role: { type: "string", enum: ["admin", "driver", "passenger"] },
+					adminSecret: {
+						type: "string",
+						description:
+							"Required when creating admin and DB already has users. Set ADMIN_REGISTER_SECRET in env.",
+					},
+				},
+			},
 			// Company
 			CreateCompanyBody: {
 				type: "object",
@@ -293,6 +307,28 @@ const swaggerDocument = {
 	},
 	paths: {
 		// ----- Auth -----
+		"/f1/auth/register": {
+			post: {
+				tags: ["Auth"],
+				summary: "Register",
+				description:
+					"Create a new user (admin, driver, or passenger). First user can be admin without adminSecret. After that, creating admin requires adminSecret matching ADMIN_REGISTER_SECRET.",
+				security: [],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/RegisterBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "User created" },
+					"400": { description: "Username taken or invalid role" },
+					"403": { description: "Admin registration requires adminSecret" },
+				},
+			},
+		},
 		"/f1/auth/login": {
 			post: {
 				tags: ["Auth"],

@@ -7,6 +7,7 @@ export const loginSchema = Joi.object({
 
 export const registerSchema = Joi.object({
 	username: Joi.string().required(),
-	password: Joi.string().required(),
-	role: Joi.string().required(),
+	password: Joi.string().min(6).required(),
+	role: Joi.string().valid("admin", "driver", "passenger").required(),
+	adminSecret: Joi.string().optional(), // required when creating admin and DB already has users
 }).required();

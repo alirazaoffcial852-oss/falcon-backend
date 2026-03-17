@@ -6,6 +6,14 @@ const catchAsync_1 = require("../../middleware/catchAsync");
 const ResponseHandler_1 = require("../../utils/responses/ResponseHandler");
 const authService = new authService_1.AuthService();
 exports.AuthController = {
+    register: (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { username, password, role, adminSecret } = req.body;
+        if (!username || !password || !role) {
+            throw ResponseHandler_1.ResponseHandler.badRequest("username, password, and role are required");
+        }
+        const result = await authService.register(String(username).trim(), password, role, adminSecret);
+        ResponseHandler_1.ResponseHandler.success(res, result, "Registration successful");
+    }),
     login: (0, catchAsync_1.catchAsync)(async (req, res) => {
         const username = req.body.username ??
             req.body.name;

@@ -8,5 +8,6 @@ const authController_1 = require("../../controllers/auth/authController");
 const authSchema_1 = require("../../schemas/auth/authSchema");
 const validate_1 = require("../../middleware/validation/validate");
 const router = express_1.default.Router();
+router.post("/register", validate_1.validate.body(authSchema_1.registerSchema), authController_1.AuthController.register);
 router.post("/login", validate_1.validate.body(authSchema_1.loginSchema), authController_1.AuthController.login);
 exports.default = router;
