@@ -23,7 +23,10 @@ const allowedOrigins = [
 	"http://localhost:5173",
 	"http://192.168.1.22",
 	"http://192.168.1.22:5001",
+	"https://falcon-backend-github.vercel.app",
 ];
+const isAllowedOrigin = (origin: string) =>
+	allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
 
 // app.use(
 // 	cors({
@@ -41,18 +44,9 @@ const allowedOrigins = [
 app.use(
 	cors({
 		origin: function (origin, callback) {
-			console.log("🔍 Express CORS check - Origin:", origin);
-			if (!origin) {
-				console.log("✅ Express CORS - Allowing request with no origin");
-				return callback(null, true);
-			}
-			if (allowedOrigins.indexOf(origin) === -1) {
-				console.log("❌ Express CORS - Origin not allowed:", origin);
-				console.log("📋 Allowed origins:", allowedOrigins);
-				return callback(new Error("CORS not allowed"), false);
-			}
-			console.log("✅ Express CORS - Origin allowed:", origin);
-			return callback(null, true);
+			if (!origin) return callback(null, true);
+			if (isAllowedOrigin(origin)) return callback(null, true);
+			return callback(new Error("CORS not allowed"), false);
 		},
 		credentials: true,
 	}),

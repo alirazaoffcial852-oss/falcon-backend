@@ -1,4 +1,11 @@
-import { PrismaClient } from "../generated/prisma/client";
+import path from "path";
+import type { PrismaClient } from "../generated/prisma/client";
+
+// Runtime path: from dist/config/ we load src/generated (so Vercel/serverless finds the client)
+const { PrismaClient: PrismaClientCtor } = require(path.join(
+	__dirname,
+	"../../src/generated/prisma/client",
+));
 
 /**
  * Single-database service for Falcon (non-SaaS).
@@ -9,7 +16,7 @@ export class DatabaseService {
 	private prisma: PrismaClient;
 
 	private constructor() {
-		this.prisma = new PrismaClient();
+		this.prisma = new PrismaClientCtor();
 	}
 
 	static getInstance(): DatabaseService {
