@@ -23,15 +23,17 @@ then the app on Vercel has **no valid database**. Vercel runs in the cloud; ther
      - **Value:** your full Postgres connection string (from step 1).
    - Choose **Production** (and **Preview** if you want it for PRs), then **Save**.
 
-3. **Redeploy**
+3. **Create tables in the database (required before register/login)**
+   - The Neon DB starts empty. Run **migrations** once from your machine so the `roles`, `users`, etc. tables exist.
+   - In your project folder, set `DATABASE_URL` to your Neon URL (e.g. in `.env`), then run:
+     ```bash
+     pnpm run migrate:deploy
+     ```
+   - This applies all migrations and creates the tables. Optional: run `pnpm run seed` to create an admin user (or use **POST /f1/auth/register** with `role: "admin"` after this).
+
+4. **Redeploy**
    - **Deployments** → open the **⋯** on the latest deployment → **Redeploy** (or push a new commit).
    - New deployments use the updated `DATABASE_URL`.
-
-4. **Run migrations and seed (first time)**
-   - After the first deploy with a **new** empty database, run locally (with the **same** `DATABASE_URL` as in Vercel, e.g. in `.env`):
-     - `pnpm run migrate` (or `prisma migrate deploy`)
-     - `pnpm run seed` (if you use a seed script)
-   - Then try **POST /f1/auth/login** again from Swagger.
 
 ## Swagger "Servers" dropdown
 

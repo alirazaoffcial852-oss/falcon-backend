@@ -10,6 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:generate": "prisma generate",
     "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
     "seed": "pnpm exec ts-node prisma/seed.ts",
     "db:setup": "pnpm run migrate && pnpm exec prisma db seed",
     "postinstall": "pnpm run prisma:generate"
