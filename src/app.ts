@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express from "express";
-import swaggerUi from "swagger-ui-express";
 import { DatabaseService } from "./config/database";
 import { RedisService } from "./config/redisService";
 import { errorHandler } from "./middleware/errorHandler";
@@ -60,14 +59,49 @@ app.use(
 	}),
 );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-// Serve swagger-ui-dist static files first (fixes Vercel: JS/CSS were returned as text/html)
-const swaggerUiDist = path.join(__dirname, "../node_modules/swagger-ui-dist");
-app.use(
-	"/api-docs",
-	express.static(swaggerUiDist, { index: false }),
-	swaggerUi.serve,
-	swaggerUi.setup(swaggerDocument),
-);
+
+// Swagger: serve spec as JSON and UI from CDN (avoids Vercel serving .js/.css as HTML)
+const SWAGGER_UI_CDN = "https://unpkg.com/swagger-ui-dist@5.9.0";
+app.get("/api-docs/spec", (_req, res) => {
+	res.set("Content-Type", "application/json");
+	res.json(swaggerDocument);
+});
+app.get(["/api-docs", "/api-docs/"], (req, res) => {
+	const baseUrl = `${req.protocol}://${req.get("host") || req.hostname}`;
+	const specUrl = `${baseUrl}/api-docs/spec`;
+	if (process.env.VERCEL === "1") {
+		console.log("[api-docs] baseUrl=%s specUrl=%s path=%s", baseUrl, specUrl, req.path);
+	}
+	res.set("Content-Type", "text/html");
+	res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Falcon API Docs</title>
+  <link rel="stylesheet" href="${SWAGGER_UI_CDN}/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="${SWAGGER_UI_CDN}/swagger-ui-bundle.js"></script>
+  <script src="${SWAGGER_UI_CDN}/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "${specUrl}",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>`);
+});
 
 Routes(app);
 

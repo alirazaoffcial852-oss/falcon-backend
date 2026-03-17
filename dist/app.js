@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
-const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const database_1 = require("./config/database");
 const redisService_1 = require("./config/redisService");
 const errorHandler_1 = require("./middleware/errorHandler");
@@ -58,9 +57,48 @@ app.use((0, express_fileupload_1.default)({
     abortOnLimit: true,
 }));
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
-// Serve swagger-ui-dist static files first (fixes Vercel: JS/CSS were returned as text/html)
-const swaggerUiDist = path_1.default.join(__dirname, "../node_modules/swagger-ui-dist");
-app.use("/api-docs", express_1.default.static(swaggerUiDist, { index: false }), swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
+// Swagger: serve spec as JSON and UI from CDN (avoids Vercel serving .js/.css as HTML)
+const SWAGGER_UI_CDN = "https://unpkg.com/swagger-ui-dist@5.9.0";
+app.get("/api-docs/spec", (_req, res) => {
+    res.set("Content-Type", "application/json");
+    res.json(swagger_1.default);
+});
+app.get(["/api-docs", "/api-docs/"], (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get("host") || req.hostname}`;
+    const specUrl = `${baseUrl}/api-docs/spec`;
+    if (process.env.VERCEL === "1") {
+        console.log("[api-docs] baseUrl=%s specUrl=%s path=%s", baseUrl, specUrl, req.path);
+    }
+    res.set("Content-Type", "text/html");
+    res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Falcon API Docs</title>
+  <link rel="stylesheet" href="${SWAGGER_UI_CDN}/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="${SWAGGER_UI_CDN}/swagger-ui-bundle.js"></script>
+  <script src="${SWAGGER_UI_CDN}/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: "${specUrl}",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>`);
+});
 (0, routes_1.default)(app);
 app.use(errorHandler_1.errorHandler);
 async function startServer() {
