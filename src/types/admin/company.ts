@@ -7,6 +7,6 @@ export interface CompanyListQuery {
 export interface Company {
 	name: string;
 	email?: string;
-	phoneNo: string;
+	phone_no: string;
 	address: string;
 }

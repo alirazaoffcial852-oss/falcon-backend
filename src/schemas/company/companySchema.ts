@@ -7,7 +7,7 @@ export const createCompanySchema = Joi.object({
 		"string.trim": "Name must be a string",
 	}),
 	email: Joi.string().email().allow("", null),
-	phoneNo: Joi.string().trim().required().messages({
+	phone_no: Joi.string().trim().required().messages({
 		"any.required": "Phone number is required",
 		"string.empty": "Phone number is required",
 		"string.trim": "Phone number must be a string",
@@ -24,7 +24,7 @@ export const updateCompanySchema = Joi.object({
 		"string.trim": "Name must be a string",
 	}),
 	email: Joi.string().email().allow("", null),
-	phoneNo: Joi.string().trim().messages({
+	phone_no: Joi.string().trim().messages({
 		"string.trim": "Phone number must be a string",
 	}),
 	address: Joi.string().trim().messages({

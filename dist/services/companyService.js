@@ -39,32 +39,36 @@ class CompanyService {
             data: {
                 name: data.name,
                 email: data.email ?? null,
-                phone_no: data.phoneNo,
+                phone_no: data.phone_no,
                 address: data.address,
             },
         });
         return {
             name: company.name,
             email: company.email ?? undefined,
-            phoneNo: company.phone_no,
+            phone_no: company.phone_no,
             address: company.address,
         };
     }
     async update(id, data) {
         await this.getById(id);
+        const updateData = {};
+        if (data.name !== undefined)
+            updateData.name = data.name.trim();
+        if (data.email !== undefined)
+            updateData.email = data.email?.trim() ?? null;
+        if (data.phone_no !== undefined)
+            updateData.phone_no = data.phone_no.trim();
+        if (data.address !== undefined)
+            updateData.address = data.address.trim();
         const company = await this.db.company.update({
             where: { id },
-            data: {
-                ...(data.name !== undefined && { name: data.name.trim() }),
-                ...(data.email !== undefined && { email: data.email?.trim() ?? null }),
-                ...(data.phoneNo !== undefined && { phoneNo: data.phoneNo.trim() }),
-                ...(data.address !== undefined && { address: data.address.trim() }),
-            },
+            data: updateData,
         });
         return {
             name: company.name,
             email: company.email ?? undefined,
-            phoneNo: company.phone_no,
+            phone_no: company.phone_no,
             address: company.address,
         };
     }

@@ -12,7 +12,7 @@ exports.createCompanySchema = joi_1.default.object({
         "string.trim": "Name must be a string",
     }),
     email: joi_1.default.string().email().allow("", null),
-    phoneNo: joi_1.default.string().trim().required().messages({
+    phone_no: joi_1.default.string().trim().required().messages({
         "any.required": "Phone number is required",
         "string.empty": "Phone number is required",
         "string.trim": "Phone number must be a string",
@@ -28,7 +28,7 @@ exports.updateCompanySchema = joi_1.default.object({
         "string.trim": "Name must be a string",
     }),
     email: joi_1.default.string().email().allow("", null),
-    phoneNo: joi_1.default.string().trim().messages({
+    phone_no: joi_1.default.string().trim().messages({
         "string.trim": "Phone number must be a string",
     }),
     address: joi_1.default.string().trim().messages({
