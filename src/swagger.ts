@@ -9,6 +9,7 @@ const swaggerDocument = {
 			"API docs for Falcon backend. Use Authorize to set Bearer token (from POST /f1/auth/login). All admin routes require admin role.",
 	},
 	servers: [
+		{ url: "/", description: "Current (Vercel / same origin)" },
 		{ url: "http://192.168.1.22:5001", description: "Server" },
 		{ url: "http://localhost:5051", description: "Local" },
 	],

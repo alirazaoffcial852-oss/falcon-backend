@@ -106,4 +106,8 @@ app.get("/health", (req, res) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
 
-startServer().catch(console.error);
+// Export app for Vercel serverless; only start HTTP server when not on Vercel
+export { app };
+if (process.env.VERCEL !== "1") {
+	startServer().catch(console.error);
+}
