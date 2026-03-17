@@ -60,7 +60,14 @@ app.use(
 	}),
 );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Serve swagger-ui-dist static files first (fixes Vercel: JS/CSS were returned as text/html)
+const swaggerUiDist = path.join(__dirname, "../node_modules/swagger-ui-dist");
+app.use(
+	"/api-docs",
+	express.static(swaggerUiDist, { index: false }),
+	swaggerUi.serve,
+	swaggerUi.setup(swaggerDocument),
+);
 
 Routes(app);
 

@@ -58,7 +58,9 @@ app.use((0, express_fileupload_1.default)({
     abortOnLimit: true,
 }));
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
-app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
+// Serve swagger-ui-dist static files first (fixes Vercel: JS/CSS were returned as text/html)
+const swaggerUiDist = path_1.default.join(__dirname, "../node_modules/swagger-ui-dist");
+app.use("/api-docs", express_1.default.static(swaggerUiDist, { index: false }), swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
 (0, routes_1.default)(app);
 app.use(errorHandler_1.errorHandler);
 async function startServer() {
