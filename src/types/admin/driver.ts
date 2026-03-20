@@ -16,5 +16,7 @@ export interface Driver {
 	salary: string;
 	driver_license_front_url: string;
 	driver_license_back_url: string;
-	car_id: number;
+	car_id?: number | null;
+	car_name?: string | null;
+	car_number?: string | null;
 }
