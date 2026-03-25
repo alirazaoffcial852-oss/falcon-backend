@@ -15,14 +15,14 @@ async function main() {
 		});
 	}
 
-	// 2) Admin user (username=admin, password=admin@123)
+	// 2) Admin user (email=admin@falcon.com, password=admin@123)
 	const adminRole = await prisma.role.findUnique({ where: { name: "admin" } });
 	if (!adminRole) throw new Error("Admin role not found");
 	const hashedPassword = await bcrypt.hash("admin@123", 10);
 	await prisma.user.upsert({
-		where: { username: "admin" },
+		where: { email: "admin@falcon.com" },
 		create: {
-			username: "admin",
+			email: "admin@falcon.com",
 			password: hashedPassword,
 			role_id: adminRole.id,
 		},

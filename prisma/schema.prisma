@@ -23,13 +23,15 @@ model Role {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  username   String   @unique
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
   password   String
   role_id    Int
-  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  driver     Driver?
+  passenger  Passenger?
 
   @@map("users")
 }
@@ -69,6 +71,8 @@ model Car {
 
 model Driver {
   id                       Int               @id @default(autoincrement())
+  user_id                  Int?              @unique
+  user                     User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                     String
   phone_no                 String
   address                  String
@@ -80,6 +84,12 @@ model Driver {
   salary                   String
   driver_license_front_url String
   driver_license_back_url  String
+  // Mobile: availability & live location
+  is_available             Boolean           @default(false)
+  available_at             DateTime?
+  current_lat              Float?
+  current_long             Float?
+  location_updated_at      DateTime?
   created_at               DateTime          @default(now())
   updated_at               DateTime          @updatedAt
   driver_assign_cars       DriverAssignCar[]
@@ -102,6 +112,8 @@ model DriverAssignCar {
 
 model Passenger {
   id             Int        @id @default(autoincrement())
+  user_id        Int?       @unique
+  user           User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name           String
   phone_no       String
   office_address String
@@ -139,6 +151,8 @@ model Route {
   office_lat     Float
   office_long    Float
   status         RouteStatus @default(PENDING)
+  started_at     DateTime?
+  completed_at   DateTime?
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
   legs           RouteLeg[]
@@ -147,24 +161,27 @@ model Route {
 }
 
 model RouteLeg {
-  id              Int         @id @default(autoincrement())
-  route_id        Int
-  route           Route       @relation(fields: [route_id], references: [id], onDelete: Cascade)
-  passenger_id    Int
-  passenger       Passenger   @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  pickup_address  String
-  pickup_lat      Float
-  pickup_long     Float
-  pickup_time     String
-  pickup_status   RouteStatus @default(PENDING)
-  dropoff_address String
-  dropoff_lat     Float
-  dropoff_long    Float
-  dropoff_time    String
-  dropoff_status  RouteStatus @default(PENDING)
-  toll_amount     Float?
-  created_at      DateTime    @default(now())
-  updated_at      DateTime    @updatedAt
+  id                Int            @id @default(autoincrement())
+  route_id          Int
+  route             Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  passenger_id      Int
+  passenger         Passenger      @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  sequence          Int            @default(0) // order in pickup queue
+  pickup_address    String
+  pickup_lat        Float
+  pickup_long       Float
+  pickup_time       String
+  pickup_status     PickupStatus   @default(PENDING)
+  driver_arrived_at DateTime?      // when driver clicked "I am Here"
+  passenger_ack     PassengerAck?  // passenger response: COMING / NOT_COMING
+  picked_at         DateTime?      // when driver confirmed pickup
+  dropoff_address   String
+  dropoff_lat       Float
+  dropoff_long      Float
+  dropoff_time      String
+  toll_amount       Float?
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
 
   @@map("route_legs")
 }
@@ -174,4 +191,16 @@ enum RouteStatus {
   ONGOING
   COMPLETED
   CANCELLED
+}
+
+enum PickupStatus {
+  PENDING
+  ARRIVED    // driver arrived at passenger location
+  PICKED
+  SKIPPED    // move to next / not coming
+}
+
+enum PassengerAck {
+  COMING
+  NOT_COMING
 }

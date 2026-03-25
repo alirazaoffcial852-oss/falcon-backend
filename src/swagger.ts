@@ -26,9 +26,9 @@ const swaggerDocument = {
 			// Auth
 			LoginBody: {
 				type: "object",
-				required: ["username", "password"],
+				required: ["email", "password"],
 				properties: {
-					username: { type: "string" },
+					email: { type: "string", format: "email" },
 					password: { type: "string" },
 				},
 			},
@@ -71,6 +71,8 @@ const swaggerDocument = {
 			CreateDriverBody: {
 				type: "object",
 				required: [
+					"email",
+					"role_id",
 					"name",
 					"phone_no",
 					"address",
@@ -78,6 +80,12 @@ const swaggerDocument = {
 					"car_id",
 				],
 				properties: {
+					email: { type: "string", format: "email" },
+					role_id: {
+						type: "integer",
+						minimum: 1,
+						description: "Role id for driver role",
+					},
 					name: { type: "string" },
 					phone_no: { type: "string" },
 					address: { type: "string" },
@@ -113,8 +121,21 @@ const swaggerDocument = {
 			// Passenger
 			CreatePassengerBody: {
 				type: "object",
-				required: ["name", "phoneNo", "officeAddress", "companyId"],
+				required: [
+					"email",
+					"role_id",
+					"name",
+					"phoneNo",
+					"officeAddress",
+					"companyId",
+				],
 				properties: {
+					email: { type: "string", format: "email" },
+					role_id: {
+						type: "integer",
+						minimum: 1,
+						description: "Role id for passenger role",
+					},
 					name: { type: "string" },
 					phoneNo: { type: "string" },
 					officeAddress: { type: "string" },
@@ -334,7 +355,7 @@ const swaggerDocument = {
 				tags: ["Auth"],
 				summary: "Login",
 				description:
-					"Login with username/password. Use returned token as Bearer token for protected routes.",
+					"Login with email/password. Use returned token as Bearer token for protected routes.",
 				security: [],
 				requestBody: {
 					required: true,
@@ -562,6 +583,8 @@ const swaggerDocument = {
 			post: {
 				tags: ["Drivers"],
 				summary: "Create driver",
+				description:
+					"Creates driver and linked user account. Email is required; a random 6-8 digit temporary password is sent to that email.",
 				security: [{ bearerAuth: [] }],
 				requestBody: {
 					required: true,
@@ -676,6 +699,8 @@ const swaggerDocument = {
 			post: {
 				tags: ["Passengers"],
 				summary: "Create passenger",
+				description:
+					"Creates passenger and linked user account. Email is required; a random 6-8 digit temporary password is sent to that email.",
 				security: [{ bearerAuth: [] }],
 				requestBody: {
 					required: true,

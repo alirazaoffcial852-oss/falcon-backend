@@ -30,3 +30,20 @@ export const generateRandomOtp = (): string => {
 	}
 	return pin;
 };
+
+/**
+ * Generates a random numeric password with configurable min/max length.
+ * Default range is 6 to 8 digits.
+ */
+export const generateRandomNumericPassword = (
+	minLength: number = 6,
+	maxLength: number = 8,
+): string => {
+	const digits = "0123456789";
+	const length = crypto.randomInt(minLength, maxLength + 1);
+	let password = "";
+	for (let i = 0; i < length; i++) {
+		password += digits[crypto.randomInt(0, digits.length)];
+	}
+	return password;
+};

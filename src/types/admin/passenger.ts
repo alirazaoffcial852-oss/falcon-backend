@@ -6,6 +6,8 @@ export interface PassengerListQuery {
 }
 
 export interface Passenger {
+	email?: string;
+	role_id?: number;
 	name: string;
 	phoneNo: string;
 	officeAddress: string;

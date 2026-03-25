@@ -18,29 +18,22 @@ export const AuthController = {
 				"username, password, and role are required",
 			);
 		}
-		const result = await authService.register(
-			String(username).trim(),
-			password,
-			role,
-			adminSecret,
-		);
-		ResponseHandler.success(res, result, "Registration successful");
+		// const result = await authService.register(
+		// 	String(username).trim(),
+		// 	password,
+		// 	role,
+		// 	adminSecret,
+		// );
+		// ResponseHandler.success(res, result, "Registration successful");
 	}),
 
 	login: catchAsync(async (req: Request, res: Response) => {
-		const username =
-			(req.body as { username?: string }).username ??
-			(req.body as { name?: string }).name;
+		const email = (req.body as { email?: string }).email;
 		const password = (req.body as { password?: string }).password;
-		if (!username || !password) {
-			throw ResponseHandler.badRequest(
-				"Username (or name) and password are required",
-			);
+		if (!email || !password) {
+			throw ResponseHandler.badRequest("Email and password are required");
 		}
-		const result = await authService.login(
-			String(username).trim(),
-			password,
-		);
+		const result = await authService.login(String(email).trim(), password);
 		ResponseHandler.success(res, result, "Login successful");
 	}),
 };
