@@ -7,6 +7,8 @@ import carRoutes from "./admin/carRoutes";
 import driverConfigurationRoutes from "./admin/driverConfigurationRoutes";
 import routeRoutes from "./admin/routeRoutes";
 import uploadRoutes from "./admin/uploadRoutes";
+import mobileDriverRoutes from "./mobile/mobileDriverRoutes";
+import mobilePassengerRoutes from "./mobile/mobilePassengerRoutes";
 
 import { authMiddleware, roleMiddleware } from "../middleware/authMiddleware";
 
@@ -15,6 +17,7 @@ export default function Routes(app: Express) {
 
 	router.use("/auth", authRoutes);
 
+	// Admin routes (require admin role)
 	const admin = [authMiddleware, roleMiddleware("admin")];
 	router.use("/companies", ...admin, companyRoutes);
 	router.use("/drivers", ...admin, driverRoutes);
@@ -23,6 +26,11 @@ export default function Routes(app: Express) {
 	router.use("/driver-configurations", ...admin, driverConfigurationRoutes);
 	router.use("/routes", ...admin, routeRoutes);
 	router.use("/uploads", ...admin, uploadRoutes);
+
+	// Mobile app routes (require authenticated driver/passenger)
+	const mobile = [authMiddleware];
+	router.use("/mobile/driver", ...mobile, mobileDriverRoutes);
+	router.use("/mobile/passenger", ...mobile, mobilePassengerRoutes);
 
 	app.use("/f1", router);
 }

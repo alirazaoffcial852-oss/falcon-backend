@@ -2,6 +2,9 @@ import { DatabaseService } from "../config/database";
 import { ResponseHandler } from "../utils/responses/ResponseHandler";
 import type { DriverListQuery, Driver } from "../types/admin/driver";
 import { buildWhereCondition } from "../utils/buildWhereCondition";
+import bcrypt from "bcryptjs";
+import { generateRandomNumericPassword } from "../utils/generateRandomPassword";
+import { sendCredentialEmail } from "../utils/email";
 
 export class DriverService {
 	private db = DatabaseService.getInstance().getPrisma();
@@ -72,9 +75,30 @@ export class DriverService {
 	}
 
 	async create(data: Driver): Promise<Driver> {
-		const createdDriver = await this.db.$transaction(async (tx) => {
+		if (!data.email) {
+			throw ResponseHandler.badRequest("Email is required");
+		}
+		const email = data.email.trim().toLowerCase();
+		const existingUser = await this.db.user.findUnique({ where: { email } });
+		if (existingUser) {
+			throw ResponseHandler.duplicateResource("User", "email");
+		}
+
+		const plainPassword = generateRandomNumericPassword(6, 8);
+		const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+		const driver = await this.db.$transaction(async (tx) => {
+			const createdUser = await tx.user.create({
+				data: {
+					email,
+					password: hashedPassword,
+					role_id: 2,
+				},
+			});
+
 			const createdDriver = await tx.driver.create({
 				data: {
+					user_id: createdUser.id,
 					name: data.name,
 					phone_no: data.phone_no,
 					address: data.address,
@@ -103,7 +127,14 @@ export class DriverService {
 
 			return createdDriver;
 		});
-		return this.getById(createdDriver.id);
+
+		await sendCredentialEmail(email, "driver", plainPassword);
+
+		return {
+			email,
+			...driver,
+			car_id: Number(data.car_id),
+		};
 	}
 
 	async update(id: number, data: Driver) {

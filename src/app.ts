@@ -9,6 +9,7 @@ import Routes from "./routes";
 import path from "path";
 import http from "http";
 import swaggerDocument from "./swagger";
+import { initSocket } from "./config/socketService";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -110,6 +111,9 @@ app.use(errorHandler);
 async function startServer() {
 	try {
 		const dbService = DatabaseService.getInstance();
+
+		// Initialise Socket.io on the shared HTTP server
+		initSocket(httpServer);
 
 		const PORT = process.env.PORT || 5051;
 		const server = httpServer.listen(PORT, () => {
