@@ -116,7 +116,12 @@ model Passenger {
   user           User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name           String
   phone_no       String
+  home_address   String?
+  home_lat       Float?
+  home_long      Float?
   office_address String
+  office_lat     Float?
+  office_long    Float?
   company_id     Int
   company        Company    @relation(fields: [company_id], references: [id], onDelete: Cascade)
   pick_up_time   String?
@@ -161,27 +166,27 @@ model Route {
 }
 
 model RouteLeg {
-  id                Int            @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   route_id          Int
-  route             Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  route             Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
   passenger_id      Int
-  passenger         Passenger      @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  sequence          Int            @default(0) // order in pickup queue
+  passenger         Passenger     @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  sequence          Int           @default(0) // order in pickup queue
   pickup_address    String
   pickup_lat        Float
   pickup_long       Float
   pickup_time       String
-  pickup_status     PickupStatus   @default(PENDING)
-  driver_arrived_at DateTime?      // when driver clicked "I am Here"
-  passenger_ack     PassengerAck?  // passenger response: COMING / NOT_COMING
-  picked_at         DateTime?      // when driver confirmed pickup
+  pickup_status     PickupStatus  @default(PENDING)
+  driver_arrived_at DateTime? // when driver clicked "I am Here"
+  passenger_ack     PassengerAck? // passenger response: COMING / NOT_COMING
+  picked_at         DateTime? // when driver confirmed pickup
   dropoff_address   String
   dropoff_lat       Float
   dropoff_long      Float
   dropoff_time      String
   toll_amount       Float?
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
 
   @@map("route_legs")
 }
@@ -195,9 +200,9 @@ enum RouteStatus {
 
 enum PickupStatus {
   PENDING
-  ARRIVED    // driver arrived at passenger location
+  ARRIVED // driver arrived at passenger location
   PICKED
-  SKIPPED    // move to next / not coming
+  SKIPPED // move to next / not coming
 }
 
 enum PassengerAck {

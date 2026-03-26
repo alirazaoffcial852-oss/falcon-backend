@@ -7,11 +7,15 @@ export interface PassengerListQuery {
 
 export interface Passenger {
 	email?: string;
-	role_id?: number;
-	name: string;
-	phoneNo: string;
-	officeAddress: string;
-	companyId: number;
+	name?: string;
+	phoneNo?: string;
+	homeAddress?: string;
+	homeLat?: number;
+	homeLong?: number;
+	officeAddress?: string;
+	officeLat?: number;
+	officeLong?: number;
+	companyId?: number;
 	pickUpTime?: string;
 	dropOffTime?: string;
 }

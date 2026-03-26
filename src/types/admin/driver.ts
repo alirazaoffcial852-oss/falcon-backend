@@ -6,7 +6,6 @@ export interface DriverListQuery {
 
 export interface Driver {
 	email?: string;
-	role_id?: number;
 	name: string;
 	phone_no: string;
 	address: string;
