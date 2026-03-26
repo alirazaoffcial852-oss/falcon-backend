@@ -7,24 +7,24 @@ const authService = new AuthService();
 
 export const AuthController = {
 	register: catchAsync(async (req: Request, res: Response) => {
-		const { username, password, role, adminSecret } = req.body as {
-			username?: string;
+		const { email, password, role, adminSecret } = req.body as {
+			email?: string;
 			password?: string;
 			role?: "admin" | "driver" | "passenger";
 			adminSecret?: string;
 		};
-		if (!username || !password || !role) {
+		if (!email || !password || !role) {
 			throw ResponseHandler.badRequest(
-				"username, password, and role are required",
+				"email, password, and role are required",
 			);
 		}
-		// const result = await authService.register(
-		// 	String(username).trim(),
-		// 	password,
-		// 	role,
-		// 	adminSecret,
-		// );
-		// ResponseHandler.success(res, result, "Registration successful");
+		const result = await authService.register(
+			String(email).trim(),
+			password,
+			role,
+			adminSecret,
+		);
+		ResponseHandler.success(res, result, "Registration successful");
 	}),
 
 	login: catchAsync(async (req: Request, res: Response) => {
