@@ -48,6 +48,30 @@ export class PassengerService {
 			throw ResponseHandler.badRequest("Email is required");
 		}
 
+		if (!data.name || !data.phoneNo || !data.officeAddress || !data.companyId) {
+			throw ResponseHandler.badRequest("Missing required passenger fields");
+		}
+		if (
+			!data.homeAddress ||
+			data.homeLat === undefined ||
+			data.homeLong === undefined ||
+			data.officeLat === undefined ||
+			data.officeLong === undefined
+		) {
+			throw ResponseHandler.badRequest(
+				"homeAddress, homeLat, homeLong, officeLat and officeLong are required",
+			);
+		}
+		const name = data.name;
+		const phoneNo = data.phoneNo;
+		const homeAddress = data.homeAddress;
+		const homeLat = data.homeLat;
+		const homeLong = data.homeLong;
+		const officeAddress = data.officeAddress;
+		const officeLat = data.officeLat;
+		const officeLong = data.officeLong;
+		const companyId = data.companyId;
+
 		const email = data.email.trim().toLowerCase();
 		const existingUser = await this.db.user.findUnique({ where: { email } });
 		if (existingUser) {
@@ -58,11 +82,11 @@ export class PassengerService {
 		const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
 		const company = await this.db.company.findUnique({
-			where: { id: data.companyId },
+			where: { id: Number(companyId) },
 		});
 		if (!company)
 			throw ResponseHandler.badRequest(
-				"No company found against this id: " + data.companyId,
+				"No company found against this id: " + companyId,
 			);
 		const passenger = await this.db.$transaction(async (tx) => {
 			const createdUser = await tx.user.create({
@@ -76,10 +100,15 @@ export class PassengerService {
 			return tx.passenger.create({
 				data: {
 					user_id: createdUser.id,
-					name: data.name.trim(),
-					phone_no: data.phoneNo.trim(),
-					office_address: data.officeAddress.trim(),
-					company_id: data.companyId,
+					name: name.trim(),
+					phone_no: phoneNo.trim(),
+					home_address: homeAddress.trim(),
+					home_lat: Number(homeLat),
+					home_long: Number(homeLong),
+					office_address: officeAddress.trim(),
+					office_lat: Number(officeLat),
+					office_long: Number(officeLong),
+					company_id: Number(companyId),
 					pick_up_time: data.pickUpTime?.trim(),
 					drop_off_time: data.dropOffTime?.trim(),
 				},
@@ -93,7 +122,12 @@ export class PassengerService {
 			email,
 			name: passenger.name,
 			phoneNo: passenger.phone_no,
+			homeAddress: passenger.home_address ?? undefined,
+			homeLat: passenger.home_lat ?? undefined,
+			homeLong: passenger.home_long ?? undefined,
 			officeAddress: passenger.office_address,
+			officeLat: passenger.office_lat ?? undefined,
+			officeLong: passenger.office_long ?? undefined,
 			companyId: passenger.company_id,
 			pickUpTime: passenger.pick_up_time ?? undefined,
 			dropOffTime: passenger.drop_off_time ?? undefined,
@@ -107,8 +141,21 @@ export class PassengerService {
 			data: {
 				...(data.name !== undefined && { name: data.name.trim() }),
 				...(data.phoneNo !== undefined && { phone_no: data.phoneNo.trim() }),
+				...(data.homeAddress !== undefined && {
+					home_address: data.homeAddress.trim(),
+				}),
+				...(data.homeLat !== undefined && { home_lat: Number(data.homeLat) }),
+				...(data.homeLong !== undefined && {
+					home_long: Number(data.homeLong),
+				}),
 				...(data.officeAddress !== undefined && {
 					office_address: data.officeAddress.trim(),
+				}),
+				...(data.officeLat !== undefined && {
+					office_lat: Number(data.officeLat),
+				}),
+				...(data.officeLong !== undefined && {
+					office_long: Number(data.officeLong),
 				}),
 				...(data.companyId !== undefined && { company_id: data.companyId }),
 				...(data.pickUpTime !== undefined && {
@@ -122,7 +169,12 @@ export class PassengerService {
 		return {
 			name: passenger.name,
 			phoneNo: passenger.phone_no,
+			homeAddress: passenger.home_address ?? undefined,
+			homeLat: passenger.home_lat ?? undefined,
+			homeLong: passenger.home_long ?? undefined,
 			officeAddress: passenger.office_address,
+			officeLat: passenger.office_lat ?? undefined,
+			officeLong: passenger.office_long ?? undefined,
 			companyId: passenger.company_id,
 			pickUpTime: passenger.pick_up_time ?? undefined,
 			dropOffTime: passenger.drop_off_time ?? undefined,

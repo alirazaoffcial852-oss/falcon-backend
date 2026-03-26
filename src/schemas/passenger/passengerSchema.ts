@@ -21,6 +21,27 @@ export const createPassengerSchema = Joi.object({
 		"string.empty": "Office address is required",
 		"string.trim": "Office address must be a string",
 	}),
+	homeAddress: Joi.string().trim().required().messages({
+		"any.required": "Home address is required",
+		"string.empty": "Home address is required",
+		"string.trim": "Home address must be a string",
+	}),
+	homeLat: Joi.number().required().messages({
+		"any.required": "Home latitude is required",
+		"number.base": "Home latitude must be a number",
+	}),
+	homeLong: Joi.number().required().messages({
+		"any.required": "Home longitude is required",
+		"number.base": "Home longitude must be a number",
+	}),
+	officeLat: Joi.number().required().messages({
+		"any.required": "Office latitude is required",
+		"number.base": "Office latitude must be a number",
+	}),
+	officeLong: Joi.number().required().messages({
+		"any.required": "Office longitude is required",
+		"number.base": "Office longitude must be a number",
+	}),
 	companyId: Joi.number().integer().min(1).required().messages({
 		"any.required": "Company id is required",
 		"number.min": "Company id must be greater than 0",
@@ -40,8 +61,23 @@ export const updatePassengerSchema = Joi.object({
 	phoneNo: Joi.string().trim().messages({
 		"string.trim": "Phone number must be a string",
 	}),
+	homeAddress: Joi.string().trim().messages({
+		"string.trim": "Home address must be a string",
+	}),
+	homeLat: Joi.number().messages({
+		"number.base": "Home latitude must be a number",
+	}),
+	homeLong: Joi.number().messages({
+		"number.base": "Home longitude must be a number",
+	}),
 	officeAddress: Joi.string().trim().messages({
 		"string.trim": "Office address must be a string",
+	}),
+	officeLat: Joi.number().messages({
+		"number.base": "Office latitude must be a number",
+	}),
+	officeLong: Joi.number().messages({
+		"number.base": "Office longitude must be a number",
 	}),
 	companyId: Joi.number().integer().min(1).messages({
 		"number.min": "Company id must be greater than 0",
