@@ -1,8 +1,8 @@
 let app;
 try {
-  const m = require("../dist/app.js");
+  const m = require("../dist/src/app.js");
   app = m.app;
-  if (!app) throw new Error("dist/app.js did not export app");
+  if (!app) throw new Error("dist/src/app.js did not export app");
 } catch (e) {
   console.error("Failed to load app:", e);
   app = require("express")();
