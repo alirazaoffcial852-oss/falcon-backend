@@ -42,6 +42,8 @@ model Company {
   email      String?
   phone_no   String
   address    String
+  lat        Float?
+  long       Float?
   created_at DateTime    @default(now())
   updated_at DateTime    @updatedAt
   passengers Passenger[]
