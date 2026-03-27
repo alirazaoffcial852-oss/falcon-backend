@@ -50,6 +50,8 @@ export type RouteMinAggregateOutputType = {
   office_lat: number | null
   office_long: number | null
   status: $Enums.RouteStatus | null
+  started_at: Date | null
+  completed_at: Date | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -62,6 +64,8 @@ export type RouteMaxAggregateOutputType = {
   office_lat: number | null
   office_long: number | null
   status: $Enums.RouteStatus | null
+  started_at: Date | null
+  completed_at: Date | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -74,6 +78,8 @@ export type RouteCountAggregateOutputType = {
   office_lat: number
   office_long: number
   status: number
+  started_at: number
+  completed_at: number
   created_at: number
   updated_at: number
   _all: number
@@ -104,6 +110,8 @@ export type RouteMinAggregateInputType = {
   office_lat?: true
   office_long?: true
   status?: true
+  started_at?: true
+  completed_at?: true
   created_at?: true
   updated_at?: true
 }
@@ -116,6 +124,8 @@ export type RouteMaxAggregateInputType = {
   office_lat?: true
   office_long?: true
   status?: true
+  started_at?: true
+  completed_at?: true
   created_at?: true
   updated_at?: true
 }
@@ -128,6 +138,8 @@ export type RouteCountAggregateInputType = {
   office_lat?: true
   office_long?: true
   status?: true
+  started_at?: true
+  completed_at?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -227,6 +239,8 @@ export type RouteGroupByOutputType = {
   office_lat: number
   office_long: number
   status: $Enums.RouteStatus
+  started_at: Date | null
+  completed_at: Date | null
   created_at: Date
   updated_at: Date
   _count: RouteCountAggregateOutputType | null
@@ -262,6 +276,8 @@ export type RouteWhereInput = {
   office_lat?: Prisma.FloatFilter<"Route"> | number
   office_long?: Prisma.FloatFilter<"Route"> | number
   status?: Prisma.EnumRouteStatusFilter<"Route"> | $Enums.RouteStatus
+  started_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
+  completed_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Route"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Route"> | Date | string
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
@@ -277,6 +293,8 @@ export type RouteOrderByWithRelationInput = {
   office_lat?: Prisma.SortOrder
   office_long?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  started_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  completed_at?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   company?: Prisma.CompanyOrderByWithRelationInput
@@ -295,6 +313,8 @@ export type RouteWhereUniqueInput = Prisma.AtLeast<{
   office_lat?: Prisma.FloatFilter<"Route"> | number
   office_long?: Prisma.FloatFilter<"Route"> | number
   status?: Prisma.EnumRouteStatusFilter<"Route"> | $Enums.RouteStatus
+  started_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
+  completed_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Route"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Route"> | Date | string
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
@@ -310,6 +330,8 @@ export type RouteOrderByWithAggregationInput = {
   office_lat?: Prisma.SortOrder
   office_long?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  started_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  completed_at?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.RouteCountOrderByAggregateInput
@@ -330,6 +352,8 @@ export type RouteScalarWhereWithAggregatesInput = {
   office_lat?: Prisma.FloatWithAggregatesFilter<"Route"> | number
   office_long?: Prisma.FloatWithAggregatesFilter<"Route"> | number
   status?: Prisma.EnumRouteStatusWithAggregatesFilter<"Route"> | $Enums.RouteStatus
+  started_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Route"> | Date | string | null
+  completed_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Route"> | Date | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Route"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"Route"> | Date | string
 }
@@ -339,6 +363,8 @@ export type RouteCreateInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   company: Prisma.CompanyCreateNestedOneWithoutRoutesInput
@@ -354,6 +380,8 @@ export type RouteUncheckedCreateInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   legs?: Prisma.RouteLegUncheckedCreateNestedManyWithoutRouteInput
@@ -364,6 +392,8 @@ export type RouteUpdateInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneRequiredWithoutRoutesNestedInput
@@ -379,6 +409,8 @@ export type RouteUncheckedUpdateInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   legs?: Prisma.RouteLegUncheckedUpdateManyWithoutRouteNestedInput
@@ -392,6 +424,8 @@ export type RouteCreateManyInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -401,6 +435,8 @@ export type RouteUpdateManyMutationInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -413,6 +449,8 @@ export type RouteUncheckedUpdateManyInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -435,6 +473,8 @@ export type RouteCountOrderByAggregateInput = {
   office_lat?: Prisma.SortOrder
   office_long?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  started_at?: Prisma.SortOrder
+  completed_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -455,6 +495,8 @@ export type RouteMaxOrderByAggregateInput = {
   office_lat?: Prisma.SortOrder
   office_long?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  started_at?: Prisma.SortOrder
+  completed_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -467,6 +509,8 @@ export type RouteMinOrderByAggregateInput = {
   office_lat?: Prisma.SortOrder
   office_long?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  started_at?: Prisma.SortOrder
+  completed_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -591,6 +635,8 @@ export type RouteCreateWithoutCompanyInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   driver: Prisma.DriverCreateNestedOneWithoutRoutesInput
@@ -604,6 +650,8 @@ export type RouteUncheckedCreateWithoutCompanyInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   legs?: Prisma.RouteLegUncheckedCreateNestedManyWithoutRouteInput
@@ -646,6 +694,8 @@ export type RouteScalarWhereInput = {
   office_lat?: Prisma.FloatFilter<"Route"> | number
   office_long?: Prisma.FloatFilter<"Route"> | number
   status?: Prisma.EnumRouteStatusFilter<"Route"> | $Enums.RouteStatus
+  started_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
+  completed_at?: Prisma.DateTimeNullableFilter<"Route"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Route"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Route"> | Date | string
 }
@@ -655,6 +705,8 @@ export type RouteCreateWithoutDriverInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   company: Prisma.CompanyCreateNestedOneWithoutRoutesInput
@@ -668,6 +720,8 @@ export type RouteUncheckedCreateWithoutDriverInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   legs?: Prisma.RouteLegUncheckedCreateNestedManyWithoutRouteInput
@@ -704,6 +758,8 @@ export type RouteCreateWithoutLegsInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   company: Prisma.CompanyCreateNestedOneWithoutRoutesInput
@@ -718,6 +774,8 @@ export type RouteUncheckedCreateWithoutLegsInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -743,6 +801,8 @@ export type RouteUpdateWithoutLegsInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneRequiredWithoutRoutesNestedInput
@@ -757,6 +817,8 @@ export type RouteUncheckedUpdateWithoutLegsInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -768,6 +830,8 @@ export type RouteCreateManyCompanyInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -777,6 +841,8 @@ export type RouteUpdateWithoutCompanyInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver?: Prisma.DriverUpdateOneRequiredWithoutRoutesNestedInput
@@ -790,6 +856,8 @@ export type RouteUncheckedUpdateWithoutCompanyInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   legs?: Prisma.RouteLegUncheckedUpdateManyWithoutRouteNestedInput
@@ -802,6 +870,8 @@ export type RouteUncheckedUpdateManyWithoutCompanyInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -813,6 +883,8 @@ export type RouteCreateManyDriverInput = {
   office_lat: number
   office_long: number
   status?: $Enums.RouteStatus
+  started_at?: Date | string | null
+  completed_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -822,6 +894,8 @@ export type RouteUpdateWithoutDriverInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneRequiredWithoutRoutesNestedInput
@@ -835,6 +909,8 @@ export type RouteUncheckedUpdateWithoutDriverInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   legs?: Prisma.RouteLegUncheckedUpdateManyWithoutRouteNestedInput
@@ -847,6 +923,8 @@ export type RouteUncheckedUpdateManyWithoutDriverInput = {
   office_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   office_long?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  started_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completed_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -890,6 +968,8 @@ export type RouteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   office_lat?: boolean
   office_long?: boolean
   status?: boolean
+  started_at?: boolean
+  completed_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -906,6 +986,8 @@ export type RouteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   office_lat?: boolean
   office_long?: boolean
   status?: boolean
+  started_at?: boolean
+  completed_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -920,6 +1002,8 @@ export type RouteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   office_lat?: boolean
   office_long?: boolean
   status?: boolean
+  started_at?: boolean
+  completed_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -934,11 +1018,13 @@ export type RouteSelectScalar = {
   office_lat?: boolean
   office_long?: boolean
   status?: boolean
+  started_at?: boolean
+  completed_at?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type RouteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "company_id" | "driver_id" | "office_address" | "office_lat" | "office_long" | "status" | "created_at" | "updated_at", ExtArgs["result"]["route"]>
+export type RouteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "company_id" | "driver_id" | "office_address" | "office_lat" | "office_long" | "status" | "started_at" | "completed_at" | "created_at" | "updated_at", ExtArgs["result"]["route"]>
 export type RouteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   driver?: boolean | Prisma.DriverDefaultArgs<ExtArgs>
@@ -969,6 +1055,8 @@ export type $RoutePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     office_lat: number
     office_long: number
     status: $Enums.RouteStatus
+    started_at: Date | null
+    completed_at: Date | null
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["route"]>
@@ -1404,6 +1492,8 @@ export interface RouteFieldRefs {
   readonly office_lat: Prisma.FieldRef<"Route", 'Float'>
   readonly office_long: Prisma.FieldRef<"Route", 'Float'>
   readonly status: Prisma.FieldRef<"Route", 'RouteStatus'>
+  readonly started_at: Prisma.FieldRef<"Route", 'DateTime'>
+  readonly completed_at: Prisma.FieldRef<"Route", 'DateTime'>
   readonly created_at: Prisma.FieldRef<"Route", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"Route", 'DateTime'>
 }

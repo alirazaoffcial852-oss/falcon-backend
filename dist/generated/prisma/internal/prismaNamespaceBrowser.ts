@@ -89,7 +89,7 @@ export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof Role
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  username: 'username',
+  email: 'email',
   password: 'password',
   role_id: 'role_id',
   created_at: 'created_at',
@@ -105,6 +105,8 @@ export const CompanyScalarFieldEnum = {
   email: 'email',
   phone_no: 'phone_no',
   address: 'address',
+  lat: 'lat',
+  long: 'long',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -133,6 +135,7 @@ export type CarScalarFieldEnum = (typeof CarScalarFieldEnum)[keyof typeof CarSca
 
 export const DriverScalarFieldEnum = {
   id: 'id',
+  user_id: 'user_id',
   name: 'name',
   phone_no: 'phone_no',
   address: 'address',
@@ -144,6 +147,11 @@ export const DriverScalarFieldEnum = {
   salary: 'salary',
   driver_license_front_url: 'driver_license_front_url',
   driver_license_back_url: 'driver_license_back_url',
+  is_available: 'is_available',
+  available_at: 'available_at',
+  current_lat: 'current_lat',
+  current_long: 'current_long',
+  location_updated_at: 'location_updated_at',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -164,9 +172,15 @@ export type DriverAssignCarScalarFieldEnum = (typeof DriverAssignCarScalarFieldE
 
 export const PassengerScalarFieldEnum = {
   id: 'id',
+  user_id: 'user_id',
   name: 'name',
   phone_no: 'phone_no',
+  home_address: 'home_address',
+  home_lat: 'home_lat',
+  home_long: 'home_long',
   office_address: 'office_address',
+  office_lat: 'office_lat',
+  office_long: 'office_long',
   company_id: 'company_id',
   pick_up_time: 'pick_up_time',
   drop_off_time: 'drop_off_time',
@@ -199,6 +213,8 @@ export const RouteScalarFieldEnum = {
   office_lat: 'office_lat',
   office_long: 'office_long',
   status: 'status',
+  started_at: 'started_at',
+  completed_at: 'completed_at',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -210,16 +226,19 @@ export const RouteLegScalarFieldEnum = {
   id: 'id',
   route_id: 'route_id',
   passenger_id: 'passenger_id',
+  sequence: 'sequence',
   pickup_address: 'pickup_address',
   pickup_lat: 'pickup_lat',
   pickup_long: 'pickup_long',
   pickup_time: 'pickup_time',
   pickup_status: 'pickup_status',
+  driver_arrived_at: 'driver_arrived_at',
+  passenger_ack: 'passenger_ack',
+  picked_at: 'picked_at',
   dropoff_address: 'dropoff_address',
   dropoff_lat: 'dropoff_lat',
   dropoff_long: 'dropoff_long',
   dropoff_time: 'dropoff_time',
-  dropoff_status: 'dropoff_status',
   toll_amount: 'toll_amount',
   created_at: 'created_at',
   updated_at: 'updated_at'

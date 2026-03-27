@@ -38,7 +38,7 @@ export type UserSumAggregateOutputType = {
 
 export type UserMinAggregateOutputType = {
   id: number | null
-  username: string | null
+  email: string | null
   password: string | null
   role_id: number | null
   created_at: Date | null
@@ -47,7 +47,7 @@ export type UserMinAggregateOutputType = {
 
 export type UserMaxAggregateOutputType = {
   id: number | null
-  username: string | null
+  email: string | null
   password: string | null
   role_id: number | null
   created_at: Date | null
@@ -56,7 +56,7 @@ export type UserMaxAggregateOutputType = {
 
 export type UserCountAggregateOutputType = {
   id: number
-  username: number
+  email: number
   password: number
   role_id: number
   created_at: number
@@ -77,7 +77,7 @@ export type UserSumAggregateInputType = {
 
 export type UserMinAggregateInputType = {
   id?: true
-  username?: true
+  email?: true
   password?: true
   role_id?: true
   created_at?: true
@@ -86,7 +86,7 @@ export type UserMinAggregateInputType = {
 
 export type UserMaxAggregateInputType = {
   id?: true
-  username?: true
+  email?: true
   password?: true
   role_id?: true
   created_at?: true
@@ -95,7 +95,7 @@ export type UserMaxAggregateInputType = {
 
 export type UserCountAggregateInputType = {
   id?: true
-  username?: true
+  email?: true
   password?: true
   role_id?: true
   created_at?: true
@@ -191,7 +191,7 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type UserGroupByOutputType = {
   id: number
-  username: string
+  email: string
   password: string
   role_id: number
   created_at: Date
@@ -223,27 +223,31 @@ export type UserWhereInput = {
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   id?: Prisma.IntFilter<"User"> | number
-  username?: Prisma.StringFilter<"User"> | string
+  email?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
   role_id?: Prisma.IntFilter<"User"> | number
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
+  driver?: Prisma.XOR<Prisma.DriverNullableScalarRelationFilter, Prisma.DriverWhereInput> | null
+  passenger?: Prisma.XOR<Prisma.PassengerNullableScalarRelationFilter, Prisma.PassengerWhereInput> | null
 }
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  username?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   role?: Prisma.RoleOrderByWithRelationInput
+  driver?: Prisma.DriverOrderByWithRelationInput
+  passenger?: Prisma.PassengerOrderByWithRelationInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
   id?: number
-  username?: string
+  email?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
@@ -252,11 +256,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
-}, "id" | "username">
+  driver?: Prisma.XOR<Prisma.DriverNullableScalarRelationFilter, Prisma.DriverWhereInput> | null
+  passenger?: Prisma.XOR<Prisma.PassengerNullableScalarRelationFilter, Prisma.PassengerWhereInput> | null
+}, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  username?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -273,7 +279,7 @@ export type UserScalarWhereWithAggregatesInput = {
   OR?: Prisma.UserScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"User"> | number
-  username?: Prisma.StringWithAggregatesFilter<"User"> | string
+  email?: Prisma.StringWithAggregatesFilter<"User"> | string
   password?: Prisma.StringWithAggregatesFilter<"User"> | string
   role_id?: Prisma.IntWithAggregatesFilter<"User"> | number
   created_at?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -281,42 +287,50 @@ export type UserScalarWhereWithAggregatesInput = {
 }
 
 export type UserCreateInput = {
-  username: string
+  email: string
   password: string
   created_at?: Date | string
   updated_at?: Date | string
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
   id?: number
-  username: string
+  email: string
   password: string
   role_id: number
   created_at?: Date | string
   updated_at?: Date | string
+  driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
 }
 
 export type UserUpdateInput = {
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.IntFieldUpdateOperationsInput | number
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
   id?: number
-  username: string
+  email: string
   password: string
   role_id: number
   created_at?: Date | string
@@ -324,7 +338,7 @@ export type UserCreateManyInput = {
 }
 
 export type UserUpdateManyMutationInput = {
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -332,7 +346,7 @@ export type UserUpdateManyMutationInput = {
 
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.IntFieldUpdateOperationsInput | number
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -351,7 +365,7 @@ export type UserOrderByRelationAggregateInput = {
 
 export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  username?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -365,7 +379,7 @@ export type UserAvgOrderByAggregateInput = {
 
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  username?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -374,7 +388,7 @@ export type UserMaxOrderByAggregateInput = {
 
 export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  username?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
@@ -384,6 +398,11 @@ export type UserMinOrderByAggregateInput = {
 export type UserSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
+}
+
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
 }
 
 export type UserCreateNestedManyWithoutRoleInput = {
@@ -428,19 +447,55 @@ export type UserUncheckedUpdateManyWithoutRoleNestedInput = {
   deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[]
 }
 
+export type UserCreateNestedOneWithoutDriverInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDriverInput, Prisma.UserUncheckedCreateWithoutDriverInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDriverInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutDriverNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDriverInput, Prisma.UserUncheckedCreateWithoutDriverInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDriverInput
+  upsert?: Prisma.UserUpsertWithoutDriverInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDriverInput, Prisma.UserUpdateWithoutDriverInput>, Prisma.UserUncheckedUpdateWithoutDriverInput>
+}
+
+export type UserCreateNestedOneWithoutPassengerInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPassengerInput, Prisma.UserUncheckedCreateWithoutPassengerInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPassengerInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutPassengerNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPassengerInput, Prisma.UserUncheckedCreateWithoutPassengerInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPassengerInput
+  upsert?: Prisma.UserUpsertWithoutPassengerInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPassengerInput, Prisma.UserUpdateWithoutPassengerInput>, Prisma.UserUncheckedUpdateWithoutPassengerInput>
+}
+
 export type UserCreateWithoutRoleInput = {
-  username: string
+  email: string
   password: string
   created_at?: Date | string
   updated_at?: Date | string
+  driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
   id?: number
-  username: string
+  email: string
   password: string
   created_at?: Date | string
   updated_at?: Date | string
+  driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -474,39 +529,151 @@ export type UserScalarWhereInput = {
   OR?: Prisma.UserScalarWhereInput[]
   NOT?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[]
   id?: Prisma.IntFilter<"User"> | number
-  username?: Prisma.StringFilter<"User"> | string
+  email?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
   role_id?: Prisma.IntFilter<"User"> | number
   created_at?: Prisma.DateTimeFilter<"User"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
 }
 
+export type UserCreateWithoutDriverInput = {
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDriverInput = {
+  id?: number
+  email: string
+  password: string
+  role_id: number
+  created_at?: Date | string
+  updated_at?: Date | string
+  passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDriverInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDriverInput, Prisma.UserUncheckedCreateWithoutDriverInput>
+}
+
+export type UserUpsertWithoutDriverInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDriverInput, Prisma.UserUncheckedUpdateWithoutDriverInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDriverInput, Prisma.UserUncheckedCreateWithoutDriverInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDriverInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDriverInput, Prisma.UserUncheckedUpdateWithoutDriverInput>
+}
+
+export type UserUpdateWithoutDriverInput = {
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDriverInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role_id?: Prisma.IntFieldUpdateOperationsInput | number
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPassengerInput = {
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPassengerInput = {
+  id?: number
+  email: string
+  password: string
+  role_id: number
+  created_at?: Date | string
+  updated_at?: Date | string
+  driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPassengerInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPassengerInput, Prisma.UserUncheckedCreateWithoutPassengerInput>
+}
+
+export type UserUpsertWithoutPassengerInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPassengerInput, Prisma.UserUncheckedUpdateWithoutPassengerInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPassengerInput, Prisma.UserUncheckedCreateWithoutPassengerInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPassengerInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPassengerInput, Prisma.UserUncheckedUpdateWithoutPassengerInput>
+}
+
+export type UserUpdateWithoutPassengerInput = {
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPassengerInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role_id?: Prisma.IntFieldUpdateOperationsInput | number
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+}
+
 export type UserCreateManyRoleInput = {
   id?: number
-  username: string
+  email: string
   password: string
   created_at?: Date | string
   updated_at?: Date | string
 }
 
 export type UserUpdateWithoutRoleInput = {
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -516,17 +683,19 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  username?: boolean
+  email?: boolean
   password?: boolean
   role_id?: boolean
   created_at?: boolean
   updated_at?: boolean
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
+  driver?: boolean | Prisma.User$driverArgs<ExtArgs>
+  passenger?: boolean | Prisma.User$passengerArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  username?: boolean
+  email?: boolean
   password?: boolean
   role_id?: boolean
   created_at?: boolean
@@ -536,7 +705,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  username?: boolean
+  email?: boolean
   password?: boolean
   role_id?: boolean
   created_at?: boolean
@@ -546,16 +715,18 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type UserSelectScalar = {
   id?: boolean
-  username?: boolean
+  email?: boolean
   password?: boolean
   role_id?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "password" | "role_id" | "created_at" | "updated_at", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "role_id" | "created_at" | "updated_at", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
+  driver?: boolean | Prisma.User$driverArgs<ExtArgs>
+  passenger?: boolean | Prisma.User$passengerArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
@@ -568,10 +739,12 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     role: Prisma.$RolePayload<ExtArgs>
+    driver: Prisma.$DriverPayload<ExtArgs> | null
+    passenger: Prisma.$PassengerPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    username: string
+    email: string
     password: string
     role_id: number
     created_at: Date
@@ -971,6 +1144,8 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  driver<T extends Prisma.User$driverArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$driverArgs<ExtArgs>>): Prisma.Prisma__DriverClient<runtime.Types.Result.GetResult<Prisma.$DriverPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  passenger<T extends Prisma.User$passengerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passengerArgs<ExtArgs>>): Prisma.Prisma__PassengerClient<runtime.Types.Result.GetResult<Prisma.$PassengerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1001,7 +1176,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'Int'>
-  readonly username: Prisma.FieldRef<"User", 'String'>
+  readonly email: Prisma.FieldRef<"User", 'String'>
   readonly password: Prisma.FieldRef<"User", 'String'>
   readonly role_id: Prisma.FieldRef<"User", 'Int'>
   readonly created_at: Prisma.FieldRef<"User", 'DateTime'>
@@ -1399,6 +1574,44 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Users to delete.
    */
   limit?: number
+}
+
+/**
+ * User.driver
+ */
+export type User$driverArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Driver
+   */
+  select?: Prisma.DriverSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Driver
+   */
+  omit?: Prisma.DriverOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DriverInclude<ExtArgs> | null
+  where?: Prisma.DriverWhereInput
+}
+
+/**
+ * User.passenger
+ */
+export type User$passengerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Passenger
+   */
+  select?: Prisma.PassengerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Passenger
+   */
+  omit?: Prisma.PassengerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PassengerInclude<ExtArgs> | null
+  where?: Prisma.PassengerWhereInput
 }
 
 /**

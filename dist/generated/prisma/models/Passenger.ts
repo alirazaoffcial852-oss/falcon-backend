@@ -28,19 +28,35 @@ export type AggregatePassenger = {
 
 export type PassengerAvgAggregateOutputType = {
   id: number | null
+  user_id: number | null
+  home_lat: number | null
+  home_long: number | null
+  office_lat: number | null
+  office_long: number | null
   company_id: number | null
 }
 
 export type PassengerSumAggregateOutputType = {
   id: number | null
+  user_id: number | null
+  home_lat: number | null
+  home_long: number | null
+  office_lat: number | null
+  office_long: number | null
   company_id: number | null
 }
 
 export type PassengerMinAggregateOutputType = {
   id: number | null
+  user_id: number | null
   name: string | null
   phone_no: string | null
+  home_address: string | null
+  home_lat: number | null
+  home_long: number | null
   office_address: string | null
+  office_lat: number | null
+  office_long: number | null
   company_id: number | null
   pick_up_time: string | null
   drop_off_time: string | null
@@ -50,9 +66,15 @@ export type PassengerMinAggregateOutputType = {
 
 export type PassengerMaxAggregateOutputType = {
   id: number | null
+  user_id: number | null
   name: string | null
   phone_no: string | null
+  home_address: string | null
+  home_lat: number | null
+  home_long: number | null
   office_address: string | null
+  office_lat: number | null
+  office_long: number | null
   company_id: number | null
   pick_up_time: string | null
   drop_off_time: string | null
@@ -62,9 +84,15 @@ export type PassengerMaxAggregateOutputType = {
 
 export type PassengerCountAggregateOutputType = {
   id: number
+  user_id: number
   name: number
   phone_no: number
+  home_address: number
+  home_lat: number
+  home_long: number
   office_address: number
+  office_lat: number
+  office_long: number
   company_id: number
   pick_up_time: number
   drop_off_time: number
@@ -76,19 +104,35 @@ export type PassengerCountAggregateOutputType = {
 
 export type PassengerAvgAggregateInputType = {
   id?: true
+  user_id?: true
+  home_lat?: true
+  home_long?: true
+  office_lat?: true
+  office_long?: true
   company_id?: true
 }
 
 export type PassengerSumAggregateInputType = {
   id?: true
+  user_id?: true
+  home_lat?: true
+  home_long?: true
+  office_lat?: true
+  office_long?: true
   company_id?: true
 }
 
 export type PassengerMinAggregateInputType = {
   id?: true
+  user_id?: true
   name?: true
   phone_no?: true
+  home_address?: true
+  home_lat?: true
+  home_long?: true
   office_address?: true
+  office_lat?: true
+  office_long?: true
   company_id?: true
   pick_up_time?: true
   drop_off_time?: true
@@ -98,9 +142,15 @@ export type PassengerMinAggregateInputType = {
 
 export type PassengerMaxAggregateInputType = {
   id?: true
+  user_id?: true
   name?: true
   phone_no?: true
+  home_address?: true
+  home_lat?: true
+  home_long?: true
   office_address?: true
+  office_lat?: true
+  office_long?: true
   company_id?: true
   pick_up_time?: true
   drop_off_time?: true
@@ -110,9 +160,15 @@ export type PassengerMaxAggregateInputType = {
 
 export type PassengerCountAggregateInputType = {
   id?: true
+  user_id?: true
   name?: true
   phone_no?: true
+  home_address?: true
+  home_lat?: true
+  home_long?: true
   office_address?: true
+  office_lat?: true
+  office_long?: true
   company_id?: true
   pick_up_time?: true
   drop_off_time?: true
@@ -209,9 +265,15 @@ export type PassengerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 
 export type PassengerGroupByOutputType = {
   id: number
+  user_id: number | null
   name: string
   phone_no: string
+  home_address: string | null
+  home_lat: number | null
+  home_long: number | null
   office_address: string
+  office_lat: number | null
+  office_long: number | null
   company_id: number
   pick_up_time: string | null
   drop_off_time: string | null
@@ -244,54 +306,81 @@ export type PassengerWhereInput = {
   OR?: Prisma.PassengerWhereInput[]
   NOT?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   id?: Prisma.IntFilter<"Passenger"> | number
+  user_id?: Prisma.IntNullableFilter<"Passenger"> | number | null
   name?: Prisma.StringFilter<"Passenger"> | string
   phone_no?: Prisma.StringFilter<"Passenger"> | string
+  home_address?: Prisma.StringNullableFilter<"Passenger"> | string | null
+  home_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  home_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   office_address?: Prisma.StringFilter<"Passenger"> | string
+  office_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  office_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   company_id?: Prisma.IntFilter<"Passenger"> | number
   pick_up_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
   drop_off_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
   created_at?: Prisma.DateTimeFilter<"Passenger"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Passenger"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   routeLegs?: Prisma.RouteLegListRelationFilter
 }
 
 export type PassengerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
+  home_address?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_long?: Prisma.SortOrderInput | Prisma.SortOrder
   office_address?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  office_long?: Prisma.SortOrderInput | Prisma.SortOrder
   company_id?: Prisma.SortOrder
   pick_up_time?: Prisma.SortOrderInput | Prisma.SortOrder
   drop_off_time?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  user?: Prisma.UserOrderByWithRelationInput
   company?: Prisma.CompanyOrderByWithRelationInput
   routeLegs?: Prisma.RouteLegOrderByRelationAggregateInput
 }
 
 export type PassengerWhereUniqueInput = Prisma.AtLeast<{
   id?: number
+  user_id?: number
   AND?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   OR?: Prisma.PassengerWhereInput[]
   NOT?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   name?: Prisma.StringFilter<"Passenger"> | string
   phone_no?: Prisma.StringFilter<"Passenger"> | string
+  home_address?: Prisma.StringNullableFilter<"Passenger"> | string | null
+  home_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  home_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   office_address?: Prisma.StringFilter<"Passenger"> | string
+  office_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  office_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   company_id?: Prisma.IntFilter<"Passenger"> | number
   pick_up_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
   drop_off_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
   created_at?: Prisma.DateTimeFilter<"Passenger"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Passenger"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
   routeLegs?: Prisma.RouteLegListRelationFilter
-}, "id">
+}, "id" | "user_id">
 
 export type PassengerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
+  home_address?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_long?: Prisma.SortOrderInput | Prisma.SortOrder
   office_address?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  office_long?: Prisma.SortOrderInput | Prisma.SortOrder
   company_id?: Prisma.SortOrder
   pick_up_time?: Prisma.SortOrderInput | Prisma.SortOrder
   drop_off_time?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -309,9 +398,15 @@ export type PassengerScalarWhereWithAggregatesInput = {
   OR?: Prisma.PassengerScalarWhereWithAggregatesInput[]
   NOT?: Prisma.PassengerScalarWhereWithAggregatesInput | Prisma.PassengerScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Passenger"> | number
+  user_id?: Prisma.IntNullableWithAggregatesFilter<"Passenger"> | number | null
   name?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
   phone_no?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
+  home_address?: Prisma.StringNullableWithAggregatesFilter<"Passenger"> | string | null
+  home_lat?: Prisma.FloatNullableWithAggregatesFilter<"Passenger"> | number | null
+  home_long?: Prisma.FloatNullableWithAggregatesFilter<"Passenger"> | number | null
   office_address?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
+  office_lat?: Prisma.FloatNullableWithAggregatesFilter<"Passenger"> | number | null
+  office_long?: Prisma.FloatNullableWithAggregatesFilter<"Passenger"> | number | null
   company_id?: Prisma.IntWithAggregatesFilter<"Passenger"> | number
   pick_up_time?: Prisma.StringNullableWithAggregatesFilter<"Passenger"> | string | null
   drop_off_time?: Prisma.StringNullableWithAggregatesFilter<"Passenger"> | string | null
@@ -322,20 +417,32 @@ export type PassengerScalarWhereWithAggregatesInput = {
 export type PassengerCreateInput = {
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   pick_up_time?: string | null
   drop_off_time?: string | null
   created_at?: Date | string
   updated_at?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutPassengerInput
   company: Prisma.CompanyCreateNestedOneWithoutPassengersInput
   routeLegs?: Prisma.RouteLegCreateNestedManyWithoutPassengerInput
 }
 
 export type PassengerUncheckedCreateInput = {
   id?: number
+  user_id?: number | null
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   company_id: number
   pick_up_time?: string | null
   drop_off_time?: string | null
@@ -347,20 +454,32 @@ export type PassengerUncheckedCreateInput = {
 export type PassengerUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutPassengerNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutPassengersNestedInput
   routeLegs?: Prisma.RouteLegUpdateManyWithoutPassengerNestedInput
 }
 
 export type PassengerUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   company_id?: Prisma.IntFieldUpdateOperationsInput | number
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -371,9 +490,15 @@ export type PassengerUncheckedUpdateInput = {
 
 export type PassengerCreateManyInput = {
   id?: number
+  user_id?: number | null
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   company_id: number
   pick_up_time?: string | null
   drop_off_time?: string | null
@@ -384,7 +509,12 @@ export type PassengerCreateManyInput = {
 export type PassengerUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -393,14 +523,25 @@ export type PassengerUpdateManyMutationInput = {
 
 export type PassengerUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   company_id?: Prisma.IntFieldUpdateOperationsInput | number
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type PassengerNullableScalarRelationFilter = {
+  is?: Prisma.PassengerWhereInput | null
+  isNot?: Prisma.PassengerWhereInput | null
 }
 
 export type PassengerListRelationFilter = {
@@ -415,9 +556,15 @@ export type PassengerOrderByRelationAggregateInput = {
 
 export type PassengerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
+  home_address?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   office_address?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrder
+  office_long?: Prisma.SortOrder
   company_id?: Prisma.SortOrder
   pick_up_time?: Prisma.SortOrder
   drop_off_time?: Prisma.SortOrder
@@ -427,14 +574,25 @@ export type PassengerCountOrderByAggregateInput = {
 
 export type PassengerAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrder
+  office_long?: Prisma.SortOrder
   company_id?: Prisma.SortOrder
 }
 
 export type PassengerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
+  home_address?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   office_address?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrder
+  office_long?: Prisma.SortOrder
   company_id?: Prisma.SortOrder
   pick_up_time?: Prisma.SortOrder
   drop_off_time?: Prisma.SortOrder
@@ -444,9 +602,15 @@ export type PassengerMaxOrderByAggregateInput = {
 
 export type PassengerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
+  home_address?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   office_address?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrder
+  office_long?: Prisma.SortOrder
   company_id?: Prisma.SortOrder
   pick_up_time?: Prisma.SortOrder
   drop_off_time?: Prisma.SortOrder
@@ -456,12 +620,49 @@ export type PassengerMinOrderByAggregateInput = {
 
 export type PassengerSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  user_id?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
+  office_lat?: Prisma.SortOrder
+  office_long?: Prisma.SortOrder
   company_id?: Prisma.SortOrder
 }
 
 export type PassengerScalarRelationFilter = {
   is?: Prisma.PassengerWhereInput
   isNot?: Prisma.PassengerWhereInput
+}
+
+export type PassengerCreateNestedOneWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+  connectOrCreate?: Prisma.PassengerCreateOrConnectWithoutUserInput
+  connect?: Prisma.PassengerWhereUniqueInput
+}
+
+export type PassengerUncheckedCreateNestedOneWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+  connectOrCreate?: Prisma.PassengerCreateOrConnectWithoutUserInput
+  connect?: Prisma.PassengerWhereUniqueInput
+}
+
+export type PassengerUpdateOneWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+  connectOrCreate?: Prisma.PassengerCreateOrConnectWithoutUserInput
+  upsert?: Prisma.PassengerUpsertWithoutUserInput
+  disconnect?: Prisma.PassengerWhereInput | boolean
+  delete?: Prisma.PassengerWhereInput | boolean
+  connect?: Prisma.PassengerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PassengerUpdateToOneWithWhereWithoutUserInput, Prisma.PassengerUpdateWithoutUserInput>, Prisma.PassengerUncheckedUpdateWithoutUserInput>
+}
+
+export type PassengerUncheckedUpdateOneWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+  connectOrCreate?: Prisma.PassengerCreateOrConnectWithoutUserInput
+  upsert?: Prisma.PassengerUpsertWithoutUserInput
+  disconnect?: Prisma.PassengerWhereInput | boolean
+  delete?: Prisma.PassengerWhereInput | boolean
+  connect?: Prisma.PassengerWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PassengerUpdateToOneWithWhereWithoutUserInput, Prisma.PassengerUpdateWithoutUserInput>, Prisma.PassengerUncheckedUpdateWithoutUserInput>
 }
 
 export type PassengerCreateNestedManyWithoutCompanyInput = {
@@ -520,22 +721,120 @@ export type PassengerUpdateOneRequiredWithoutRouteLegsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PassengerUpdateToOneWithWhereWithoutRouteLegsInput, Prisma.PassengerUpdateWithoutRouteLegsInput>, Prisma.PassengerUncheckedUpdateWithoutRouteLegsInput>
 }
 
-export type PassengerCreateWithoutCompanyInput = {
+export type PassengerCreateWithoutUserInput = {
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   pick_up_time?: string | null
   drop_off_time?: string | null
   created_at?: Date | string
   updated_at?: Date | string
+  company: Prisma.CompanyCreateNestedOneWithoutPassengersInput
+  routeLegs?: Prisma.RouteLegCreateNestedManyWithoutPassengerInput
+}
+
+export type PassengerUncheckedCreateWithoutUserInput = {
+  id?: number
+  name: string
+  phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
+  office_address: string
+  office_lat?: number | null
+  office_long?: number | null
+  company_id: number
+  pick_up_time?: string | null
+  drop_off_time?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  routeLegs?: Prisma.RouteLegUncheckedCreateNestedManyWithoutPassengerInput
+}
+
+export type PassengerCreateOrConnectWithoutUserInput = {
+  where: Prisma.PassengerWhereUniqueInput
+  create: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+}
+
+export type PassengerUpsertWithoutUserInput = {
+  update: Prisma.XOR<Prisma.PassengerUpdateWithoutUserInput, Prisma.PassengerUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.PassengerCreateWithoutUserInput, Prisma.PassengerUncheckedCreateWithoutUserInput>
+  where?: Prisma.PassengerWhereInput
+}
+
+export type PassengerUpdateToOneWithWhereWithoutUserInput = {
+  where?: Prisma.PassengerWhereInput
+  data: Prisma.XOR<Prisma.PassengerUpdateWithoutUserInput, Prisma.PassengerUncheckedUpdateWithoutUserInput>
+}
+
+export type PassengerUpdateWithoutUserInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  company?: Prisma.CompanyUpdateOneRequiredWithoutPassengersNestedInput
+  routeLegs?: Prisma.RouteLegUpdateManyWithoutPassengerNestedInput
+}
+
+export type PassengerUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  company_id?: Prisma.IntFieldUpdateOperationsInput | number
+  pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  routeLegs?: Prisma.RouteLegUncheckedUpdateManyWithoutPassengerNestedInput
+}
+
+export type PassengerCreateWithoutCompanyInput = {
+  name: string
+  phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
+  office_address: string
+  office_lat?: number | null
+  office_long?: number | null
+  pick_up_time?: string | null
+  drop_off_time?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutPassengerInput
   routeLegs?: Prisma.RouteLegCreateNestedManyWithoutPassengerInput
 }
 
 export type PassengerUncheckedCreateWithoutCompanyInput = {
   id?: number
+  user_id?: number | null
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   pick_up_time?: string | null
   drop_off_time?: string | null
   created_at?: Date | string
@@ -574,9 +873,15 @@ export type PassengerScalarWhereInput = {
   OR?: Prisma.PassengerScalarWhereInput[]
   NOT?: Prisma.PassengerScalarWhereInput | Prisma.PassengerScalarWhereInput[]
   id?: Prisma.IntFilter<"Passenger"> | number
+  user_id?: Prisma.IntNullableFilter<"Passenger"> | number | null
   name?: Prisma.StringFilter<"Passenger"> | string
   phone_no?: Prisma.StringFilter<"Passenger"> | string
+  home_address?: Prisma.StringNullableFilter<"Passenger"> | string | null
+  home_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  home_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   office_address?: Prisma.StringFilter<"Passenger"> | string
+  office_lat?: Prisma.FloatNullableFilter<"Passenger"> | number | null
+  office_long?: Prisma.FloatNullableFilter<"Passenger"> | number | null
   company_id?: Prisma.IntFilter<"Passenger"> | number
   pick_up_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
   drop_off_time?: Prisma.StringNullableFilter<"Passenger"> | string | null
@@ -587,19 +892,31 @@ export type PassengerScalarWhereInput = {
 export type PassengerCreateWithoutRouteLegsInput = {
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   pick_up_time?: string | null
   drop_off_time?: string | null
   created_at?: Date | string
   updated_at?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutPassengerInput
   company: Prisma.CompanyCreateNestedOneWithoutPassengersInput
 }
 
 export type PassengerUncheckedCreateWithoutRouteLegsInput = {
   id?: number
+  user_id?: number | null
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   company_id: number
   pick_up_time?: string | null
   drop_off_time?: string | null
@@ -626,19 +943,31 @@ export type PassengerUpdateToOneWithWhereWithoutRouteLegsInput = {
 export type PassengerUpdateWithoutRouteLegsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutPassengerNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutPassengersNestedInput
 }
 
 export type PassengerUncheckedUpdateWithoutRouteLegsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   company_id?: Prisma.IntFieldUpdateOperationsInput | number
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -648,9 +977,15 @@ export type PassengerUncheckedUpdateWithoutRouteLegsInput = {
 
 export type PassengerCreateManyCompanyInput = {
   id?: number
+  user_id?: number | null
   name: string
   phone_no: string
+  home_address?: string | null
+  home_lat?: number | null
+  home_long?: number | null
   office_address: string
+  office_lat?: number | null
+  office_long?: number | null
   pick_up_time?: string | null
   drop_off_time?: string | null
   created_at?: Date | string
@@ -660,19 +995,31 @@ export type PassengerCreateManyCompanyInput = {
 export type PassengerUpdateWithoutCompanyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutPassengerNestedInput
   routeLegs?: Prisma.RouteLegUpdateManyWithoutPassengerNestedInput
 }
 
 export type PassengerUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -682,9 +1029,15 @@ export type PassengerUncheckedUpdateWithoutCompanyInput = {
 
 export type PassengerUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  home_address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   office_address?: Prisma.StringFieldUpdateOperationsInput | string
+  office_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  office_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   pick_up_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   drop_off_time?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -724,14 +1077,21 @@ export type PassengerCountOutputTypeCountRouteLegsArgs<ExtArgs extends runtime.T
 
 export type PassengerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  user_id?: boolean
   name?: boolean
   phone_no?: boolean
+  home_address?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   office_address?: boolean
+  office_lat?: boolean
+  office_long?: boolean
   company_id?: boolean
   pick_up_time?: boolean
   drop_off_time?: boolean
   created_at?: boolean
   updated_at?: boolean
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   routeLegs?: boolean | Prisma.Passenger$routeLegsArgs<ExtArgs>
   _count?: boolean | Prisma.PassengerCountOutputTypeDefaultArgs<ExtArgs>
@@ -739,35 +1099,55 @@ export type PassengerSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type PassengerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  user_id?: boolean
   name?: boolean
   phone_no?: boolean
+  home_address?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   office_address?: boolean
+  office_lat?: boolean
+  office_long?: boolean
   company_id?: boolean
   pick_up_time?: boolean
   drop_off_time?: boolean
   created_at?: boolean
   updated_at?: boolean
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["passenger"]>
 
 export type PassengerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  user_id?: boolean
   name?: boolean
   phone_no?: boolean
+  home_address?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   office_address?: boolean
+  office_lat?: boolean
+  office_long?: boolean
   company_id?: boolean
   pick_up_time?: boolean
   drop_off_time?: boolean
   created_at?: boolean
   updated_at?: boolean
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["passenger"]>
 
 export type PassengerSelectScalar = {
   id?: boolean
+  user_id?: boolean
   name?: boolean
   phone_no?: boolean
+  home_address?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   office_address?: boolean
+  office_lat?: boolean
+  office_long?: boolean
   company_id?: boolean
   pick_up_time?: boolean
   drop_off_time?: boolean
@@ -775,30 +1155,40 @@ export type PassengerSelectScalar = {
   updated_at?: boolean
 }
 
-export type PassengerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "phone_no" | "office_address" | "company_id" | "pick_up_time" | "drop_off_time" | "created_at" | "updated_at", ExtArgs["result"]["passenger"]>
+export type PassengerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "user_id" | "name" | "phone_no" | "home_address" | "home_lat" | "home_long" | "office_address" | "office_lat" | "office_long" | "company_id" | "pick_up_time" | "drop_off_time" | "created_at" | "updated_at", ExtArgs["result"]["passenger"]>
 export type PassengerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
   routeLegs?: boolean | Prisma.Passenger$routeLegsArgs<ExtArgs>
   _count?: boolean | Prisma.PassengerCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PassengerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
 }
 export type PassengerIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.Passenger$userArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
 }
 
 export type $PassengerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Passenger"
   objects: {
+    user: Prisma.$UserPayload<ExtArgs> | null
     company: Prisma.$CompanyPayload<ExtArgs>
     routeLegs: Prisma.$RouteLegPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
+    user_id: number | null
     name: string
     phone_no: string
+    home_address: string | null
+    home_lat: number | null
+    home_long: number | null
     office_address: string
+    office_lat: number | null
+    office_long: number | null
     company_id: number
     pick_up_time: string | null
     drop_off_time: string | null
@@ -1198,6 +1588,7 @@ readonly fields: PassengerFieldRefs;
  */
 export interface Prisma__PassengerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  user<T extends Prisma.Passenger$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Passenger$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   routeLegs<T extends Prisma.Passenger$routeLegsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Passenger$routeLegsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RouteLegPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1230,9 +1621,15 @@ export interface Prisma__PassengerClient<T, Null = never, ExtArgs extends runtim
  */
 export interface PassengerFieldRefs {
   readonly id: Prisma.FieldRef<"Passenger", 'Int'>
+  readonly user_id: Prisma.FieldRef<"Passenger", 'Int'>
   readonly name: Prisma.FieldRef<"Passenger", 'String'>
   readonly phone_no: Prisma.FieldRef<"Passenger", 'String'>
+  readonly home_address: Prisma.FieldRef<"Passenger", 'String'>
+  readonly home_lat: Prisma.FieldRef<"Passenger", 'Float'>
+  readonly home_long: Prisma.FieldRef<"Passenger", 'Float'>
   readonly office_address: Prisma.FieldRef<"Passenger", 'String'>
+  readonly office_lat: Prisma.FieldRef<"Passenger", 'Float'>
+  readonly office_long: Prisma.FieldRef<"Passenger", 'Float'>
   readonly company_id: Prisma.FieldRef<"Passenger", 'Int'>
   readonly pick_up_time: Prisma.FieldRef<"Passenger", 'String'>
   readonly drop_off_time: Prisma.FieldRef<"Passenger", 'String'>
@@ -1631,6 +2028,25 @@ export type PassengerDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Limit how many Passengers to delete.
    */
   limit?: number
+}
+
+/**
+ * Passenger.user
+ */
+export type Passenger$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

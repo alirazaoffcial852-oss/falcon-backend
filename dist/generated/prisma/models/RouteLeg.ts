@@ -30,6 +30,7 @@ export type RouteLegAvgAggregateOutputType = {
   id: number | null
   route_id: number | null
   passenger_id: number | null
+  sequence: number | null
   pickup_lat: number | null
   pickup_long: number | null
   dropoff_lat: number | null
@@ -41,6 +42,7 @@ export type RouteLegSumAggregateOutputType = {
   id: number | null
   route_id: number | null
   passenger_id: number | null
+  sequence: number | null
   pickup_lat: number | null
   pickup_long: number | null
   dropoff_lat: number | null
@@ -52,16 +54,19 @@ export type RouteLegMinAggregateOutputType = {
   id: number | null
   route_id: number | null
   passenger_id: number | null
+  sequence: number | null
   pickup_address: string | null
   pickup_lat: number | null
   pickup_long: number | null
   pickup_time: string | null
-  pickup_status: $Enums.RouteStatus | null
+  pickup_status: $Enums.PickupStatus | null
+  driver_arrived_at: Date | null
+  passenger_ack: $Enums.PassengerAck | null
+  picked_at: Date | null
   dropoff_address: string | null
   dropoff_lat: number | null
   dropoff_long: number | null
   dropoff_time: string | null
-  dropoff_status: $Enums.RouteStatus | null
   toll_amount: number | null
   created_at: Date | null
   updated_at: Date | null
@@ -71,16 +76,19 @@ export type RouteLegMaxAggregateOutputType = {
   id: number | null
   route_id: number | null
   passenger_id: number | null
+  sequence: number | null
   pickup_address: string | null
   pickup_lat: number | null
   pickup_long: number | null
   pickup_time: string | null
-  pickup_status: $Enums.RouteStatus | null
+  pickup_status: $Enums.PickupStatus | null
+  driver_arrived_at: Date | null
+  passenger_ack: $Enums.PassengerAck | null
+  picked_at: Date | null
   dropoff_address: string | null
   dropoff_lat: number | null
   dropoff_long: number | null
   dropoff_time: string | null
-  dropoff_status: $Enums.RouteStatus | null
   toll_amount: number | null
   created_at: Date | null
   updated_at: Date | null
@@ -90,16 +98,19 @@ export type RouteLegCountAggregateOutputType = {
   id: number
   route_id: number
   passenger_id: number
+  sequence: number
   pickup_address: number
   pickup_lat: number
   pickup_long: number
   pickup_time: number
   pickup_status: number
+  driver_arrived_at: number
+  passenger_ack: number
+  picked_at: number
   dropoff_address: number
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: number
-  dropoff_status: number
   toll_amount: number
   created_at: number
   updated_at: number
@@ -111,6 +122,7 @@ export type RouteLegAvgAggregateInputType = {
   id?: true
   route_id?: true
   passenger_id?: true
+  sequence?: true
   pickup_lat?: true
   pickup_long?: true
   dropoff_lat?: true
@@ -122,6 +134,7 @@ export type RouteLegSumAggregateInputType = {
   id?: true
   route_id?: true
   passenger_id?: true
+  sequence?: true
   pickup_lat?: true
   pickup_long?: true
   dropoff_lat?: true
@@ -133,16 +146,19 @@ export type RouteLegMinAggregateInputType = {
   id?: true
   route_id?: true
   passenger_id?: true
+  sequence?: true
   pickup_address?: true
   pickup_lat?: true
   pickup_long?: true
   pickup_time?: true
   pickup_status?: true
+  driver_arrived_at?: true
+  passenger_ack?: true
+  picked_at?: true
   dropoff_address?: true
   dropoff_lat?: true
   dropoff_long?: true
   dropoff_time?: true
-  dropoff_status?: true
   toll_amount?: true
   created_at?: true
   updated_at?: true
@@ -152,16 +168,19 @@ export type RouteLegMaxAggregateInputType = {
   id?: true
   route_id?: true
   passenger_id?: true
+  sequence?: true
   pickup_address?: true
   pickup_lat?: true
   pickup_long?: true
   pickup_time?: true
   pickup_status?: true
+  driver_arrived_at?: true
+  passenger_ack?: true
+  picked_at?: true
   dropoff_address?: true
   dropoff_lat?: true
   dropoff_long?: true
   dropoff_time?: true
-  dropoff_status?: true
   toll_amount?: true
   created_at?: true
   updated_at?: true
@@ -171,16 +190,19 @@ export type RouteLegCountAggregateInputType = {
   id?: true
   route_id?: true
   passenger_id?: true
+  sequence?: true
   pickup_address?: true
   pickup_lat?: true
   pickup_long?: true
   pickup_time?: true
   pickup_status?: true
+  driver_arrived_at?: true
+  passenger_ack?: true
+  picked_at?: true
   dropoff_address?: true
   dropoff_lat?: true
   dropoff_long?: true
   dropoff_time?: true
-  dropoff_status?: true
   toll_amount?: true
   created_at?: true
   updated_at?: true
@@ -277,16 +299,19 @@ export type RouteLegGroupByOutputType = {
   id: number
   route_id: number
   passenger_id: number
+  sequence: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status: $Enums.RouteStatus
+  pickup_status: $Enums.PickupStatus
+  driver_arrived_at: Date | null
+  passenger_ack: $Enums.PassengerAck | null
+  picked_at: Date | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status: $Enums.RouteStatus
   toll_amount: number | null
   created_at: Date
   updated_at: Date
@@ -319,16 +344,19 @@ export type RouteLegWhereInput = {
   id?: Prisma.IntFilter<"RouteLeg"> | number
   route_id?: Prisma.IntFilter<"RouteLeg"> | number
   passenger_id?: Prisma.IntFilter<"RouteLeg"> | number
+  sequence?: Prisma.IntFilter<"RouteLeg"> | number
   pickup_address?: Prisma.StringFilter<"RouteLeg"> | string
   pickup_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_long?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_time?: Prisma.StringFilter<"RouteLeg"> | string
-  pickup_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFilter<"RouteLeg"> | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
+  passenger_ack?: Prisma.EnumPassengerAckNullableFilter<"RouteLeg"> | $Enums.PassengerAck | null
+  picked_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
   dropoff_address?: Prisma.StringFilter<"RouteLeg"> | string
   dropoff_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_long?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_time?: Prisma.StringFilter<"RouteLeg"> | string
-  dropoff_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
   toll_amount?: Prisma.FloatNullableFilter<"RouteLeg"> | number | null
   created_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
@@ -340,16 +368,19 @@ export type RouteLegOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_address?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   pickup_time?: Prisma.SortOrder
   pickup_status?: Prisma.SortOrder
+  driver_arrived_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  passenger_ack?: Prisma.SortOrderInput | Prisma.SortOrder
+  picked_at?: Prisma.SortOrderInput | Prisma.SortOrder
   dropoff_address?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
   dropoff_long?: Prisma.SortOrder
   dropoff_time?: Prisma.SortOrder
-  dropoff_status?: Prisma.SortOrder
   toll_amount?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
@@ -364,16 +395,19 @@ export type RouteLegWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.RouteLegWhereInput | Prisma.RouteLegWhereInput[]
   route_id?: Prisma.IntFilter<"RouteLeg"> | number
   passenger_id?: Prisma.IntFilter<"RouteLeg"> | number
+  sequence?: Prisma.IntFilter<"RouteLeg"> | number
   pickup_address?: Prisma.StringFilter<"RouteLeg"> | string
   pickup_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_long?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_time?: Prisma.StringFilter<"RouteLeg"> | string
-  pickup_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFilter<"RouteLeg"> | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
+  passenger_ack?: Prisma.EnumPassengerAckNullableFilter<"RouteLeg"> | $Enums.PassengerAck | null
+  picked_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
   dropoff_address?: Prisma.StringFilter<"RouteLeg"> | string
   dropoff_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_long?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_time?: Prisma.StringFilter<"RouteLeg"> | string
-  dropoff_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
   toll_amount?: Prisma.FloatNullableFilter<"RouteLeg"> | number | null
   created_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
@@ -385,16 +419,19 @@ export type RouteLegOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_address?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   pickup_time?: Prisma.SortOrder
   pickup_status?: Prisma.SortOrder
+  driver_arrived_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  passenger_ack?: Prisma.SortOrderInput | Prisma.SortOrder
+  picked_at?: Prisma.SortOrderInput | Prisma.SortOrder
   dropoff_address?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
   dropoff_long?: Prisma.SortOrder
   dropoff_time?: Prisma.SortOrder
-  dropoff_status?: Prisma.SortOrder
   toll_amount?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
@@ -412,32 +449,38 @@ export type RouteLegScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"RouteLeg"> | number
   route_id?: Prisma.IntWithAggregatesFilter<"RouteLeg"> | number
   passenger_id?: Prisma.IntWithAggregatesFilter<"RouteLeg"> | number
+  sequence?: Prisma.IntWithAggregatesFilter<"RouteLeg"> | number
   pickup_address?: Prisma.StringWithAggregatesFilter<"RouteLeg"> | string
   pickup_lat?: Prisma.FloatWithAggregatesFilter<"RouteLeg"> | number
   pickup_long?: Prisma.FloatWithAggregatesFilter<"RouteLeg"> | number
   pickup_time?: Prisma.StringWithAggregatesFilter<"RouteLeg"> | string
-  pickup_status?: Prisma.EnumRouteStatusWithAggregatesFilter<"RouteLeg"> | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusWithAggregatesFilter<"RouteLeg"> | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.DateTimeNullableWithAggregatesFilter<"RouteLeg"> | Date | string | null
+  passenger_ack?: Prisma.EnumPassengerAckNullableWithAggregatesFilter<"RouteLeg"> | $Enums.PassengerAck | null
+  picked_at?: Prisma.DateTimeNullableWithAggregatesFilter<"RouteLeg"> | Date | string | null
   dropoff_address?: Prisma.StringWithAggregatesFilter<"RouteLeg"> | string
   dropoff_lat?: Prisma.FloatWithAggregatesFilter<"RouteLeg"> | number
   dropoff_long?: Prisma.FloatWithAggregatesFilter<"RouteLeg"> | number
   dropoff_time?: Prisma.StringWithAggregatesFilter<"RouteLeg"> | string
-  dropoff_status?: Prisma.EnumRouteStatusWithAggregatesFilter<"RouteLeg"> | $Enums.RouteStatus
   toll_amount?: Prisma.FloatNullableWithAggregatesFilter<"RouteLeg"> | number | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"RouteLeg"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"RouteLeg"> | Date | string
 }
 
 export type RouteLegCreateInput = {
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
@@ -449,32 +492,38 @@ export type RouteLegUncheckedCreateInput = {
   id?: number
   route_id: number
   passenger_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
 
 export type RouteLegUpdateInput = {
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -486,16 +535,19 @@ export type RouteLegUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   route_id?: Prisma.IntFieldUpdateOperationsInput | number
   passenger_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -505,32 +557,38 @@ export type RouteLegCreateManyInput = {
   id?: number
   route_id: number
   passenger_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
 
 export type RouteLegUpdateManyMutationInput = {
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -540,16 +598,19 @@ export type RouteLegUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   route_id?: Prisma.IntFieldUpdateOperationsInput | number
   passenger_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -569,16 +630,19 @@ export type RouteLegCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_address?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   pickup_time?: Prisma.SortOrder
   pickup_status?: Prisma.SortOrder
+  driver_arrived_at?: Prisma.SortOrder
+  passenger_ack?: Prisma.SortOrder
+  picked_at?: Prisma.SortOrder
   dropoff_address?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
   dropoff_long?: Prisma.SortOrder
   dropoff_time?: Prisma.SortOrder
-  dropoff_status?: Prisma.SortOrder
   toll_amount?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
@@ -588,6 +652,7 @@ export type RouteLegAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
@@ -599,16 +664,19 @@ export type RouteLegMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_address?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   pickup_time?: Prisma.SortOrder
   pickup_status?: Prisma.SortOrder
+  driver_arrived_at?: Prisma.SortOrder
+  passenger_ack?: Prisma.SortOrder
+  picked_at?: Prisma.SortOrder
   dropoff_address?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
   dropoff_long?: Prisma.SortOrder
   dropoff_time?: Prisma.SortOrder
-  dropoff_status?: Prisma.SortOrder
   toll_amount?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
@@ -618,16 +686,19 @@ export type RouteLegMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_address?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   pickup_time?: Prisma.SortOrder
   pickup_status?: Prisma.SortOrder
+  driver_arrived_at?: Prisma.SortOrder
+  passenger_ack?: Prisma.SortOrder
+  picked_at?: Prisma.SortOrder
   dropoff_address?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
   dropoff_long?: Prisma.SortOrder
   dropoff_time?: Prisma.SortOrder
-  dropoff_status?: Prisma.SortOrder
   toll_amount?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
@@ -637,6 +708,7 @@ export type RouteLegSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   route_id?: Prisma.SortOrder
   passenger_id?: Prisma.SortOrder
+  sequence?: Prisma.SortOrder
   pickup_lat?: Prisma.SortOrder
   pickup_long?: Prisma.SortOrder
   dropoff_lat?: Prisma.SortOrder
@@ -728,25 +800,28 @@ export type RouteLegUncheckedUpdateManyWithoutRouteNestedInput = {
   deleteMany?: Prisma.RouteLegScalarWhereInput | Prisma.RouteLegScalarWhereInput[]
 }
 
-export type NullableFloatFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type EnumPickupStatusFieldUpdateOperationsInput = {
+  set?: $Enums.PickupStatus
+}
+
+export type NullableEnumPassengerAckFieldUpdateOperationsInput = {
+  set?: $Enums.PassengerAck | null
 }
 
 export type RouteLegCreateWithoutPassengerInput = {
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
@@ -756,16 +831,19 @@ export type RouteLegCreateWithoutPassengerInput = {
 export type RouteLegUncheckedCreateWithoutPassengerInput = {
   id?: number
   route_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
@@ -804,32 +882,38 @@ export type RouteLegScalarWhereInput = {
   id?: Prisma.IntFilter<"RouteLeg"> | number
   route_id?: Prisma.IntFilter<"RouteLeg"> | number
   passenger_id?: Prisma.IntFilter<"RouteLeg"> | number
+  sequence?: Prisma.IntFilter<"RouteLeg"> | number
   pickup_address?: Prisma.StringFilter<"RouteLeg"> | string
   pickup_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_long?: Prisma.FloatFilter<"RouteLeg"> | number
   pickup_time?: Prisma.StringFilter<"RouteLeg"> | string
-  pickup_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFilter<"RouteLeg"> | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
+  passenger_ack?: Prisma.EnumPassengerAckNullableFilter<"RouteLeg"> | $Enums.PassengerAck | null
+  picked_at?: Prisma.DateTimeNullableFilter<"RouteLeg"> | Date | string | null
   dropoff_address?: Prisma.StringFilter<"RouteLeg"> | string
   dropoff_lat?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_long?: Prisma.FloatFilter<"RouteLeg"> | number
   dropoff_time?: Prisma.StringFilter<"RouteLeg"> | string
-  dropoff_status?: Prisma.EnumRouteStatusFilter<"RouteLeg"> | $Enums.RouteStatus
   toll_amount?: Prisma.FloatNullableFilter<"RouteLeg"> | number | null
   created_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"RouteLeg"> | Date | string
 }
 
 export type RouteLegCreateWithoutRouteInput = {
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
@@ -839,16 +923,19 @@ export type RouteLegCreateWithoutRouteInput = {
 export type RouteLegUncheckedCreateWithoutRouteInput = {
   id?: number
   passenger_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
@@ -883,32 +970,38 @@ export type RouteLegUpdateManyWithWhereWithoutRouteInput = {
 export type RouteLegCreateManyPassengerInput = {
   id?: number
   route_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
 
 export type RouteLegUpdateWithoutPassengerInput = {
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -918,16 +1011,19 @@ export type RouteLegUpdateWithoutPassengerInput = {
 export type RouteLegUncheckedUpdateWithoutPassengerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   route_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -936,16 +1032,19 @@ export type RouteLegUncheckedUpdateWithoutPassengerInput = {
 export type RouteLegUncheckedUpdateManyWithoutPassengerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   route_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -954,32 +1053,38 @@ export type RouteLegUncheckedUpdateManyWithoutPassengerInput = {
 export type RouteLegCreateManyRouteInput = {
   id?: number
   passenger_id: number
+  sequence?: number
   pickup_address: string
   pickup_lat: number
   pickup_long: number
   pickup_time: string
-  pickup_status?: $Enums.RouteStatus
+  pickup_status?: $Enums.PickupStatus
+  driver_arrived_at?: Date | string | null
+  passenger_ack?: $Enums.PassengerAck | null
+  picked_at?: Date | string | null
   dropoff_address: string
   dropoff_lat: number
   dropoff_long: number
   dropoff_time: string
-  dropoff_status?: $Enums.RouteStatus
   toll_amount?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
 
 export type RouteLegUpdateWithoutRouteInput = {
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -989,16 +1094,19 @@ export type RouteLegUpdateWithoutRouteInput = {
 export type RouteLegUncheckedUpdateWithoutRouteInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   passenger_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1007,16 +1115,19 @@ export type RouteLegUncheckedUpdateWithoutRouteInput = {
 export type RouteLegUncheckedUpdateManyWithoutRouteInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   passenger_id?: Prisma.IntFieldUpdateOperationsInput | number
+  sequence?: Prisma.IntFieldUpdateOperationsInput | number
   pickup_address?: Prisma.StringFieldUpdateOperationsInput | string
   pickup_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_long?: Prisma.FloatFieldUpdateOperationsInput | number
   pickup_time?: Prisma.StringFieldUpdateOperationsInput | string
-  pickup_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
+  pickup_status?: Prisma.EnumPickupStatusFieldUpdateOperationsInput | $Enums.PickupStatus
+  driver_arrived_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passenger_ack?: Prisma.NullableEnumPassengerAckFieldUpdateOperationsInput | $Enums.PassengerAck | null
+  picked_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dropoff_address?: Prisma.StringFieldUpdateOperationsInput | string
   dropoff_lat?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_long?: Prisma.FloatFieldUpdateOperationsInput | number
   dropoff_time?: Prisma.StringFieldUpdateOperationsInput | string
-  dropoff_status?: Prisma.EnumRouteStatusFieldUpdateOperationsInput | $Enums.RouteStatus
   toll_amount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1028,16 +1139,19 @@ export type RouteLegSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   id?: boolean
   route_id?: boolean
   passenger_id?: boolean
+  sequence?: boolean
   pickup_address?: boolean
   pickup_lat?: boolean
   pickup_long?: boolean
   pickup_time?: boolean
   pickup_status?: boolean
+  driver_arrived_at?: boolean
+  passenger_ack?: boolean
+  picked_at?: boolean
   dropoff_address?: boolean
   dropoff_lat?: boolean
   dropoff_long?: boolean
   dropoff_time?: boolean
-  dropoff_status?: boolean
   toll_amount?: boolean
   created_at?: boolean
   updated_at?: boolean
@@ -1049,16 +1163,19 @@ export type RouteLegSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   route_id?: boolean
   passenger_id?: boolean
+  sequence?: boolean
   pickup_address?: boolean
   pickup_lat?: boolean
   pickup_long?: boolean
   pickup_time?: boolean
   pickup_status?: boolean
+  driver_arrived_at?: boolean
+  passenger_ack?: boolean
+  picked_at?: boolean
   dropoff_address?: boolean
   dropoff_lat?: boolean
   dropoff_long?: boolean
   dropoff_time?: boolean
-  dropoff_status?: boolean
   toll_amount?: boolean
   created_at?: boolean
   updated_at?: boolean
@@ -1070,16 +1187,19 @@ export type RouteLegSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   id?: boolean
   route_id?: boolean
   passenger_id?: boolean
+  sequence?: boolean
   pickup_address?: boolean
   pickup_lat?: boolean
   pickup_long?: boolean
   pickup_time?: boolean
   pickup_status?: boolean
+  driver_arrived_at?: boolean
+  passenger_ack?: boolean
+  picked_at?: boolean
   dropoff_address?: boolean
   dropoff_lat?: boolean
   dropoff_long?: boolean
   dropoff_time?: boolean
-  dropoff_status?: boolean
   toll_amount?: boolean
   created_at?: boolean
   updated_at?: boolean
@@ -1091,22 +1211,25 @@ export type RouteLegSelectScalar = {
   id?: boolean
   route_id?: boolean
   passenger_id?: boolean
+  sequence?: boolean
   pickup_address?: boolean
   pickup_lat?: boolean
   pickup_long?: boolean
   pickup_time?: boolean
   pickup_status?: boolean
+  driver_arrived_at?: boolean
+  passenger_ack?: boolean
+  picked_at?: boolean
   dropoff_address?: boolean
   dropoff_lat?: boolean
   dropoff_long?: boolean
   dropoff_time?: boolean
-  dropoff_status?: boolean
   toll_amount?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type RouteLegOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "route_id" | "passenger_id" | "pickup_address" | "pickup_lat" | "pickup_long" | "pickup_time" | "pickup_status" | "dropoff_address" | "dropoff_lat" | "dropoff_long" | "dropoff_time" | "dropoff_status" | "toll_amount" | "created_at" | "updated_at", ExtArgs["result"]["routeLeg"]>
+export type RouteLegOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "route_id" | "passenger_id" | "sequence" | "pickup_address" | "pickup_lat" | "pickup_long" | "pickup_time" | "pickup_status" | "driver_arrived_at" | "passenger_ack" | "picked_at" | "dropoff_address" | "dropoff_lat" | "dropoff_long" | "dropoff_time" | "toll_amount" | "created_at" | "updated_at", ExtArgs["result"]["routeLeg"]>
 export type RouteLegInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   route?: boolean | Prisma.RouteDefaultArgs<ExtArgs>
   passenger?: boolean | Prisma.PassengerDefaultArgs<ExtArgs>
@@ -1130,16 +1253,19 @@ export type $RouteLegPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     id: number
     route_id: number
     passenger_id: number
+    sequence: number
     pickup_address: string
     pickup_lat: number
     pickup_long: number
     pickup_time: string
-    pickup_status: $Enums.RouteStatus
+    pickup_status: $Enums.PickupStatus
+    driver_arrived_at: Date | null
+    passenger_ack: $Enums.PassengerAck | null
+    picked_at: Date | null
     dropoff_address: string
     dropoff_lat: number
     dropoff_long: number
     dropoff_time: string
-    dropoff_status: $Enums.RouteStatus
     toll_amount: number | null
     created_at: Date
     updated_at: Date
@@ -1571,16 +1697,19 @@ export interface RouteLegFieldRefs {
   readonly id: Prisma.FieldRef<"RouteLeg", 'Int'>
   readonly route_id: Prisma.FieldRef<"RouteLeg", 'Int'>
   readonly passenger_id: Prisma.FieldRef<"RouteLeg", 'Int'>
+  readonly sequence: Prisma.FieldRef<"RouteLeg", 'Int'>
   readonly pickup_address: Prisma.FieldRef<"RouteLeg", 'String'>
   readonly pickup_lat: Prisma.FieldRef<"RouteLeg", 'Float'>
   readonly pickup_long: Prisma.FieldRef<"RouteLeg", 'Float'>
   readonly pickup_time: Prisma.FieldRef<"RouteLeg", 'String'>
-  readonly pickup_status: Prisma.FieldRef<"RouteLeg", 'RouteStatus'>
+  readonly pickup_status: Prisma.FieldRef<"RouteLeg", 'PickupStatus'>
+  readonly driver_arrived_at: Prisma.FieldRef<"RouteLeg", 'DateTime'>
+  readonly passenger_ack: Prisma.FieldRef<"RouteLeg", 'PassengerAck'>
+  readonly picked_at: Prisma.FieldRef<"RouteLeg", 'DateTime'>
   readonly dropoff_address: Prisma.FieldRef<"RouteLeg", 'String'>
   readonly dropoff_lat: Prisma.FieldRef<"RouteLeg", 'Float'>
   readonly dropoff_long: Prisma.FieldRef<"RouteLeg", 'Float'>
   readonly dropoff_time: Prisma.FieldRef<"RouteLeg", 'String'>
-  readonly dropoff_status: Prisma.FieldRef<"RouteLeg", 'RouteStatus'>
   readonly toll_amount: Prisma.FieldRef<"RouteLeg", 'Float'>
   readonly created_at: Prisma.FieldRef<"RouteLeg", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"RouteLeg", 'DateTime'>

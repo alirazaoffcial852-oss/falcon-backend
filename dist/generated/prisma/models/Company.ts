@@ -28,10 +28,14 @@ export type AggregateCompany = {
 
 export type CompanyAvgAggregateOutputType = {
   id: number | null
+  lat: number | null
+  long: number | null
 }
 
 export type CompanySumAggregateOutputType = {
   id: number | null
+  lat: number | null
+  long: number | null
 }
 
 export type CompanyMinAggregateOutputType = {
@@ -40,6 +44,8 @@ export type CompanyMinAggregateOutputType = {
   email: string | null
   phone_no: string | null
   address: string | null
+  lat: number | null
+  long: number | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -50,6 +56,8 @@ export type CompanyMaxAggregateOutputType = {
   email: string | null
   phone_no: string | null
   address: string | null
+  lat: number | null
+  long: number | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -60,6 +68,8 @@ export type CompanyCountAggregateOutputType = {
   email: number
   phone_no: number
   address: number
+  lat: number
+  long: number
   created_at: number
   updated_at: number
   _all: number
@@ -68,10 +78,14 @@ export type CompanyCountAggregateOutputType = {
 
 export type CompanyAvgAggregateInputType = {
   id?: true
+  lat?: true
+  long?: true
 }
 
 export type CompanySumAggregateInputType = {
   id?: true
+  lat?: true
+  long?: true
 }
 
 export type CompanyMinAggregateInputType = {
@@ -80,6 +94,8 @@ export type CompanyMinAggregateInputType = {
   email?: true
   phone_no?: true
   address?: true
+  lat?: true
+  long?: true
   created_at?: true
   updated_at?: true
 }
@@ -90,6 +106,8 @@ export type CompanyMaxAggregateInputType = {
   email?: true
   phone_no?: true
   address?: true
+  lat?: true
+  long?: true
   created_at?: true
   updated_at?: true
 }
@@ -100,6 +118,8 @@ export type CompanyCountAggregateInputType = {
   email?: true
   phone_no?: true
   address?: true
+  lat?: true
+  long?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -197,6 +217,8 @@ export type CompanyGroupByOutputType = {
   email: string | null
   phone_no: string
   address: string
+  lat: number | null
+  long: number | null
   created_at: Date
   updated_at: Date
   _count: CompanyCountAggregateOutputType | null
@@ -230,6 +252,8 @@ export type CompanyWhereInput = {
   email?: Prisma.StringNullableFilter<"Company"> | string | null
   phone_no?: Prisma.StringFilter<"Company"> | string
   address?: Prisma.StringFilter<"Company"> | string
+  lat?: Prisma.FloatNullableFilter<"Company"> | number | null
+  long?: Prisma.FloatNullableFilter<"Company"> | number | null
   created_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   passengers?: Prisma.PassengerListRelationFilter
@@ -242,6 +266,8 @@ export type CompanyOrderByWithRelationInput = {
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   phone_no?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  long?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   passengers?: Prisma.PassengerOrderByRelationAggregateInput
@@ -257,6 +283,8 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   email?: Prisma.StringNullableFilter<"Company"> | string | null
   phone_no?: Prisma.StringFilter<"Company"> | string
   address?: Prisma.StringFilter<"Company"> | string
+  lat?: Prisma.FloatNullableFilter<"Company"> | number | null
+  long?: Prisma.FloatNullableFilter<"Company"> | number | null
   created_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   passengers?: Prisma.PassengerListRelationFilter
@@ -269,6 +297,8 @@ export type CompanyOrderByWithAggregationInput = {
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   phone_no?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  long?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.CompanyCountOrderByAggregateInput
@@ -287,6 +317,8 @@ export type CompanyScalarWhereWithAggregatesInput = {
   email?: Prisma.StringNullableWithAggregatesFilter<"Company"> | string | null
   phone_no?: Prisma.StringWithAggregatesFilter<"Company"> | string
   address?: Prisma.StringWithAggregatesFilter<"Company"> | string
+  lat?: Prisma.FloatNullableWithAggregatesFilter<"Company"> | number | null
+  long?: Prisma.FloatNullableWithAggregatesFilter<"Company"> | number | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"Company"> | Date | string
 }
@@ -296,6 +328,8 @@ export type CompanyCreateInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerCreateNestedManyWithoutCompanyInput
@@ -308,6 +342,8 @@ export type CompanyUncheckedCreateInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerUncheckedCreateNestedManyWithoutCompanyInput
@@ -319,6 +355,8 @@ export type CompanyUpdateInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUpdateManyWithoutCompanyNestedInput
@@ -331,6 +369,8 @@ export type CompanyUncheckedUpdateInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUncheckedUpdateManyWithoutCompanyNestedInput
@@ -343,6 +383,8 @@ export type CompanyCreateManyInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -352,6 +394,8 @@ export type CompanyUpdateManyMutationInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -362,6 +406,8 @@ export type CompanyUncheckedUpdateManyInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -372,12 +418,16 @@ export type CompanyCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  lat?: Prisma.SortOrder
+  long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
 
 export type CompanyAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  lat?: Prisma.SortOrder
+  long?: Prisma.SortOrder
 }
 
 export type CompanyMaxOrderByAggregateInput = {
@@ -386,6 +436,8 @@ export type CompanyMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  lat?: Prisma.SortOrder
+  long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -396,12 +448,16 @@ export type CompanyMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   phone_no?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  lat?: Prisma.SortOrder
+  long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
 
 export type CompanySumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  lat?: Prisma.SortOrder
+  long?: Prisma.SortOrder
 }
 
 export type CompanyScalarRelationFilter = {
@@ -411,6 +467,14 @@ export type CompanyScalarRelationFilter = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type CompanyCreateNestedOneWithoutPassengersInput = {
@@ -446,6 +510,8 @@ export type CompanyCreateWithoutPassengersInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteCreateNestedManyWithoutCompanyInput
@@ -457,6 +523,8 @@ export type CompanyUncheckedCreateWithoutPassengersInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutCompanyInput
@@ -483,6 +551,8 @@ export type CompanyUpdateWithoutPassengersInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUpdateManyWithoutCompanyNestedInput
@@ -494,6 +564,8 @@ export type CompanyUncheckedUpdateWithoutPassengersInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUncheckedUpdateManyWithoutCompanyNestedInput
@@ -504,6 +576,8 @@ export type CompanyCreateWithoutRoutesInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerCreateNestedManyWithoutCompanyInput
@@ -515,6 +589,8 @@ export type CompanyUncheckedCreateWithoutRoutesInput = {
   email?: string | null
   phone_no: string
   address: string
+  lat?: number | null
+  long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerUncheckedCreateNestedManyWithoutCompanyInput
@@ -541,6 +617,8 @@ export type CompanyUpdateWithoutRoutesInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUpdateManyWithoutCompanyNestedInput
@@ -552,6 +630,8 @@ export type CompanyUncheckedUpdateWithoutRoutesInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone_no?: Prisma.StringFieldUpdateOperationsInput | string
   address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUncheckedUpdateManyWithoutCompanyNestedInput
@@ -603,6 +683,8 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   phone_no?: boolean
   address?: boolean
+  lat?: boolean
+  long?: boolean
   created_at?: boolean
   updated_at?: boolean
   passengers?: boolean | Prisma.Company$passengersArgs<ExtArgs>
@@ -616,6 +698,8 @@ export type CompanySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   phone_no?: boolean
   address?: boolean
+  lat?: boolean
+  long?: boolean
   created_at?: boolean
   updated_at?: boolean
 }, ExtArgs["result"]["company"]>
@@ -626,6 +710,8 @@ export type CompanySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   phone_no?: boolean
   address?: boolean
+  lat?: boolean
+  long?: boolean
   created_at?: boolean
   updated_at?: boolean
 }, ExtArgs["result"]["company"]>
@@ -636,11 +722,13 @@ export type CompanySelectScalar = {
   email?: boolean
   phone_no?: boolean
   address?: boolean
+  lat?: boolean
+  long?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "phone_no" | "address" | "created_at" | "updated_at", ExtArgs["result"]["company"]>
+export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "phone_no" | "address" | "lat" | "long" | "created_at" | "updated_at", ExtArgs["result"]["company"]>
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   passengers?: boolean | Prisma.Company$passengersArgs<ExtArgs>
   routes?: boolean | Prisma.Company$routesArgs<ExtArgs>
@@ -661,6 +749,8 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     email: string | null
     phone_no: string
     address: string
+    lat: number | null
+    long: number | null
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["company"]>
@@ -1093,6 +1183,8 @@ export interface CompanyFieldRefs {
   readonly email: Prisma.FieldRef<"Company", 'String'>
   readonly phone_no: Prisma.FieldRef<"Company", 'String'>
   readonly address: Prisma.FieldRef<"Company", 'String'>
+  readonly lat: Prisma.FieldRef<"Company", 'Float'>
+  readonly long: Prisma.FieldRef<"Company", 'Float'>
   readonly created_at: Prisma.FieldRef<"Company", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"Company", 'DateTime'>
 }

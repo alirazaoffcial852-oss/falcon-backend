@@ -17,3 +17,21 @@ export const RouteStatus = {
 } as const
 
 export type RouteStatus = (typeof RouteStatus)[keyof typeof RouteStatus]
+
+
+export const PickupStatus = {
+  PENDING: 'PENDING',
+  ARRIVED: 'ARRIVED',
+  PICKED: 'PICKED',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type PickupStatus = (typeof PickupStatus)[keyof typeof PickupStatus]
+
+
+export const PassengerAck = {
+  COMING: 'COMING',
+  NOT_COMING: 'NOT_COMING'
+} as const
+
+export type PassengerAck = (typeof PassengerAck)[keyof typeof PassengerAck]
