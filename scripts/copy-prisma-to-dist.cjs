@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const src = path.join(__dirname, "../src/generated");
-const dest = path.join(__dirname, "../dist/generated");
+const dest = path.join(__dirname, "../dist/src/generated");
 
 if (!fs.existsSync(src)) {
   console.warn("copy-prisma-to-dist: src/generated not found (run prisma generate first)");
