@@ -17,6 +17,14 @@ export const createCompanySchema = Joi.object({
 		"string.empty": "Address is required",
 		"string.trim": "Address must be a string",
 	}),
+	lat: Joi.number().required().messages({
+		"any.required": "Latitude is required",
+		"number.base": "Latitude must be a number",
+	}),
+	long: Joi.number().required().messages({
+		"any.required": "Longitude is required",
+		"number.base": "Longitude must be a number",
+	}),
 }).required();
 
 export const updateCompanySchema = Joi.object({
@@ -29,6 +37,12 @@ export const updateCompanySchema = Joi.object({
 	}),
 	address: Joi.string().trim().messages({
 		"string.trim": "Address must be a string",
+	}),
+	lat: Joi.number().messages({
+		"number.base": "Latitude must be a number",
+	}),
+	long: Joi.number().messages({
+		"number.base": "Longitude must be a number",
 	}),
 }).min(1);
 

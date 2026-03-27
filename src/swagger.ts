@@ -55,6 +55,8 @@ const swaggerDocument = {
 					email: { type: "string", format: "email", nullable: true },
 					phoneNo: { type: "string" },
 					address: { type: "string" },
+					lat: { type: "number" },
+					long: { type: "number" },
 				},
 			},
 			UpdateCompanyBody: {
@@ -65,6 +67,8 @@ const swaggerDocument = {
 					email: { type: "string", format: "email", nullable: true },
 					phoneNo: { type: "string" },
 					address: { type: "string" },
+					lat: { type: "number" },
+					long: { type: "number" },
 				},
 			},
 			// Driver (image fields can be URLs or multipart in real usage)
