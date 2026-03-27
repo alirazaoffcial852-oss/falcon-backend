@@ -49,3 +49,26 @@ export async function sendCredentialEmail(
     `,
 	});
 }
+
+export async function sendForgotPasswordOtpEmail(to: string, otp: string) {
+	const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+	if (!from) {
+		throw ResponseHandler.internal(
+			"SMTP sender missing. Set SMTP_FROM or SMTP_USER",
+		);
+	}
+	const transporter = getTransporter();
+	await transporter.sendMail({
+		from,
+		to,
+		subject: "Falcon password reset OTP",
+		text: `Your Falcon password reset OTP is ${otp}. This code will expire in 5 minutes.`,
+		html: `
+		<div style="font-family: Arial, sans-serif; line-height: 1.6;">
+			<h3>Falcon password reset</h3>
+			<p>Your OTP is: <strong style="font-size: 20px;">${otp}</strong></p>
+			<p>This code will expire in 5 minutes.</p>
+		</div>
+	`,
+	});
+}

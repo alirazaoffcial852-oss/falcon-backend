@@ -374,6 +374,70 @@ const swaggerDocument = {
 				},
 			},
 		},
+		"/f1/auth/forgot-password/request-otp": {
+			post: {
+				tags: ["Auth"],
+				summary: "Request forgot password OTP",
+				description:
+					"Request a forgot password OTP to be sent to the email address.",
+				security: [],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								$ref: "#/components/schemas/ForgotPasswordRequestBody",
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "OTP sent to email successfully" },
+					"400": { description: "Email not found" },
+				},
+			},
+		},
+		"/f1/auth/forgot-password/verify-otp": {
+			post: {
+				tags: ["Auth"],
+				summary: "Verify forgot password OTP",
+				description:
+					"Verify the forgot password OTP sent to the email address.",
+				security: [],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/ForgotPasswordVerifyBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "OTP verified successfully" },
+					"400": { description: "Invalid or expired OTP" },
+				},
+			},
+		},
+		"/f1/auth/forgot-password/reset-password": {
+			post: {
+				tags: ["Auth"],
+				summary: "Reset forgot password",
+				description: "Reset the forgot password for the email address.",
+				security: [],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/ForgotPasswordResetBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Password reset successfully" },
+					"400": { description: "Invalid request or OTP" },
+				},
+			},
+		},
 		// ----- Companies -----
 		"/f1/companies": {
 			get: {
