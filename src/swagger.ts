@@ -34,9 +34,9 @@ const swaggerDocument = {
 			},
 			RegisterBody: {
 				type: "object",
-				required: ["username", "password", "role"],
+				required: ["email", "password", "role"],
 				properties: {
-					username: { type: "string" },
+					email: { type: "string", format: "email" },
 					password: { type: "string", minLength: 6 },
 					role: { type: "string", enum: ["admin", "driver", "passenger"] },
 					adminSecret: {
