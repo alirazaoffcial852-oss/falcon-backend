@@ -9,4 +9,6 @@ export interface Company {
 	email?: string;
 	phone_no: string;
 	address: string;
+	lat?: number;
+	long?: number;
 }

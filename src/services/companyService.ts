@@ -43,6 +43,8 @@ export class CompanyService {
 				email: data.email ?? null,
 				phone_no: data.phone_no,
 				address: data.address,
+				lat: data.lat ?? null,
+				long: data.long ?? null,
 			},
 		});
 		return {
@@ -50,6 +52,8 @@ export class CompanyService {
 			email: company.email ?? undefined,
 			phone_no: company.phone_no,
 			address: company.address,
+			lat: company.lat ?? undefined,
+			long: company.long ?? undefined,
 		};
 	}
 
@@ -60,6 +64,8 @@ export class CompanyService {
 			email?: string | null;
 			phone_no?: string;
 			address?: string;
+			lat?: number | null;
+			long?: number | null;
 		} = {};
 		if (data.name !== undefined) updateData.name = data.name.trim();
 		if (data.email !== undefined) updateData.email = data.email?.trim() ?? null;
@@ -74,6 +80,8 @@ export class CompanyService {
 			email: company.email ?? undefined,
 			phone_no: company.phone_no,
 			address: company.address,
+			lat: company.lat ?? undefined,
+			long: company.long ?? undefined,
 		};
 	}
 
