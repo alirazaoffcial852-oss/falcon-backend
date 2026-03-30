@@ -48,7 +48,8 @@ export const MobileDriverService = {
 
 		// Get driver configuration for availability duration
 		const config = await db.driverConfiguration.findFirst();
-		if (!config) throw ResponseHandler.notFound("Driver configuration not found");
+		if (!config)
+			throw ResponseHandler.notFound("Driver configuration not found");
 
 		// Mark driver available
 		const updatedDriver = await db.driver.update({
@@ -100,7 +101,10 @@ export const MobileDriverService = {
 
 		return {
 			driver: { id: driver.id, name: driver.name, is_available: true },
-			routes: routes.map((r) => ({ id: r.id, passengers_count: r.legs.length })),
+			routes: routes.map((r) => ({
+				id: r.id,
+				passengers_count: r.legs.length,
+			})),
 			config: {
 				availability_time: config.availability_time,
 				remaining_start_time: config.remaining_start_time,
@@ -177,6 +181,13 @@ export const MobileDriverService = {
 				office_lat: route.office_lat,
 				office_long: route.office_long,
 				started_at: route.started_at,
+				directions_polyline: route.directions_polyline,
+				directions_waypoint_order: route.directions_waypoint_order,
+				directions_legs: route.directions_legs,
+				directions_distance_meters: route.directions_distance_meters,
+				directions_duration_seconds: route.directions_duration_seconds,
+				directions_updated_at: route.directions_updated_at,
+
 				passengers_queue: sortedLegs.map((leg, idx) => ({
 					queue_position: idx + 1,
 					leg_id: leg.id,
@@ -233,7 +244,8 @@ export const MobileDriverService = {
 				},
 			},
 		});
-		if (!route) throw ResponseHandler.notFound("Route not found or already started");
+		if (!route)
+			throw ResponseHandler.notFound("Route not found or already started");
 
 		await db.route.update({
 			where: { id: routeId },
@@ -314,7 +326,11 @@ export const MobileDriverService = {
 
 		await db.driver.update({
 			where: { id: driver.id },
-			data: { current_lat: lat, current_long: long, location_updated_at: new Date() },
+			data: {
+				current_lat: lat,
+				current_long: long,
+				location_updated_at: new Date(),
+			},
 		});
 
 		// Find active route and notify its passengers
@@ -440,7 +456,10 @@ export const MobileDriverService = {
 		if (!nextLeg) {
 			// Check all legs done
 			const pendingCount = await db.routeLeg.count({
-				where: { route_id: routeId, pickup_status: { in: ["PENDING", "ARRIVED"] } },
+				where: {
+					route_id: routeId,
+					pickup_status: { in: ["PENDING", "ARRIVED"] },
+				},
 			});
 			if (pendingCount === 0) {
 				// All picked/skipped → navigate to office
@@ -453,22 +472,32 @@ export const MobileDriverService = {
 			}
 		}
 
-		emitToDriver(driver.id, "next:passenger", nextLeg
-			? {
-					leg_id: nextLeg.id,
-					passenger: { id: nextLeg.passenger.id, name: nextLeg.passenger.name },
-					pickup_address: nextLeg.pickup_address,
-					pickup_lat: nextLeg.pickup_lat,
-					pickup_long: nextLeg.pickup_long,
-				}
-			: null);
+		emitToDriver(
+			driver.id,
+			"next:passenger",
+			nextLeg
+				? {
+						leg_id: nextLeg.id,
+						passenger: {
+							id: nextLeg.passenger.id,
+							name: nextLeg.passenger.name,
+						},
+						pickup_address: nextLeg.pickup_address,
+						pickup_lat: nextLeg.pickup_lat,
+						pickup_long: nextLeg.pickup_long,
+					}
+				: null,
+		);
 
 		return {
 			action,
 			next_passenger: nextLeg
 				? {
 						leg_id: nextLeg.id,
-						passenger: { id: nextLeg.passenger.id, name: nextLeg.passenger.name },
+						passenger: {
+							id: nextLeg.passenger.id,
+							name: nextLeg.passenger.name,
+						},
 						pickup_address: nextLeg.pickup_address,
 						pickup_lat: nextLeg.pickup_lat,
 						pickup_long: nextLeg.pickup_long,

@@ -1159,6 +1159,30 @@ const swaggerDocument = {
 				},
 			},
 		},
+		"/f1/routes/{id}/optimize": {
+			post: {
+				tags: ["Routes"],
+				summary: "Optimize and cache route directions",
+				description:
+					"Calls Google Directions API once, stores optimized waypoint order and polyline in DB, and updates leg sequence.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Route optimized and cached" },
+					"400": { description: "Invalid route or Google API error" },
+					"404": { description: "Route not found" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
 	},
 };
 

@@ -21,6 +21,11 @@ router.put(
 	validate.combined(updateRouteSchema, routeIdParamSchema),
 	RouteController.update,
 );
+router.post(
+	"/:id/optimize",
+	validate.params(routeIdParamSchema),
+	RouteController.optimize,
+);
 router.delete(
 	"/:id",
 	validate.params(routeIdParamSchema),
