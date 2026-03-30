@@ -24,7 +24,7 @@ export class AuthService {
 		});
 		if (!user) throw ResponseHandler.unauthorized("Invalid email or password");
 		const valid = await bcrypt.compare(password, user.password);
-		if (!valid) throw ResponseHandler.unauthorized("Invalid email or password");
+		if (!valid) throw ResponseHandler.unauthorized("Invalid password");
 		const secret = process.env.JWT_SECRET;
 		if (!secret) throw ResponseHandler.internal("Server misconfiguration");
 		const token = jwt.sign({ id: user.id, role: user.role.name }, secret, {

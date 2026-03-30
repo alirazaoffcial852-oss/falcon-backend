@@ -6,6 +6,11 @@ export const createPassengerSchema = Joi.object({
 		"string.empty": "Name is required",
 		"string.trim": "Name must be a string",
 	}),
+	email: Joi.string().trim().required().messages({
+		"any.required": "Email is required",
+		"string.empty": "Email is required",
+		"string.trim": "Email must be a string",
+	}),
 	phoneNo: Joi.string().trim().required().messages({
 		"any.required": "Phone number is required",
 		"string.empty": "Phone number is required",
@@ -52,6 +57,10 @@ export const createPassengerSchema = Joi.object({
 export const updatePassengerSchema = Joi.object({
 	name: Joi.string().trim().messages({
 		"string.trim": "Name must be a string",
+	}),
+	email: Joi.string().trim().messages({
+		"string.email": "Email must be a valid email",
+		"string.trim": "Email must be a string",
 	}),
 	phoneNo: Joi.string().trim().messages({
 		"string.trim": "Phone number must be a string",

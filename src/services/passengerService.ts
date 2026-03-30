@@ -18,10 +18,19 @@ export class PassengerService {
 			take: params.limit,
 			skip: (params.page - 1) * params.limit,
 			orderBy: { created_at: "desc" },
-			include: { company: { select: { id: true, name: true } } },
+			include: {
+				company: { select: { id: true, name: true } },
+				user: { select: { email: true } },
+			},
+		});
+		const data = passengers.map((passenger) => {
+			return {
+				...passenger,
+				email: passenger.user?.email ?? null,
+			};
 		});
 		return {
-			data: passengers,
+			data,
 			pagination: {
 				total,
 				page: params.page,
@@ -34,13 +43,16 @@ export class PassengerService {
 	async getById(id: number) {
 		const passenger = await this.db.passenger.findUnique({
 			where: { id },
-			include: { company: true },
+			include: { company: true, user: { select: { email: true } } },
 		});
 		if (!passenger)
 			throw ResponseHandler.notFound(
 				"No passenger found against this id: " + id,
 			);
-		return passenger;
+		return {
+			...passenger,
+			email: passenger.user?.email ?? null,
+		};
 	}
 
 	async create(data: Passenger): Promise<Passenger> {
@@ -70,6 +82,14 @@ export class PassengerService {
 
 		let userId: number | null = null;
 
+		const company = await this.db.company.findUnique({
+			where: { id: Number(companyId) },
+		});
+		if (!company)
+			throw ResponseHandler.badRequest(
+				"No company found against this id: " + companyId,
+			);
+
 		if (data.email) {
 			const email = data.email.trim().toLowerCase();
 			const existingUser = await this.db.user.findUnique({ where: { email } });
@@ -82,7 +102,7 @@ export class PassengerService {
 
 			const createdUser = await this.db.user.create({
 				data: {
-					email,
+					email: email.trim().toLowerCase(),
 					password: hashedPassword,
 					role_id: 3,
 				},
@@ -91,14 +111,6 @@ export class PassengerService {
 			userId = createdUser.id;
 			await sendCredentialEmail(email, "passenger", plainPassword);
 		}
-
-		const company = await this.db.company.findUnique({
-			where: { id: Number(companyId) },
-		});
-		if (!company)
-			throw ResponseHandler.badRequest(
-				"No company found against this id: " + companyId,
-			);
 
 		const passenger = await this.db.passenger.create({
 			data: {

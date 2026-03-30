@@ -159,6 +159,12 @@ model Route {
   office_lat     Float
   office_long    Float
   status         RouteStatus @default(PENDING)
+  directions_polyline         String?
+  directions_waypoint_order   Json?
+  directions_legs             Json?
+  directions_distance_meters  Int?
+  directions_duration_seconds Int?
+  directions_updated_at       DateTime?
   started_at     DateTime?
   completed_at   DateTime?
   created_at     DateTime    @default(now())
