@@ -58,6 +58,11 @@ export const updateDriverSchema = Joi.object({
 		"any.required": "Name is required",
 		"string.trim": "Name must be a string",
 	}),
+	email: Joi.string().trim().required().messages({
+		"any.required": "Email is required",
+		"string.email": "Email must be valid",
+		"string.empty": "Email is required",
+	}),
 	phone_no: Joi.string().trim().required().messages({
 		"any.required": "Phone number is required",
 		"string.trim": "Phone number must be a string",

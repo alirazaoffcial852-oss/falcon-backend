@@ -19,10 +19,7 @@ export class RouteService {
 		const lat2 = (b.lat * Math.PI) / 180;
 		const h =
 			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-			Math.cos(lat1) *
-				Math.cos(lat2) *
-				Math.sin(dLon / 2) *
-				Math.sin(dLon / 2);
+			Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 		return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 	}
 
@@ -163,6 +160,7 @@ export class RouteService {
 	}
 
 	async create(data: CreateRouteInput) {
+		console.log(data);
 		const route = await this.db.$transaction(async (tx) => {
 			const created = await tx.route.create({
 				data: {

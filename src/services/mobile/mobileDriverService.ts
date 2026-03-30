@@ -153,25 +153,9 @@ export const MobileDriverService = {
 			};
 		}
 
-		// Sort remaining legs by distance from driver's current location
-		let sortedLegs = route.legs;
-		if (driver.current_lat !== null && driver.current_long !== null) {
-			sortedLegs = [...route.legs].sort((a, b) => {
-				const distA = haversineKm(
-					driver.current_lat!,
-					driver.current_long!,
-					a.pickup_lat,
-					a.pickup_long,
-				);
-				const distB = haversineKm(
-					driver.current_lat!,
-					driver.current_long!,
-					b.pickup_lat,
-					b.pickup_long,
-				);
-				return distA - distB;
-			});
-		}
+		// Keep order strictly by cached/assigned pickup sequence.
+		// (Do not re-sort by live GPS; otherwise polyline/order mismatch happens.)
+		const sortedLegs = [...route.legs].sort((a, b) => a.sequence - b.sequence);
 
 		return {
 			route: {
@@ -254,35 +238,9 @@ export const MobileDriverService = {
 
 		const config = await db.driverConfiguration.findFirst();
 
-		// Sort legs by nearest to driver
-		let sortedLegs = route.legs;
-		if (driver.current_lat !== null && driver.current_long !== null) {
-			sortedLegs = [...route.legs].sort((a, b) => {
-				const distA = haversineKm(
-					driver.current_lat!,
-					driver.current_long!,
-					a.pickup_lat,
-					a.pickup_long,
-				);
-				const distB = haversineKm(
-					driver.current_lat!,
-					driver.current_long!,
-					b.pickup_lat,
-					b.pickup_long,
-				);
-				return distA - distB;
-			});
-		}
-
-		// Update sequence based on sorted order
-		await db.$transaction(
-			sortedLegs.map((leg, idx) =>
-				db.routeLeg.update({
-					where: { id: leg.id },
-					data: { sequence: idx + 1 },
-				}),
-			),
-		);
+		// Use stored sequence order (already set by route optimize step).
+		// Do not re-optimize/re-sequence at trip start.
+		const sortedLegs = route.legs;
 
 		const car = route.driver.driver_assign_cars[0]?.car ?? null;
 

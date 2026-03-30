@@ -28,6 +28,7 @@ export class DriverService {
 					take: 1,
 					include: { car: true },
 				},
+				user: { select: { email: true } },
 			},
 		});
 		const data = drivers.map((driver) => {
@@ -38,6 +39,7 @@ export class DriverService {
 				car_name: assignedCar?.car?.name ?? null,
 				car_number: assignedCar?.car?.car_no ?? null,
 				driver_assign_cars: undefined,
+				email: driver.user?.email ?? null,
 			};
 		});
 		return {
@@ -60,6 +62,7 @@ export class DriverService {
 					take: 1,
 					include: { car: true },
 				},
+				user: { select: { email: true } },
 			},
 		});
 		if (!driver)
@@ -71,6 +74,7 @@ export class DriverService {
 			car_name: assignedCar?.car?.name ?? null,
 			car_number: assignedCar?.car?.car_no ?? null,
 			driver_assign_cars: undefined,
+			email: driver.user?.email ?? null,
 		};
 	}
 
