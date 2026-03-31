@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defineExtension = exports.NullsOrder = exports.QueryMode = exports.SortOrder = exports.RouteLegScalarFieldEnum = exports.RouteScalarFieldEnum = exports.DriverConfigurationScalarFieldEnum = exports.PassengerScalarFieldEnum = exports.DriverAssignCarScalarFieldEnum = exports.DriverScalarFieldEnum = exports.CarScalarFieldEnum = exports.CompanyScalarFieldEnum = exports.UserScalarFieldEnum = exports.RoleScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
+exports.defineExtension = exports.JsonNullValueFilter = exports.NullsOrder = exports.QueryMode = exports.NullableJsonNullValueInput = exports.SortOrder = exports.RouteLegScalarFieldEnum = exports.RouteSegmentScalarFieldEnum = exports.RouteBatchScalarFieldEnum = exports.RouteScalarFieldEnum = exports.DriverConfigurationScalarFieldEnum = exports.PassengerScalarFieldEnum = exports.DriverAssignCarScalarFieldEnum = exports.DriverScalarFieldEnum = exports.CarScalarFieldEnum = exports.CompanyScalarFieldEnum = exports.UserScalarFieldEnum = exports.RoleScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/library"));
 /**
  * Prisma Errors
@@ -112,6 +112,8 @@ exports.ModelName = {
     Passenger: 'Passenger',
     DriverConfiguration: 'DriverConfiguration',
     Route: 'Route',
+    RouteBatch: 'RouteBatch',
+    RouteSegment: 'RouteSegment',
     RouteLeg: 'RouteLeg'
 };
 /**
@@ -179,9 +181,8 @@ exports.DriverScalarFieldEnum = {
     driver_license_back_url: 'driver_license_back_url',
     is_available: 'is_available',
     available_at: 'available_at',
-    current_lat: 'current_lat',
-    current_long: 'current_long',
-    location_updated_at: 'location_updated_at',
+    home_lat: 'home_lat',
+    home_long: 'home_long',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
@@ -227,16 +228,49 @@ exports.RouteScalarFieldEnum = {
     office_lat: 'office_lat',
     office_long: 'office_long',
     status: 'status',
+    directions_polyline: 'directions_polyline',
+    directions_waypoint_order: 'directions_waypoint_order',
+    directions_legs: 'directions_legs',
+    directions_distance_meters: 'directions_distance_meters',
+    directions_duration_seconds: 'directions_duration_seconds',
+    directions_updated_at: 'directions_updated_at',
     started_at: 'started_at',
     completed_at: 'completed_at',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
+exports.RouteBatchScalarFieldEnum = {
+    id: 'id',
+    route_id: 'route_id',
+    batch_order: 'batch_order',
+    pickup_directions_polyline: 'pickup_directions_polyline',
+    pickup_waypoint_order: 'pickup_waypoint_order',
+    pickup_directions_legs: 'pickup_directions_legs',
+    pickup_distance_meters: 'pickup_distance_meters',
+    pickup_duration_seconds: 'pickup_duration_seconds',
+    pickup_updated_at: 'pickup_updated_at',
+    drop_directions_polyline: 'drop_directions_polyline',
+    drop_waypoint_order: 'drop_waypoint_order',
+    drop_directions_legs: 'drop_directions_legs',
+    drop_distance_meters: 'drop_distance_meters',
+    drop_duration_seconds: 'drop_duration_seconds',
+    drop_updated_at: 'drop_updated_at'
+};
+exports.RouteSegmentScalarFieldEnum = {
+    id: 'id',
+    route_id: 'route_id',
+    segment_order: 'segment_order',
+    batch_id: 'batch_id',
+    kind: 'kind',
+    status: 'status'
+};
 exports.RouteLegScalarFieldEnum = {
     id: 'id',
     route_id: 'route_id',
+    batch_id: 'batch_id',
     passenger_id: 'passenger_id',
     sequence: 'sequence',
+    drop_sequence: 'drop_sequence',
     pickup_address: 'pickup_address',
     pickup_lat: 'pickup_lat',
     pickup_long: 'pickup_long',
@@ -249,6 +283,9 @@ exports.RouteLegScalarFieldEnum = {
     dropoff_lat: 'dropoff_lat',
     dropoff_long: 'dropoff_long',
     dropoff_time: 'dropoff_time',
+    dropoff_status: 'dropoff_status',
+    dropoff_arrived_at: 'dropoff_arrived_at',
+    dropped_at: 'dropped_at',
     toll_amount: 'toll_amount',
     created_at: 'created_at',
     updated_at: 'updated_at'
@@ -257,6 +294,10 @@ exports.SortOrder = {
     asc: 'asc',
     desc: 'desc'
 };
+exports.NullableJsonNullValueInput = {
+    DbNull: exports.DbNull,
+    JsonNull: exports.JsonNull
+};
 exports.QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
@@ -264,5 +305,10 @@ exports.QueryMode = {
 exports.NullsOrder = {
     first: 'first',
     last: 'last'
+};
+exports.JsonNullValueFilter = {
+    DbNull: exports.DbNull,
+    JsonNull: exports.JsonNull,
+    AnyNull: exports.AnyNull
 };
 exports.defineExtension = runtime.Extensions.defineExtension;

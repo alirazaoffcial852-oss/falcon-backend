@@ -87,6 +87,13 @@ const swaggerDocument = {
 					name: { type: "string" },
 					phone_no: { type: "string" },
 					address: { type: "string" },
+					home_lat: {
+						type: "number",
+						nullable: true,
+						description:
+							"Optional; if omitted, geocoded from address when first route is created",
+					},
+					home_long: { type: "number", nullable: true },
 					emergency_phone_no: { type: "string" },
 					driver_image_url: { type: "string", nullable: true },
 					rate_per_km: { type: "number", nullable: true },
@@ -105,6 +112,8 @@ const swaggerDocument = {
 					name: { type: "string" },
 					phone_no: { type: "string" },
 					address: { type: "string" },
+					home_lat: { type: "number", nullable: true },
+					home_long: { type: "number", nullable: true },
 					emergency_phone_no: { type: "string" },
 					driver_image_url: { type: "string", nullable: true },
 					rate_per_km: { type: "number" },
@@ -292,6 +301,17 @@ const swaggerDocument = {
 					tollAmount: { type: "number", nullable: true },
 				},
 			},
+			RouteBatchInput: {
+				type: "object",
+				required: ["legs"],
+				properties: {
+					legs: {
+						type: "array",
+						minItems: 1,
+						items: { $ref: "#/components/schemas/RouteLeg" },
+					},
+				},
+			},
 			CreateRouteBody: {
 				type: "object",
 				required: [
@@ -300,14 +320,20 @@ const swaggerDocument = {
 					"officeAddress",
 					"officeLat",
 					"officeLong",
-					"legs",
 				],
+				description:
+					"Provide either batches (one or more pickup loads) or legacy legs (single batch).",
 				properties: {
 					companyId: { type: "integer", minimum: 1 },
 					driverId: { type: "integer", minimum: 1 },
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					batches: {
+						type: "array",
+						minItems: 1,
+						items: { $ref: "#/components/schemas/RouteBatchInput" },
+					},
 					legs: {
 						type: "array",
 						minItems: 1,
@@ -324,6 +350,11 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					batches: {
+						type: "array",
+						minItems: 1,
+						items: { $ref: "#/components/schemas/RouteBatchInput" },
+					},
 					legs: {
 						type: "array",
 						minItems: 1,

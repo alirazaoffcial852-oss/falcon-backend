@@ -6,15 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.passengerIdParamSchema = exports.listPassengersQuerySchema = exports.updatePassengerSchema = exports.createPassengerSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.createPassengerSchema = joi_1.default.object({
-    email: joi_1.default.string().email().trim().required().messages({
-        "any.required": "Email is required",
-        "string.email": "Email must be valid",
-        "string.empty": "Email is required",
-    }),
     name: joi_1.default.string().trim().required().messages({
         "any.required": "Name is required",
         "string.empty": "Name is required",
         "string.trim": "Name must be a string",
+    }),
+    email: joi_1.default.string().trim().required().messages({
+        "any.required": "Email is required",
+        "string.empty": "Email is required",
+        "string.trim": "Email must be a string",
     }),
     phoneNo: joi_1.default.string().trim().required().messages({
         "any.required": "Phone number is required",
@@ -61,6 +61,10 @@ exports.createPassengerSchema = joi_1.default.object({
 exports.updatePassengerSchema = joi_1.default.object({
     name: joi_1.default.string().trim().messages({
         "string.trim": "Name must be a string",
+    }),
+    email: joi_1.default.string().trim().messages({
+        "string.email": "Email must be a valid email",
+        "string.trim": "Email must be a string",
     }),
     phoneNo: joi_1.default.string().trim().messages({
         "string.trim": "Phone number must be a string",

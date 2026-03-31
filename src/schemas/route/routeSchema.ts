@@ -49,6 +49,12 @@ const routeLegSchema = Joi.object({
 	}),
 });
 
+const batchSchema = Joi.object({
+	legs: Joi.array().items(routeLegSchema).min(1).required().messages({
+		"array.min": "Each batch needs at least one leg",
+	}),
+});
+
 export const createRouteSchema = Joi.object({
 	companyId: Joi.number().integer().min(1).required().messages({
 		"any.required": "Company id is required",
@@ -70,11 +76,14 @@ export const createRouteSchema = Joi.object({
 		"any.required": "Office longitude is required",
 		"number.base": "Office longitude must be a number",
 	}),
-	legs: Joi.array().items(routeLegSchema).min(1).required().messages({
-		"any.required": "At least one leg is required",
-		"array.min": "At least one leg is required",
-	}),
-}).required();
+	batches: Joi.array().items(batchSchema).min(1),
+	legs: Joi.array().items(routeLegSchema).min(1),
+})
+	.or("batches", "legs")
+	.messages({
+		"object.missing": "Provide batches (preferred) or legacy legs array",
+	})
+	.required();
 
 export const updateRouteSchema = Joi.object({
 	companyId: Joi.number().integer().min(1).messages({
@@ -92,9 +101,8 @@ export const updateRouteSchema = Joi.object({
 	officeLong: Joi.number().messages({
 		"number.base": "Office longitude must be a number",
 	}),
-	legs: Joi.array().items(routeLegSchema).min(1).messages({
-		"array.min": "At least one leg is required",
-	}),
+	batches: Joi.array().items(batchSchema).min(1),
+	legs: Joi.array().items(routeLegSchema).min(1),
 }).min(1);
 
 export const listRoutesQuerySchema = Joi.object({

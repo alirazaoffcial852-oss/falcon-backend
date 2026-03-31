@@ -63,6 +63,16 @@ export type DriverConfiguration = Prisma.DriverConfigurationModel
  */
 export type Route = Prisma.RouteModel
 /**
+ * Model RouteBatch
+ * One load (e.g. up to 3 passengers) with its own pickup and drop cached directions.
+ */
+export type RouteBatch = Prisma.RouteBatchModel
+/**
+ * Model RouteSegment
+ * Ordered execution: all pickup batches first (office between), then drops in batch order.
+ */
+export type RouteSegment = Prisma.RouteSegmentModel
+/**
  * Model RouteLeg
  * 
  */

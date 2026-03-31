@@ -33,6 +33,7 @@ class DriverService {
                     take: 1,
                     include: { car: true },
                 },
+                user: { select: { email: true } },
             },
         });
         const data = drivers.map((driver) => {
@@ -43,6 +44,7 @@ class DriverService {
                 car_name: assignedCar?.car?.name ?? null,
                 car_number: assignedCar?.car?.car_no ?? null,
                 driver_assign_cars: undefined,
+                email: driver.user?.email ?? null,
             };
         });
         return {
@@ -64,6 +66,7 @@ class DriverService {
                     take: 1,
                     include: { car: true },
                 },
+                user: { select: { email: true } },
             },
         });
         if (!driver)
@@ -75,6 +78,7 @@ class DriverService {
             car_name: assignedCar?.car?.name ?? null,
             car_number: assignedCar?.car?.car_no ?? null,
             driver_assign_cars: undefined,
+            email: driver.user?.email ?? null,
         };
     }
     async create(data) {
@@ -102,6 +106,10 @@ class DriverService {
                     name: data.name,
                     phone_no: data.phone_no,
                     address: data.address,
+                    ...(data.home_lat !== undefined &&
+                        data.home_lat !== null && { home_lat: Number(data.home_lat) }),
+                    ...(data.home_long !== undefined &&
+                        data.home_long !== null && { home_long: Number(data.home_long) }),
                     emergency_phone_no: data.emergency_phone_no,
                     driver_image_url: data.driver_image_url ?? "",
                     rate_per_km: data.rate_per_km !== undefined && data.rate_per_km !== null
@@ -139,6 +147,12 @@ class DriverService {
                 name: data.name,
                 phone_no: data.phone_no,
                 address: data.address,
+                ...(data.home_lat !== undefined && {
+                    home_lat: data.home_lat === null ? null : Number(data.home_lat),
+                }),
+                ...(data.home_long !== undefined && {
+                    home_long: data.home_long === null ? null : Number(data.home_long),
+                }),
                 emergency_phone_no: data.emergency_phone_no,
                 driver_image_url: data.driver_image_url ?? "",
                 rate_per_km: data.rate_per_km !== undefined && data.rate_per_km !== null

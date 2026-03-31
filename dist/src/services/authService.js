@@ -25,7 +25,7 @@ class AuthService {
             throw ResponseHandler_1.ResponseHandler.unauthorized("Invalid email or password");
         const valid = await bcryptjs_1.default.compare(password, user.password);
         if (!valid)
-            throw ResponseHandler_1.ResponseHandler.unauthorized("Invalid email or password");
+            throw ResponseHandler_1.ResponseHandler.unauthorized("Invalid password");
         const secret = process.env.JWT_SECRET;
         if (!secret)
             throw ResponseHandler_1.ResponseHandler.internal("Server misconfiguration");

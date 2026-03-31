@@ -399,6 +399,8 @@ export const ModelName = {
   Passenger: 'Passenger',
   DriverConfiguration: 'DriverConfiguration',
   Route: 'Route',
+  RouteBatch: 'RouteBatch',
+  RouteSegment: 'RouteSegment',
   RouteLeg: 'RouteLeg'
 } as const
 
@@ -415,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "company" | "car" | "driver" | "driverAssignCar" | "passenger" | "driverConfiguration" | "route" | "routeLeg"
+    modelProps: "role" | "user" | "company" | "car" | "driver" | "driverAssignCar" | "passenger" | "driverConfiguration" | "route" | "routeBatch" | "routeSegment" | "routeLeg"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1085,6 +1087,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RouteBatch: {
+      payload: Prisma.$RouteBatchPayload<ExtArgs>
+      fields: Prisma.RouteBatchFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RouteBatchFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RouteBatchFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        findFirst: {
+          args: Prisma.RouteBatchFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RouteBatchFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        findMany: {
+          args: Prisma.RouteBatchFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>[]
+        }
+        create: {
+          args: Prisma.RouteBatchCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        createMany: {
+          args: Prisma.RouteBatchCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RouteBatchCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>[]
+        }
+        delete: {
+          args: Prisma.RouteBatchDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        update: {
+          args: Prisma.RouteBatchUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        deleteMany: {
+          args: Prisma.RouteBatchDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RouteBatchUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RouteBatchUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>[]
+        }
+        upsert: {
+          args: Prisma.RouteBatchUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteBatchPayload>
+        }
+        aggregate: {
+          args: Prisma.RouteBatchAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRouteBatch>
+        }
+        groupBy: {
+          args: Prisma.RouteBatchGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteBatchGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RouteBatchCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteBatchCountAggregateOutputType> | number
+        }
+      }
+    }
+    RouteSegment: {
+      payload: Prisma.$RouteSegmentPayload<ExtArgs>
+      fields: Prisma.RouteSegmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RouteSegmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RouteSegmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        findFirst: {
+          args: Prisma.RouteSegmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RouteSegmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        findMany: {
+          args: Prisma.RouteSegmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>[]
+        }
+        create: {
+          args: Prisma.RouteSegmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        createMany: {
+          args: Prisma.RouteSegmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RouteSegmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>[]
+        }
+        delete: {
+          args: Prisma.RouteSegmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        update: {
+          args: Prisma.RouteSegmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.RouteSegmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RouteSegmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RouteSegmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.RouteSegmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteSegmentPayload>
+        }
+        aggregate: {
+          args: Prisma.RouteSegmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRouteSegment>
+        }
+        groupBy: {
+          args: Prisma.RouteSegmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteSegmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RouteSegmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteSegmentCountAggregateOutputType> | number
+        }
+      }
+    }
     RouteLeg: {
       payload: Prisma.$RouteLegPayload<ExtArgs>
       fields: Prisma.RouteLegFieldRefs
@@ -1270,9 +1420,8 @@ export const DriverScalarFieldEnum = {
   driver_license_back_url: 'driver_license_back_url',
   is_available: 'is_available',
   available_at: 'available_at',
-  current_lat: 'current_lat',
-  current_long: 'current_long',
-  location_updated_at: 'location_updated_at',
+  home_lat: 'home_lat',
+  home_long: 'home_long',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -1334,6 +1483,12 @@ export const RouteScalarFieldEnum = {
   office_lat: 'office_lat',
   office_long: 'office_long',
   status: 'status',
+  directions_polyline: 'directions_polyline',
+  directions_waypoint_order: 'directions_waypoint_order',
+  directions_legs: 'directions_legs',
+  directions_distance_meters: 'directions_distance_meters',
+  directions_duration_seconds: 'directions_duration_seconds',
+  directions_updated_at: 'directions_updated_at',
   started_at: 'started_at',
   completed_at: 'completed_at',
   created_at: 'created_at',
@@ -1343,11 +1498,46 @@ export const RouteScalarFieldEnum = {
 export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
 
 
+export const RouteBatchScalarFieldEnum = {
+  id: 'id',
+  route_id: 'route_id',
+  batch_order: 'batch_order',
+  pickup_directions_polyline: 'pickup_directions_polyline',
+  pickup_waypoint_order: 'pickup_waypoint_order',
+  pickup_directions_legs: 'pickup_directions_legs',
+  pickup_distance_meters: 'pickup_distance_meters',
+  pickup_duration_seconds: 'pickup_duration_seconds',
+  pickup_updated_at: 'pickup_updated_at',
+  drop_directions_polyline: 'drop_directions_polyline',
+  drop_waypoint_order: 'drop_waypoint_order',
+  drop_directions_legs: 'drop_directions_legs',
+  drop_distance_meters: 'drop_distance_meters',
+  drop_duration_seconds: 'drop_duration_seconds',
+  drop_updated_at: 'drop_updated_at'
+} as const
+
+export type RouteBatchScalarFieldEnum = (typeof RouteBatchScalarFieldEnum)[keyof typeof RouteBatchScalarFieldEnum]
+
+
+export const RouteSegmentScalarFieldEnum = {
+  id: 'id',
+  route_id: 'route_id',
+  segment_order: 'segment_order',
+  batch_id: 'batch_id',
+  kind: 'kind',
+  status: 'status'
+} as const
+
+export type RouteSegmentScalarFieldEnum = (typeof RouteSegmentScalarFieldEnum)[keyof typeof RouteSegmentScalarFieldEnum]
+
+
 export const RouteLegScalarFieldEnum = {
   id: 'id',
   route_id: 'route_id',
+  batch_id: 'batch_id',
   passenger_id: 'passenger_id',
   sequence: 'sequence',
+  drop_sequence: 'drop_sequence',
   pickup_address: 'pickup_address',
   pickup_lat: 'pickup_lat',
   pickup_long: 'pickup_long',
@@ -1360,6 +1550,9 @@ export const RouteLegScalarFieldEnum = {
   dropoff_lat: 'dropoff_lat',
   dropoff_long: 'dropoff_long',
   dropoff_time: 'dropoff_time',
+  dropoff_status: 'dropoff_status',
+  dropoff_arrived_at: 'dropoff_arrived_at',
+  dropped_at: 'dropped_at',
   toll_amount: 'toll_amount',
   created_at: 'created_at',
   updated_at: 'updated_at'
@@ -1376,6 +1569,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -1390,6 +1591,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -1476,6 +1686,48 @@ export type ListEnumRouteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'SegmentKind'
+ */
+export type EnumSegmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SegmentKind'>
+    
+
+
+/**
+ * Reference to a field of type 'SegmentKind[]'
+ */
+export type ListEnumSegmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SegmentKind[]'>
+    
+
+
+/**
+ * Reference to a field of type 'SegmentStatus'
+ */
+export type EnumSegmentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SegmentStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'SegmentStatus[]'
+ */
+export type ListEnumSegmentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SegmentStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'PickupStatus'
  */
 export type EnumPickupStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PickupStatus'>
@@ -1500,6 +1752,20 @@ export type EnumPassengerAckFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'PassengerAck[]'
  */
 export type ListEnumPassengerAckFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PassengerAck[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DropoffStatus'
+ */
+export type EnumDropoffStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DropoffStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DropoffStatus[]'
+ */
+export type ListEnumDropoffStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DropoffStatus[]'>
     
 
 /**
@@ -1598,6 +1864,8 @@ export type GlobalOmitConfig = {
   passenger?: Prisma.PassengerOmit
   driverConfiguration?: Prisma.DriverConfigurationOmit
   route?: Prisma.RouteOmit
+  routeBatch?: Prisma.RouteBatchOmit
+  routeSegment?: Prisma.RouteSegmentOmit
   routeLeg?: Prisma.RouteLegOmit
 }
 

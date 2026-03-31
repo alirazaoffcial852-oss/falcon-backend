@@ -23,10 +23,19 @@ class PassengerService {
             take: params.limit,
             skip: (params.page - 1) * params.limit,
             orderBy: { created_at: "desc" },
-            include: { company: { select: { id: true, name: true } } },
+            include: {
+                company: { select: { id: true, name: true } },
+                user: { select: { email: true } },
+            },
+        });
+        const data = passengers.map((passenger) => {
+            return {
+                ...passenger,
+                email: passenger.user?.email ?? null,
+            };
         });
         return {
-            data: passengers,
+            data,
             pagination: {
                 total,
                 page: params.page,
@@ -38,16 +47,16 @@ class PassengerService {
     async getById(id) {
         const passenger = await this.db.passenger.findUnique({
             where: { id },
-            include: { company: true },
+            include: { company: true, user: { select: { email: true } } },
         });
         if (!passenger)
             throw ResponseHandler_1.ResponseHandler.notFound("No passenger found against this id: " + id);
-        return passenger;
+        return {
+            ...passenger,
+            email: passenger.user?.email ?? null,
+        };
     }
     async create(data) {
-        if (!data.email) {
-            throw ResponseHandler_1.ResponseHandler.badRequest("Email is required");
-        }
         if (!data.name || !data.phoneNo || !data.officeAddress || !data.companyId) {
             throw ResponseHandler_1.ResponseHandler.badRequest("Missing required passenger fields");
         }
@@ -67,47 +76,48 @@ class PassengerService {
         const officeLat = data.officeLat;
         const officeLong = data.officeLong;
         const companyId = data.companyId;
-        const email = data.email.trim().toLowerCase();
-        const existingUser = await this.db.user.findUnique({ where: { email } });
-        if (existingUser) {
-            throw ResponseHandler_1.ResponseHandler.duplicateResource("User", "email");
-        }
-        const plainPassword = (0, generateRandomPassword_1.generateRandomNumericPassword)(6, 8);
-        const hashedPassword = await bcryptjs_1.default.hash(plainPassword, 10);
+        let userId = null;
         const company = await this.db.company.findUnique({
             where: { id: Number(companyId) },
         });
         if (!company)
             throw ResponseHandler_1.ResponseHandler.badRequest("No company found against this id: " + companyId);
-        const passenger = await this.db.$transaction(async (tx) => {
-            const createdUser = await tx.user.create({
+        if (data.email) {
+            const email = data.email.trim().toLowerCase();
+            const existingUser = await this.db.user.findUnique({ where: { email } });
+            if (existingUser) {
+                throw ResponseHandler_1.ResponseHandler.duplicateResource("User", "email");
+            }
+            const plainPassword = (0, generateRandomPassword_1.generateRandomNumericPassword)(6, 8);
+            const hashedPassword = await bcryptjs_1.default.hash(plainPassword, 10);
+            const createdUser = await this.db.user.create({
                 data: {
-                    email,
+                    email: email.trim().toLowerCase(),
                     password: hashedPassword,
                     role_id: 3,
                 },
             });
-            return tx.passenger.create({
-                data: {
-                    user_id: createdUser.id,
-                    name: name.trim(),
-                    phone_no: phoneNo.trim(),
-                    home_address: homeAddress.trim(),
-                    home_lat: Number(homeLat),
-                    home_long: Number(homeLong),
-                    office_address: officeAddress.trim(),
-                    office_lat: Number(officeLat),
-                    office_long: Number(officeLong),
-                    company_id: Number(companyId),
-                    pick_up_time: data.pickUpTime?.trim(),
-                    drop_off_time: data.dropOffTime?.trim(),
-                },
-                include: { company: { select: { id: true, name: true } } },
-            });
+            userId = createdUser.id;
+            await (0, email_1.sendCredentialEmail)(email, "passenger", plainPassword);
+        }
+        const passenger = await this.db.passenger.create({
+            data: {
+                user_id: userId,
+                name: name.trim(),
+                phone_no: phoneNo.trim(),
+                home_address: homeAddress.trim(),
+                home_lat: Number(homeLat),
+                home_long: Number(homeLong),
+                office_address: officeAddress.trim(),
+                office_lat: Number(officeLat),
+                office_long: Number(officeLong),
+                company_id: Number(companyId),
+                pick_up_time: data.pickUpTime?.trim(),
+                drop_off_time: data.dropOffTime?.trim(),
+            },
+            include: { company: { select: { id: true, name: true } } },
         });
-        await (0, email_1.sendCredentialEmail)(email, "passenger", plainPassword);
         return {
-            email,
             name: passenger.name,
             phoneNo: passenger.phone_no,
             homeAddress: passenger.home_address ?? undefined,

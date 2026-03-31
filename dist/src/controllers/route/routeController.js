@@ -54,6 +54,13 @@ exports.RouteController = {
         const route = await routeService.update(id, { ...req.body });
         ResponseHandler_1.ResponseHandler.success(res, route, "Route updated successfully");
     }),
+    optimize: (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const id = (0, parseId_1.parseIdParam)(req.params.id);
+        if (id === null)
+            throw ResponseHandler_1.ResponseHandler.badRequest("Invalid id");
+        const route = await routeService.optimizeById(id);
+        ResponseHandler_1.ResponseHandler.success(res, route, "Route optimized and directions saved successfully");
+    }),
     delete: (0, catchAsync_1.catchAsync)(async (req, res) => {
         const id = (0, parseId_1.parseIdParam)(req.params.id);
         if (id === null)

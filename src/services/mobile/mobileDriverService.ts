@@ -4,14 +4,20 @@ import {
 	emitToDriver,
 	emitToPassenger,
 	emitToPassengers,
+	emitToAdmins,
 } from "../../config/socketService";
 import type { LegAction } from "../../types/mobile/driver";
+import { RouteService } from "../routeService";
+import {
+	getDriverLiveLocation,
+	setDriverLiveLocation,
+} from "../../utils/liveLocationStore";
 
 const db = DatabaseService.getInstance().getPrisma();
+const routeService = new RouteService();
 
 // ---------- helpers ----------
 
-/** Haversine distance in km between two lat/long points */
 function haversineKm(
 	lat1: number,
 	lon1: number,
@@ -29,29 +35,164 @@ function haversineKm(
 	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Resolve driver record from the user account */
 async function resolveDriver(userId: number) {
-	const driver = await db.driver.findUnique({ where: { user_id: userId } });
+	const driver = await db.driver.findUnique({
+		where: { user_id: userId },
+		select: {
+			id: true,
+			user_id: true,
+			name: true,
+			phone_no: true,
+			address: true,
+			driver_image_url: true,
+			is_available: true,
+			available_at: true,
+		},
+	});
 	if (!driver) throw ResponseHandler.notFound("Driver profile not found");
 	return driver;
 }
 
-// ---------- service methods ----------
+function distanceKmForLeg(
+	driver: { current_lat: number | null; current_long: number | null },
+	leg: {
+		pickup_lat: number;
+		pickup_long: number;
+		dropoff_lat: number;
+		dropoff_long: number;
+	},
+	isPickup: boolean,
+): string | null {
+	if (driver.current_lat === null || driver.current_long === null) return null;
+	const lat = isPickup ? leg.pickup_lat : leg.dropoff_lat;
+	const lng = isPickup ? leg.pickup_long : leg.dropoff_long;
+	return haversineKm(driver.current_lat, driver.current_long, lat, lng).toFixed(
+		2,
+	);
+}
+
+function getDriverLocationSnapshot(driverId: number): {
+	current_lat: number | null;
+	current_long: number | null;
+	location_updated_at: Date | null;
+} {
+	const loc = getDriverLiveLocation(driverId);
+	return {
+		current_lat: loc?.lat ?? null,
+		current_long: loc?.long ?? null,
+		location_updated_at: loc?.updated_at ?? null,
+	};
+}
+
+/** Polyline + meta for display: ONGOING segment, else first segment preview. */
+async function getDisplayDirectionsForRoute(routeId: number) {
+	const ongoing = await db.routeSegment.findFirst({
+		where: { route_id: routeId, status: "ONGOING" },
+		include: { batch: true },
+	});
+	const seg = ongoing
+		? ongoing
+		: await db.routeSegment.findFirst({
+				where: { route_id: routeId, segment_order: 0 },
+				include: { batch: true },
+			});
+	if (!seg) return null;
+	const b = seg.batch;
+	const pickup = seg.kind === "PICKUP_TO_OFFICE";
+	return {
+		directions_polyline: pickup
+			? b.pickup_directions_polyline
+			: b.drop_directions_polyline,
+		directions_waypoint_order: pickup
+			? b.pickup_waypoint_order
+			: b.drop_waypoint_order,
+		directions_legs: pickup ? b.pickup_directions_legs : b.drop_directions_legs,
+		directions_distance_meters: pickup
+			? b.pickup_distance_meters
+			: b.drop_distance_meters,
+		directions_duration_seconds: pickup
+			? b.pickup_duration_seconds
+			: b.drop_duration_seconds,
+		directions_updated_at: pickup ? b.pickup_updated_at : b.drop_updated_at,
+		execution_kind: seg.kind,
+		batch_id: seg.batch_id,
+	};
+}
+
+function buildQueueItem(
+	leg: {
+		id: number;
+		sequence: number;
+		drop_sequence: number;
+		pickup_address: string;
+		pickup_lat: number;
+		pickup_long: number;
+		pickup_time: string;
+		pickup_status: string;
+		passenger_ack: string | null;
+		dropoff_address: string;
+		dropoff_lat: number;
+		dropoff_long: number;
+		dropoff_time: string;
+		dropoff_status: string;
+		passenger: { id: number; name: string; phone_no: string };
+	},
+	idx: number,
+	isPickup: boolean,
+	driver: { current_lat: number | null; current_long: number | null },
+) {
+	const base = {
+		queue_position: idx + 1,
+		leg_id: leg.id,
+		sequence: leg.sequence,
+		drop_sequence: leg.drop_sequence,
+		passenger: {
+			id: leg.passenger.id,
+			name: leg.passenger.name,
+			phone_no: leg.passenger.phone_no,
+		},
+		execution_phase: isPickup ? ("PICKUP" as const) : ("DROP" as const),
+	};
+	if (isPickup) {
+		return {
+			...base,
+			pickup_address: leg.pickup_address,
+			pickup_lat: leg.pickup_lat,
+			pickup_long: leg.pickup_long,
+			pickup_time: leg.pickup_time,
+			pickup_status: leg.pickup_status,
+			passenger_ack: leg.passenger_ack,
+			stop_address: leg.pickup_address,
+			stop_lat: leg.pickup_lat,
+			stop_long: leg.pickup_long,
+			distance_km: distanceKmForLeg(driver, leg, true),
+		};
+	}
+	return {
+		...base,
+		dropoff_address: leg.dropoff_address,
+		dropoff_lat: leg.dropoff_lat,
+		dropoff_long: leg.dropoff_long,
+		dropoff_time: leg.dropoff_time,
+		dropoff_status: leg.dropoff_status,
+		stop_address: leg.dropoff_address,
+		stop_lat: leg.dropoff_lat,
+		stop_long: leg.dropoff_long,
+		distance_km: distanceKmForLeg(driver, leg, false),
+	};
+}
+
+// ---------- service ----------
 
 export const MobileDriverService = {
-	/**
-	 * Driver slides "Go Available".
-	 * Sets is_available = true, broadcasts to all passengers on today's PENDING route.
-	 */
 	async goAvailable(userId: number) {
 		const driver = await resolveDriver(userId);
+		const driverLive = getDriverLocationSnapshot(driver.id);
 
-		// Get driver configuration for availability duration
 		const config = await db.driverConfiguration.findFirst();
 		if (!config)
 			throw ResponseHandler.notFound("Driver configuration not found");
 
-		// Mark driver available
 		const updatedDriver = await db.driver.update({
 			where: { id: driver.id },
 			data: {
@@ -60,7 +201,6 @@ export const MobileDriverService = {
 			},
 		});
 
-		// Find today's PENDING routes assigned to this driver
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 		const tomorrow = new Date(today);
@@ -73,9 +213,12 @@ export const MobileDriverService = {
 				created_at: { gte: today, lt: tomorrow },
 			},
 			include: {
-				legs: {
-					include: { passenger: true },
+				legs: { include: { passenger: true } },
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: { legs: { include: { passenger: true } } },
 				},
+				segments: { orderBy: { segment_order: "asc" } },
 				driver: {
 					include: {
 						driver_assign_cars: { include: { car: true }, take: 1 },
@@ -84,7 +227,6 @@ export const MobileDriverService = {
 			},
 		});
 
-		// Notify all passengers on those routes
 		for (const route of routes) {
 			const passengerIds = route.legs.map((l) => l.passenger_id);
 			emitToPassengers(passengerIds, "driver:available", {
@@ -99,12 +241,63 @@ export const MobileDriverService = {
 			});
 		}
 
+		const mapped = await Promise.all(
+			routes
+				.slice()
+				.sort((a, b) => b.id - a.id)
+				.map(async (route) => {
+					const dir = await getDisplayDirectionsForRoute(route.id);
+					const firstBatch = route.batches[0];
+					const legs = firstBatch?.legs ?? route.legs;
+					const sorted = [...legs].sort((a, b) => a.sequence - b.sequence);
+					const queue = sorted
+						.filter((l) => ["PENDING", "ARRIVED"].includes(l.pickup_status))
+						.map((leg, idx) => buildQueueItem(leg, idx, true, driverLive));
+					return {
+						id: route.id,
+						status: route.status,
+						office_address: route.office_address,
+						office_lat: route.office_lat,
+						office_long: route.office_long,
+						started_at: route.started_at,
+						directions_polyline:
+							dir?.directions_polyline ?? route.directions_polyline,
+						directions_waypoint_order:
+							dir?.directions_waypoint_order ?? route.directions_waypoint_order,
+						directions_legs: dir?.directions_legs ?? route.directions_legs,
+						directions_distance_meters:
+							dir?.directions_distance_meters ??
+							route.directions_distance_meters,
+						directions_duration_seconds:
+							dir?.directions_duration_seconds ??
+							route.directions_duration_seconds,
+						directions_updated_at:
+							dir?.directions_updated_at ?? route.directions_updated_at,
+						execution_kind: dir?.execution_kind ?? "PICKUP_TO_OFFICE",
+						batches: route.batches.map((b) => ({
+							id: b.id,
+							batch_order: b.batch_order,
+						})),
+						segments: route.segments.map((s) => ({
+							id: s.id,
+							segment_order: s.segment_order,
+							kind: s.kind,
+							status: s.status,
+							batch_id: s.batch_id,
+						})),
+						passengers_queue: queue,
+					};
+				}),
+		);
+
 		return {
-			driver: { id: driver.id, name: driver.name, is_available: true },
-			routes: routes.map((r) => ({
-				id: r.id,
-				passengers_count: r.legs.length,
-			})),
+			routes: mapped,
+			driver: {
+				id: driver.id,
+				is_available: true,
+				current_lat: driverLive.current_lat,
+				current_long: driverLive.current_long,
+			},
 			config: {
 				availability_time: config.availability_time,
 				remaining_start_time: config.remaining_start_time,
@@ -112,14 +305,11 @@ export const MobileDriverService = {
 		};
 	},
 
-	/**
-	 * Get driver's current active route with passengers sorted by nearest.
-	 */
 	async getSession(userId: number) {
 		const driver = await resolveDriver(userId);
+		const driverLive = getDriverLocationSnapshot(driver.id);
 		const config = await db.driverConfiguration.findFirst();
 
-		// Find the PENDING or ONGOING route for today
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 		const tomorrow = new Date(today);
@@ -132,10 +322,12 @@ export const MobileDriverService = {
 				created_at: { gte: today, lt: tomorrow },
 			},
 			include: {
-				legs: {
-					where: { pickup_status: { in: ["PENDING", "ARRIVED"] } },
-					include: { passenger: true },
+				legs: { include: { passenger: true } },
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: { legs: { include: { passenger: true } } },
 				},
+				segments: { orderBy: { segment_order: "asc" } },
 			},
 			orderBy: { id: "desc" },
 		});
@@ -146,16 +338,121 @@ export const MobileDriverService = {
 				driver: {
 					id: driver.id,
 					is_available: driver.is_available,
-					current_lat: driver.current_lat,
-					current_long: driver.current_long,
+					current_lat: driverLive.current_lat,
+					current_long: driverLive.current_long,
 				},
 				config,
 			};
 		}
 
-		// Keep order strictly by cached/assigned pickup sequence.
-		// (Do not re-sort by live GPS; otherwise polyline/order mismatch happens.)
-		const sortedLegs = [...route.legs].sort((a, b) => a.sequence - b.sequence);
+		let activeSeg =
+			(await db.routeSegment.findFirst({
+				where: { route_id: route.id, status: "ONGOING" },
+				include: {
+					batch: { include: { legs: { include: { passenger: true } } } },
+				},
+			})) ??
+			(await db.routeSegment.findFirst({
+				where: { route_id: route.id, segment_order: 0 },
+				include: {
+					batch: { include: { legs: { include: { passenger: true } } } },
+				},
+			}));
+
+		if (!activeSeg) {
+			return {
+				route: null,
+				driver: {
+					id: driver.id,
+					is_available: driver.is_available,
+					current_lat: driverLive.current_lat,
+					current_long: driverLive.current_long,
+				},
+				config,
+			};
+		}
+
+		let isPickup = activeSeg.kind === "PICKUP_TO_OFFICE";
+		let batchLegs = activeSeg.batch.legs;
+		let filtered = isPickup
+			? batchLegs.filter((l) =>
+					["PENDING", "ARRIVED"].includes(l.pickup_status),
+				)
+			: batchLegs.filter((l) =>
+					["PENDING", "ARRIVED"].includes(l.dropoff_status),
+				);
+		let sorted = isPickup
+			? [...filtered].sort((a, b) => a.sequence - b.sequence)
+			: [...filtered].sort((a, b) => a.drop_sequence - b.drop_sequence);
+		const currentActiveSegId = activeSeg.id;
+
+		// Self-heal: if queue is empty but segment has no actionable legs,
+		// auto-advance to next segment so frontend does not get empty queue.
+		if (sorted.length === 0) {
+			const pendingInCurrent = await db.routeLeg.count({
+				where: {
+					route_id: route.id,
+					batch_id: activeSeg.batch_id,
+					...(isPickup
+						? { pickup_status: { in: ["PENDING", "ARRIVED"] } }
+						: { dropoff_status: { in: ["PENDING", "ARRIVED"] } }),
+				},
+			});
+
+			if (pendingInCurrent === 0) {
+				const nextSeg = await db.$transaction(async (tx) => {
+					await tx.routeSegment.update({
+						where: { id: currentActiveSegId },
+						data: { status: "COMPLETED" },
+					});
+					const next = await tx.routeSegment.findFirst({
+						where: { route_id: route.id, status: "PENDING" },
+						orderBy: { segment_order: "asc" },
+					});
+					if (next) {
+						await tx.routeSegment.update({
+							where: { id: next.id },
+							data: { status: "ONGOING" },
+						});
+					}
+					return next;
+				});
+
+				if (nextSeg) {
+					await routeService.syncRouteDisplayDirections(route.id);
+					const refreshed = await db.routeSegment.findUnique({
+						where: { id: nextSeg.id },
+						include: {
+							batch: { include: { legs: { include: { passenger: true } } } },
+						},
+					});
+					if (refreshed) {
+						activeSeg = refreshed;
+						isPickup = activeSeg.kind === "PICKUP_TO_OFFICE";
+						batchLegs = activeSeg.batch.legs;
+						filtered = isPickup
+							? batchLegs.filter((l) =>
+									["PENDING", "ARRIVED"].includes(l.pickup_status),
+								)
+							: batchLegs.filter((l) =>
+									["PENDING", "ARRIVED"].includes(l.dropoff_status),
+								);
+						sorted = isPickup
+							? [...filtered].sort((a, b) => a.sequence - b.sequence)
+							: [...filtered].sort((a, b) => a.drop_sequence - b.drop_sequence);
+					}
+				}
+			}
+		}
+
+		const queueLegs =
+			sorted.length > 0
+				? sorted
+				: isPickup
+					? [...batchLegs].sort((a, b) => a.sequence - b.sequence)
+					: [...batchLegs].sort((a, b) => a.drop_sequence - b.drop_sequence);
+
+		const dir = await getDisplayDirectionsForRoute(route.id);
 
 		return {
 			route: {
@@ -165,62 +462,53 @@ export const MobileDriverService = {
 				office_lat: route.office_lat,
 				office_long: route.office_long,
 				started_at: route.started_at,
-				directions_polyline: route.directions_polyline,
-				directions_waypoint_order: route.directions_waypoint_order,
-				directions_legs: route.directions_legs,
-				directions_distance_meters: route.directions_distance_meters,
-				directions_duration_seconds: route.directions_duration_seconds,
-				directions_updated_at: route.directions_updated_at,
-
-				passengers_queue: sortedLegs.map((leg, idx) => ({
-					queue_position: idx + 1,
-					leg_id: leg.id,
-					sequence: leg.sequence,
-					passenger: {
-						id: leg.passenger.id,
-						name: leg.passenger.name,
-						phone_no: leg.passenger.phone_no,
-					},
-					pickup_address: leg.pickup_address,
-					pickup_lat: leg.pickup_lat,
-					pickup_long: leg.pickup_long,
-					pickup_time: leg.pickup_time,
-					pickup_status: leg.pickup_status,
-					passenger_ack: leg.passenger_ack,
-					distance_km:
-						driver.current_lat !== null && driver.current_long !== null
-							? haversineKm(
-									driver.current_lat,
-									driver.current_long,
-									leg.pickup_lat,
-									leg.pickup_long,
-								).toFixed(2)
-							: null,
+				directions_polyline:
+					dir?.directions_polyline ?? route.directions_polyline,
+				directions_waypoint_order:
+					dir?.directions_waypoint_order ?? route.directions_waypoint_order,
+				directions_legs: dir?.directions_legs ?? route.directions_legs,
+				directions_distance_meters:
+					dir?.directions_distance_meters ?? route.directions_distance_meters,
+				directions_duration_seconds:
+					dir?.directions_duration_seconds ?? route.directions_duration_seconds,
+				directions_updated_at:
+					dir?.directions_updated_at ?? route.directions_updated_at,
+				execution_kind: activeSeg.kind,
+				active_segment_id: activeSeg.id,
+				batches: route.batches.map((b) => ({
+					id: b.id,
+					batch_order: b.batch_order,
 				})),
+				segments: route.segments.map((s) => ({
+					id: s.id,
+					segment_order: s.segment_order,
+					kind: s.kind,
+					status: s.status,
+					batch_id: s.batch_id,
+				})),
+				passengers_queue: queueLegs.map((leg, idx) =>
+					buildQueueItem(leg, idx, isPickup, driverLive),
+				),
 			},
 			driver: {
 				id: driver.id,
 				is_available: driver.is_available,
-				current_lat: driver.current_lat,
-				current_long: driver.current_long,
+				current_lat: driverLive.current_lat,
+				current_long: driverLive.current_long,
 			},
 			config,
 		};
 	},
 
-	/**
-	 * Driver clicks "Start" — route moves to ONGOING.
-	 */
 	async startTrip(userId: number, routeId: number) {
 		const driver = await resolveDriver(userId);
+		const driverLive = getDriverLocationSnapshot(driver.id);
 
 		const route = await db.route.findFirst({
 			where: { id: routeId, driver_id: driver.id, status: "PENDING" },
 			include: {
-				legs: {
-					include: { passenger: true },
-					orderBy: { sequence: "asc" },
-				},
+				legs: { include: { passenger: true }, orderBy: { sequence: "asc" } },
+				segments: { orderBy: { segment_order: "asc" } },
 				driver: {
 					include: {
 						driver_assign_cars: { include: { car: true }, take: 1 },
@@ -231,20 +519,48 @@ export const MobileDriverService = {
 		if (!route)
 			throw ResponseHandler.notFound("Route not found or already started");
 
-		await db.route.update({
-			where: { id: routeId },
-			data: { status: "ONGOING", started_at: new Date() },
+		const firstSeg = route.segments[0];
+		if (!firstSeg)
+			throw ResponseHandler.badRequest("Route has no segments configured");
+
+		await db.$transaction(async (tx) => {
+			await tx.route.update({
+				where: { id: routeId },
+				data: { status: "ONGOING", started_at: new Date() },
+			});
+			await tx.routeSegment.update({
+				where: { id: firstSeg.id },
+				data: { status: "ONGOING" },
+			});
 		});
 
+		await routeService.syncRouteDisplayDirections(routeId);
+
+		const startedRoute = await db.route.findUnique({
+			where: { id: routeId },
+			include: {
+				legs: { include: { passenger: true }, orderBy: { sequence: "asc" } },
+				segments: { orderBy: { segment_order: "asc" } },
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: { legs: { include: { passenger: true } } },
+				},
+			},
+		});
+		if (!startedRoute) {
+			throw ResponseHandler.notFound("Route not found after start");
+		}
+
 		const config = await db.driverConfiguration.findFirst();
-
-		// Use stored sequence order (already set by route optimize step).
-		// Do not re-optimize/re-sequence at trip start.
-		const sortedLegs = route.legs;
-
 		const car = route.driver.driver_assign_cars[0]?.car ?? null;
 
-		// Notify all passengers
+		const activeBatch = startedRoute.batches.find(
+			(b) => b.id === firstSeg.batch_id,
+		);
+		const sortedLegs = activeBatch?.legs.length
+			? [...activeBatch.legs].sort((a, b) => a.sequence - b.sequence)
+			: startedRoute.legs;
+
 		for (const leg of route.legs) {
 			emitToPassenger(leg.passenger_id, "driver:started", {
 				routeId: route.id,
@@ -257,9 +573,27 @@ export const MobileDriverService = {
 		}
 
 		const firstLeg = sortedLegs[0];
+		const queue = sortedLegs
+			.filter((l) => ["PENDING", "ARRIVED"].includes(l.pickup_status))
+			.map((leg, idx) => buildQueueItem(leg, idx, true, driverLive));
+
 		return {
-			route_id: routeId,
-			status: "ONGOING",
+			route: {
+				id: startedRoute.id,
+				status: startedRoute.status,
+				office_address: startedRoute.office_address,
+				office_lat: startedRoute.office_lat,
+				office_long: startedRoute.office_long,
+				started_at: startedRoute.started_at,
+				directions_polyline: startedRoute.directions_polyline,
+				directions_waypoint_order: startedRoute.directions_waypoint_order,
+				directions_legs: startedRoute.directions_legs,
+				directions_distance_meters: startedRoute.directions_distance_meters,
+				directions_duration_seconds: startedRoute.directions_duration_seconds,
+				directions_updated_at: startedRoute.directions_updated_at,
+				execution_kind: "PICKUP_TO_OFFICE",
+				passengers_queue: queue,
+			},
 			first_passenger: firstLeg
 				? {
 						leg_id: firstLeg.id,
@@ -276,22 +610,11 @@ export const MobileDriverService = {
 		};
 	},
 
-	/**
-	 * Update driver's live location.
-	 */
 	async updateLocation(userId: number, lat: number, long: number) {
 		const driver = await resolveDriver(userId);
+		const updatedAt = new Date();
+		setDriverLiveLocation(driver.id, lat, long, updatedAt);
 
-		await db.driver.update({
-			where: { id: driver.id },
-			data: {
-				current_lat: lat,
-				current_long: long,
-				location_updated_at: new Date(),
-			},
-		});
-
-		// Find active route and notify its passengers
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 		const tomorrow = new Date(today);
@@ -308,20 +631,29 @@ export const MobileDriverService = {
 
 		if (route) {
 			const passengerIds = route.legs.map((l) => l.passenger_id);
-			emitToPassengers(passengerIds, "driver:location", {
+			const payload = {
 				driverId: driver.id,
 				lat,
 				long,
-				updated_at: new Date(),
-			});
+				updated_at: updatedAt,
+			};
+			emitToPassengers(passengerIds, "driver:location", payload);
+			emitToDriver(driver.id, "driver:location", payload);
+			emitToAdmins("driver:location", payload);
+		} else {
+			const payload = {
+				driverId: driver.id,
+				lat,
+				long,
+				updated_at: updatedAt,
+			};
+			emitToDriver(driver.id, "driver:location", payload);
+			emitToAdmins("driver:location", payload);
 		}
 
-		return { lat, long };
+		return { lat, long, updated_at: updatedAt };
 	},
 
-	/**
-	 * Driver clicks "I am Here" at passenger pickup point.
-	 */
 	async arriveAtPassenger(userId: number, routeId: number, legId: number) {
 		const driver = await resolveDriver(userId);
 
@@ -331,29 +663,52 @@ export const MobileDriverService = {
 		});
 		if (!leg) throw ResponseHandler.notFound("Route leg not found");
 
-		const config = await db.driverConfiguration.findFirst();
-
-		await db.routeLeg.update({
-			where: { id: legId },
-			data: {
-				pickup_status: "ARRIVED",
-				driver_arrived_at: new Date(),
+		const seg = await db.routeSegment.findFirst({
+			where: {
+				route_id: routeId,
+				status: "ONGOING",
+				batch_id: leg.batch_id,
 			},
 		});
+		if (!seg)
+			throw ResponseHandler.badRequest(
+				"No active segment for this leg / batch",
+			);
 
-		// Notify passenger: driver has arrived
+		const config = await db.driverConfiguration.findFirst();
+
+		if (seg.kind === "PICKUP_TO_OFFICE") {
+			await db.routeLeg.update({
+				where: { id: legId },
+				data: {
+					pickup_status: "ARRIVED",
+					driver_arrived_at: new Date(),
+				},
+			});
+		} else {
+			await db.routeLeg.update({
+				where: { id: legId },
+				data: {
+					dropoff_status: "ARRIVED",
+					dropoff_arrived_at: new Date(),
+				},
+			});
+		}
+
 		emitToPassenger(leg.passenger_id, "driver:arrived", {
 			driverId: driver.id,
 			driverName: driver.name,
 			routeId,
 			legId,
 			passenger: { id: leg.passenger.id, name: leg.passenger.name },
+			phase: seg.kind,
 			arrived_at: new Date(),
 		});
 
 		return {
 			leg_id: legId,
 			passenger: { id: leg.passenger.id, name: leg.passenger.name },
+			execution_kind: seg.kind,
 			config: {
 				still_waiting_button_appear_in: config?.still_waiting_button_appear_in,
 				passenger_waiting_time: config?.passenger_waiting_time,
@@ -362,9 +717,6 @@ export const MobileDriverService = {
 		};
 	},
 
-	/**
-	 * Driver action after arriving: PICKED | STILL_WAITING | MOVE_TO_NEXT
-	 */
 	async legAction(
 		userId: number,
 		routeId: number,
@@ -379,53 +731,328 @@ export const MobileDriverService = {
 		});
 		if (!leg) throw ResponseHandler.notFound("Route leg not found");
 
+		const seg = await db.routeSegment.findFirst({
+			where: {
+				route_id: routeId,
+				status: "ONGOING",
+				batch_id: leg.batch_id,
+			},
+		});
+		if (!seg)
+			throw ResponseHandler.badRequest("No active segment for this leg");
+
+		const isPickup = seg.kind === "PICKUP_TO_OFFICE";
+
+		if (isPickup) {
+			if (action === "PICKED") {
+				await db.routeLeg.update({
+					where: { id: legId },
+					data: { pickup_status: "PICKED", picked_at: new Date() },
+				});
+			} else if (action === "MOVE_TO_NEXT") {
+				await db.routeLeg.update({
+					where: { id: legId },
+					data: { pickup_status: "SKIPPED" },
+				});
+			}
+
+			emitToPassenger(leg.passenger_id, "driver:action", {
+				action,
+				legId,
+				routeId,
+				phase: "PICKUP",
+			});
+
+			const nextLeg = await db.routeLeg.findFirst({
+				where: {
+					route_id: routeId,
+					batch_id: leg.batch_id,
+					pickup_status: "PENDING",
+					id: { not: legId },
+				},
+				include: { passenger: true },
+				orderBy: { sequence: "asc" },
+			});
+
+			if (!nextLeg) {
+				const pendingCount = await db.routeLeg.count({
+					where: {
+						route_id: routeId,
+						batch_id: leg.batch_id,
+						pickup_status: { in: ["PENDING", "ARRIVED"] },
+					},
+				});
+				if (pendingCount === 0) {
+					// Pickup batch done. To avoid empty queue, auto-advance to next segment.
+					// This keeps `route_segments.status` aligned with what the driver should see next.
+					await db.routeSegment.update({
+						where: { id: seg.id },
+						data: { status: "COMPLETED" },
+					});
+
+					const nextSeg = await db.routeSegment.findFirst({
+						where: { route_id: routeId, status: "PENDING" },
+						orderBy: { segment_order: "asc" },
+					});
+
+					if (nextSeg) {
+						await db.routeSegment.update({
+							where: { id: nextSeg.id },
+							data: { status: "ONGOING" },
+						});
+						await routeService.syncRouteDisplayDirections(routeId);
+
+						// Pick first actionable leg from the newly activated segment.
+						if (nextSeg.kind === "PICKUP_TO_OFFICE") {
+							const firstNextPickup = await db.routeLeg.findFirst({
+								where: {
+									route_id: routeId,
+									batch_id: nextSeg.batch_id,
+									pickup_status: { in: ["PENDING", "ARRIVED"] },
+								},
+								include: { passenger: true },
+								orderBy: { sequence: "asc" },
+							});
+
+							emitToDriver(driver.id, "next:passenger", {
+								nextLeg: firstNextPickup
+									? {
+											leg_id: firstNextPickup.id,
+											passenger: {
+												id: firstNextPickup.passenger.id,
+												name: firstNextPickup.passenger.name,
+											},
+											pickup_address:
+												firstNextPickup.pickup_address,
+											pickup_lat: firstNextPickup.pickup_lat,
+											pickup_long: firstNextPickup.pickup_long,
+									  }
+									: null,
+							});
+
+							return {
+								action,
+								next_passenger: firstNextPickup
+									? {
+											leg_id: firstNextPickup.id,
+											passenger: {
+												id: firstNextPickup.passenger.id,
+												name: firstNextPickup.passenger.name,
+											},
+											pickup_address:
+												firstNextPickup.pickup_address,
+											pickup_lat: firstNextPickup.pickup_lat,
+											pickup_long: firstNextPickup.pickup_long,
+									  }
+									: null,
+								navigate_to_office: false,
+								message:
+									"Pickup batch complete. Next segment is started.",
+								execution_kind: nextSeg.kind,
+							};
+						}
+
+						// DROP_TO_HOMES
+						const firstNextDrop = await db.routeLeg.findFirst({
+							where: {
+								route_id: routeId,
+								batch_id: nextSeg.batch_id,
+								dropoff_status: { in: ["PENDING", "ARRIVED"] },
+							},
+							include: { passenger: true },
+							orderBy: { drop_sequence: "asc" },
+						});
+
+						emitToDriver(driver.id, "next:passenger", {
+							nextLeg: firstNextDrop
+								? {
+										leg_id: firstNextDrop.id,
+										passenger: {
+											id: firstNextDrop.passenger.id,
+											name: firstNextDrop.passenger.name,
+										},
+										dropoff_address: firstNextDrop.dropoff_address,
+										dropoff_lat: firstNextDrop.dropoff_lat,
+										dropoff_long: firstNextDrop.dropoff_long,
+								  }
+								: null,
+						});
+
+						return {
+							action,
+							next_passenger: firstNextDrop
+								? {
+										leg_id: firstNextDrop.id,
+										passenger: {
+											id: firstNextDrop.passenger.id,
+											name: firstNextDrop.passenger.name,
+										},
+										dropoff_address: firstNextDrop.dropoff_address,
+										dropoff_lat: firstNextDrop.dropoff_lat,
+										dropoff_long: firstNextDrop.dropoff_long,
+								  }
+								: null,
+							navigate_to_office: false,
+							message: "Pickup batch complete. Drop segment is started.",
+							execution_kind: nextSeg.kind,
+						};
+					}
+
+					// No next segment -> let client finalize.
+					return {
+						action,
+						next_passenger: null,
+						navigate_to_office: true,
+						message: "Pickup batch complete. No next segment found.",
+						execution_kind: "PICKUP_TO_OFFICE",
+					};
+				}
+				return {
+					action,
+					next_passenger: null,
+					navigate_to_office: false,
+					message: "Finish remaining pickup interactions in this batch.",
+					execution_kind: "PICKUP_TO_OFFICE",
+				};
+			}
+
+			emitToDriver(
+				driver.id,
+				"next:passenger",
+				nextLeg
+					? {
+							leg_id: nextLeg.id,
+							passenger: {
+								id: nextLeg.passenger.id,
+								name: nextLeg.passenger.name,
+							},
+							pickup_address: nextLeg.pickup_address,
+							pickup_lat: nextLeg.pickup_lat,
+							pickup_long: nextLeg.pickup_long,
+						}
+					: null,
+			);
+
+			return {
+				action,
+				next_passenger: nextLeg
+					? {
+							leg_id: nextLeg.id,
+							passenger: {
+								id: nextLeg.passenger.id,
+								name: nextLeg.passenger.name,
+							},
+							pickup_address: nextLeg.pickup_address,
+							pickup_lat: nextLeg.pickup_lat,
+							pickup_long: nextLeg.pickup_long,
+						}
+					: null,
+				navigate_to_office: !nextLeg,
+				execution_kind: "PICKUP_TO_OFFICE",
+			};
+		}
+
+		// DROP segment
 		if (action === "PICKED") {
 			await db.routeLeg.update({
 				where: { id: legId },
-				data: { pickup_status: "PICKED", picked_at: new Date() },
+				data: { dropoff_status: "DROPPED", dropped_at: new Date() },
 			});
 		} else if (action === "MOVE_TO_NEXT") {
 			await db.routeLeg.update({
 				where: { id: legId },
-				data: { pickup_status: "SKIPPED" },
+				data: { dropoff_status: "SKIPPED" },
 			});
 		}
-		// STILL_WAITING: no status change, just acknowledged
 
-		// Notify the current passenger of the action
 		emitToPassenger(leg.passenger_id, "driver:action", {
 			action,
 			legId,
 			routeId,
+			phase: "DROP",
 		});
 
-		// Get the next pending passenger
-		const nextLeg = await db.routeLeg.findFirst({
+		const nextDrop = await db.routeLeg.findFirst({
 			where: {
 				route_id: routeId,
-				pickup_status: "PENDING",
+				batch_id: leg.batch_id,
+				dropoff_status: "PENDING",
 				id: { not: legId },
 			},
 			include: { passenger: true },
-			orderBy: { sequence: "asc" },
+			orderBy: { drop_sequence: "asc" },
 		});
 
-		// If no more pending legs, check if trip is complete
-		if (!nextLeg) {
-			// Check all legs done
-			const pendingCount = await db.routeLeg.count({
+		if (!nextDrop) {
+			const pendingDrop = await db.routeLeg.count({
 				where: {
 					route_id: routeId,
-					pickup_status: { in: ["PENDING", "ARRIVED"] },
+					batch_id: leg.batch_id,
+					dropoff_status: { in: ["PENDING", "ARRIVED"] },
 				},
 			});
-			if (pendingCount === 0) {
-				// All picked/skipped → navigate to office
+			if (pendingDrop === 0) {
+				await db.routeSegment.update({
+					where: { id: seg.id },
+					data: { status: "COMPLETED" },
+				});
+
+				const nextSeg = await db.routeSegment.findFirst({
+					where: { route_id: routeId, status: "PENDING" },
+					orderBy: { segment_order: "asc" },
+				});
+
+				if (nextSeg) {
+					await db.routeSegment.update({
+						where: { id: nextSeg.id },
+						data: { status: "ONGOING" },
+					});
+					await routeService.syncRouteDisplayDirections(routeId);
+					return {
+						action,
+						next_passenger: null,
+						navigate_to_office: nextSeg.kind === "PICKUP_TO_OFFICE",
+						message:
+							nextSeg.kind === "PICKUP_TO_OFFICE"
+								? "Next batch: pickups. Follow updated route."
+								: "Next: drop segment. Follow updated route.",
+						execution_kind: nextSeg.kind,
+						route_continues: true,
+					};
+				}
+
+				await db.route.update({
+					where: { id: routeId },
+					data: { status: "COMPLETED", completed_at: new Date() },
+				});
+				await db.driver.update({
+					where: { id: driver.id },
+					data: { is_available: false, available_at: null },
+				});
+
+				const route = await db.route.findUnique({
+					where: { id: routeId },
+					include: { legs: { select: { passenger_id: true } } },
+				});
+				if (route) {
+					emitToPassengers(
+						route.legs.map((l) => l.passenger_id),
+						"ride:completed",
+						{
+							routeId,
+							driverId: driver.id,
+							completed_at: new Date(),
+						},
+					);
+				}
+
 				return {
 					action,
 					next_passenger: null,
-					navigate_to_office: true,
-					message: "All passengers processed. Navigate to office.",
+					navigate_to_office: false,
+					route_completed: true,
+					message: "All segments finished.",
+					execution_kind: "DROP_TO_HOMES",
 				};
 			}
 		}
@@ -433,67 +1060,162 @@ export const MobileDriverService = {
 		emitToDriver(
 			driver.id,
 			"next:passenger",
-			nextLeg
+			nextDrop
 				? {
-						leg_id: nextLeg.id,
+						leg_id: nextDrop.id,
 						passenger: {
-							id: nextLeg.passenger.id,
-							name: nextLeg.passenger.name,
+							id: nextDrop.passenger.id,
+							name: nextDrop.passenger.name,
 						},
-						pickup_address: nextLeg.pickup_address,
-						pickup_lat: nextLeg.pickup_lat,
-						pickup_long: nextLeg.pickup_long,
+						dropoff_address: nextDrop.dropoff_address,
+						dropoff_lat: nextDrop.dropoff_lat,
+						dropoff_long: nextDrop.dropoff_long,
 					}
 				: null,
 		);
 
 		return {
 			action,
-			next_passenger: nextLeg
+			next_passenger: nextDrop
 				? {
-						leg_id: nextLeg.id,
+						leg_id: nextDrop.id,
 						passenger: {
-							id: nextLeg.passenger.id,
-							name: nextLeg.passenger.name,
+							id: nextDrop.passenger.id,
+							name: nextDrop.passenger.name,
 						},
-						pickup_address: nextLeg.pickup_address,
-						pickup_lat: nextLeg.pickup_lat,
-						pickup_long: nextLeg.pickup_long,
+						dropoff_address: nextDrop.dropoff_address,
+						dropoff_lat: nextDrop.dropoff_lat,
+						dropoff_long: nextDrop.dropoff_long,
 					}
 				: null,
-			navigate_to_office: !nextLeg,
+			navigate_to_office: false,
+			execution_kind: "DROP_TO_HOMES",
 		};
 	},
 
 	/**
-	 * Driver clicks "Ride Completed" after reaching office.
+	 * Call when driver reaches office after finishing a pickup batch (navigate_to_office).
+	 * Advances to the next segment (next pickup batch or first drop batch).
+	 */
+	async officeCheckpoint(userId: number, routeId: number) {
+		const driver = await resolveDriver(userId);
+
+		const seg = await db.routeSegment.findFirst({
+			where: {
+				route_id: routeId,
+				status: "ONGOING",
+				kind: "PICKUP_TO_OFFICE",
+			},
+			include: { batch: true },
+		});
+		// If we already auto-advanced segment in `legAction`, there may be no active pickup segment now.
+		// Make this endpoint idempotent to prevent client errors.
+		if (!seg) {
+			const activeAny = await db.routeSegment.findFirst({
+				where: { route_id: routeId, status: "ONGOING" },
+			});
+			if (!activeAny) {
+				throw ResponseHandler.badRequest(
+					"Office checkpoint not available (no active segment found)",
+				);
+			}
+			return {
+				next_segment_kind: activeAny.kind,
+				batch_id: activeAny.batch_id,
+				message:
+					"Office checkpoint ignored: next segment already active (auto-advanced).",
+			};
+		}
+
+		const pending = await db.routeLeg.count({
+			where: {
+				batch_id: seg.batch_id,
+				pickup_status: { in: ["PENDING", "ARRIVED"] },
+			},
+		});
+		if (pending > 0) {
+			throw ResponseHandler.badRequest(
+				"Complete or skip all pickups in this batch before office checkpoint",
+			);
+		}
+
+		await db.routeSegment.update({
+			where: { id: seg.id },
+			data: { status: "COMPLETED" },
+		});
+
+		const nextSeg = await db.routeSegment.findFirst({
+			where: { route_id: routeId, status: "PENDING" },
+			orderBy: { segment_order: "asc" },
+		});
+		if (!nextSeg) {
+			throw ResponseHandler.badRequest("No next segment");
+		}
+
+		await db.routeSegment.update({
+			where: { id: nextSeg.id },
+			data: { status: "ONGOING" },
+		});
+		await routeService.syncRouteDisplayDirections(routeId);
+
+		return {
+			next_segment_kind: nextSeg.kind,
+			batch_id: nextSeg.batch_id,
+			message:
+				nextSeg.kind === "PICKUP_TO_OFFICE"
+					? "Continue with next pickup batch."
+					: "Start drop-offs. Route updated.",
+		};
+	},
+
+	/**
+	 * Optional explicit finish when the last drop is done (route may already auto-complete in legAction).
 	 */
 	async completeTrip(userId: number, routeId: number) {
 		const driver = await resolveDriver(userId);
 
 		const route = await db.route.findFirst({
 			where: { id: routeId, driver_id: driver.id, status: "ONGOING" },
-			include: { legs: { select: { passenger_id: true } } },
 		});
 		if (!route) throw ResponseHandler.notFound("Active route not found");
+
+		const incomplete = await db.routeSegment.count({
+			where: {
+				route_id: routeId,
+				status: { not: "COMPLETED" },
+			},
+		});
+		if (incomplete > 0) {
+			throw ResponseHandler.badRequest(
+				"Finish all segments (use office-checkpoint between pickups, complete drops) before completing",
+			);
+		}
 
 		await db.route.update({
 			where: { id: routeId },
 			data: { status: "COMPLETED", completed_at: new Date() },
 		});
 
-		// Reset driver availability
 		await db.driver.update({
 			where: { id: driver.id },
 			data: { is_available: false, available_at: null },
 		});
 
-		const passengerIds = route.legs.map((l) => l.passenger_id);
-		emitToPassengers(passengerIds, "ride:completed", {
-			routeId,
-			driverId: driver.id,
-			completed_at: new Date(),
+		const r = await db.route.findUnique({
+			where: { id: routeId },
+			include: { legs: { select: { passenger_id: true } } },
 		});
+		if (r) {
+			emitToPassengers(
+				r.legs.map((l) => l.passenger_id),
+				"ride:completed",
+				{
+					routeId,
+					driverId: driver.id,
+					completed_at: new Date(),
+				},
+			);
+		}
 
 		return { route_id: routeId, status: "COMPLETED" };
 	},

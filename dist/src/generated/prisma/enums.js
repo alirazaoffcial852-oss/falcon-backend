@@ -9,7 +9,7 @@
 * 🟢 You can import this file directly.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PassengerAck = exports.PickupStatus = exports.RouteStatus = void 0;
+exports.DropoffStatus = exports.SegmentStatus = exports.SegmentKind = exports.PassengerAck = exports.PickupStatus = exports.RouteStatus = void 0;
 exports.RouteStatus = {
     PENDING: 'PENDING',
     ONGOING: 'ONGOING',
@@ -25,4 +25,19 @@ exports.PickupStatus = {
 exports.PassengerAck = {
     COMING: 'COMING',
     NOT_COMING: 'NOT_COMING'
+};
+exports.SegmentKind = {
+    PICKUP_TO_OFFICE: 'PICKUP_TO_OFFICE',
+    DROP_TO_HOMES: 'DROP_TO_HOMES'
+};
+exports.SegmentStatus = {
+    PENDING: 'PENDING',
+    ONGOING: 'ONGOING',
+    COMPLETED: 'COMPLETED'
+};
+exports.DropoffStatus = {
+    PENDING: 'PENDING',
+    ARRIVED: 'ARRIVED',
+    DROPPED: 'DROPPED',
+    SKIPPED: 'SKIPPED'
 };

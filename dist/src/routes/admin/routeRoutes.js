@@ -12,5 +12,6 @@ router.get("/", routeController_1.RouteController.list);
 router.get("/:id", validate_1.validate.params(routeSchema_1.routeIdParamSchema), routeController_1.RouteController.getById);
 router.post("/", validate_1.validate.body(routeSchema_1.createRouteSchema), routeController_1.RouteController.create);
 router.put("/:id", validate_1.validate.combined(routeSchema_1.updateRouteSchema, routeSchema_1.routeIdParamSchema), routeController_1.RouteController.update);
+router.post("/:id/optimize", validate_1.validate.params(routeSchema_1.routeIdParamSchema), routeController_1.RouteController.optimize);
 router.delete("/:id", validate_1.validate.params(routeSchema_1.routeIdParamSchema), routeController_1.RouteController.delete);
 exports.default = router;

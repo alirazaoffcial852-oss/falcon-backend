@@ -21,6 +21,12 @@ export const createDriverSchema = Joi.object({
 		"string.empty": "Address is required",
 		"string.trim": "Address must be a string",
 	}),
+	home_lat: Joi.number().allow(null).messages({
+		"number.base": "home_lat must be a number",
+	}),
+	home_long: Joi.number().allow(null).messages({
+		"number.base": "home_long must be a number",
+	}),
 	emergency_phone_no: Joi.string().trim().required().messages({
 		"any.required": "Emergency phone number is required",
 		"string.empty": "Emergency phone number is required",
@@ -70,6 +76,12 @@ export const updateDriverSchema = Joi.object({
 	address: Joi.string().trim().required().messages({
 		"any.required": "Address is required",
 		"string.trim": "Address must be a string",
+	}),
+	home_lat: Joi.number().allow(null).messages({
+		"number.base": "home_lat must be a number",
+	}),
+	home_long: Joi.number().allow(null).messages({
+		"number.base": "home_long must be a number",
 	}),
 	emergency_phone_no: Joi.string().trim().required().messages({
 		"any.required": "Emergency phone number is required",
