@@ -58,6 +58,8 @@ export const ModelName = {
   Passenger: 'Passenger',
   DriverConfiguration: 'DriverConfiguration',
   Route: 'Route',
+  RouteBatch: 'RouteBatch',
+  RouteSegment: 'RouteSegment',
   RouteLeg: 'RouteLeg'
 } as const
 
@@ -149,9 +151,8 @@ export const DriverScalarFieldEnum = {
   driver_license_back_url: 'driver_license_back_url',
   is_available: 'is_available',
   available_at: 'available_at',
-  current_lat: 'current_lat',
-  current_long: 'current_long',
-  location_updated_at: 'location_updated_at',
+  home_lat: 'home_lat',
+  home_long: 'home_long',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
@@ -213,6 +214,12 @@ export const RouteScalarFieldEnum = {
   office_lat: 'office_lat',
   office_long: 'office_long',
   status: 'status',
+  directions_polyline: 'directions_polyline',
+  directions_waypoint_order: 'directions_waypoint_order',
+  directions_legs: 'directions_legs',
+  directions_distance_meters: 'directions_distance_meters',
+  directions_duration_seconds: 'directions_duration_seconds',
+  directions_updated_at: 'directions_updated_at',
   started_at: 'started_at',
   completed_at: 'completed_at',
   created_at: 'created_at',
@@ -222,11 +229,46 @@ export const RouteScalarFieldEnum = {
 export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
 
 
+export const RouteBatchScalarFieldEnum = {
+  id: 'id',
+  route_id: 'route_id',
+  batch_order: 'batch_order',
+  pickup_directions_polyline: 'pickup_directions_polyline',
+  pickup_waypoint_order: 'pickup_waypoint_order',
+  pickup_directions_legs: 'pickup_directions_legs',
+  pickup_distance_meters: 'pickup_distance_meters',
+  pickup_duration_seconds: 'pickup_duration_seconds',
+  pickup_updated_at: 'pickup_updated_at',
+  drop_directions_polyline: 'drop_directions_polyline',
+  drop_waypoint_order: 'drop_waypoint_order',
+  drop_directions_legs: 'drop_directions_legs',
+  drop_distance_meters: 'drop_distance_meters',
+  drop_duration_seconds: 'drop_duration_seconds',
+  drop_updated_at: 'drop_updated_at'
+} as const
+
+export type RouteBatchScalarFieldEnum = (typeof RouteBatchScalarFieldEnum)[keyof typeof RouteBatchScalarFieldEnum]
+
+
+export const RouteSegmentScalarFieldEnum = {
+  id: 'id',
+  route_id: 'route_id',
+  segment_order: 'segment_order',
+  batch_id: 'batch_id',
+  kind: 'kind',
+  status: 'status'
+} as const
+
+export type RouteSegmentScalarFieldEnum = (typeof RouteSegmentScalarFieldEnum)[keyof typeof RouteSegmentScalarFieldEnum]
+
+
 export const RouteLegScalarFieldEnum = {
   id: 'id',
   route_id: 'route_id',
+  batch_id: 'batch_id',
   passenger_id: 'passenger_id',
   sequence: 'sequence',
+  drop_sequence: 'drop_sequence',
   pickup_address: 'pickup_address',
   pickup_lat: 'pickup_lat',
   pickup_long: 'pickup_long',
@@ -239,6 +281,9 @@ export const RouteLegScalarFieldEnum = {
   dropoff_lat: 'dropoff_lat',
   dropoff_long: 'dropoff_long',
   dropoff_time: 'dropoff_time',
+  dropoff_status: 'dropoff_status',
+  dropoff_arrived_at: 'dropoff_arrived_at',
+  dropped_at: 'dropped_at',
   toll_amount: 'toll_amount',
   created_at: 'created_at',
   updated_at: 'updated_at'
@@ -255,6 +300,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -269,4 +322,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

@@ -21,7 +21,13 @@ router.post("/session/:routeId/legs/:legId/arrive", MobileDriverController.arriv
 // Driver action on a leg: PICKED | STILL_WAITING | MOVE_TO_NEXT
 router.post("/session/:routeId/legs/:legId/action", MobileDriverController.legAction);
 
-// Complete the trip (all passengers at office)
+// After a pickup batch, driver reached office — advance to next pickup or drop segment
+router.post(
+	"/session/:routeId/office-checkpoint",
+	MobileDriverController.officeCheckpoint,
+);
+
+// Optional explicit complete when all segments done (usually auto-completes after last drop)
 router.post("/session/:routeId/complete", MobileDriverController.completeTrip);
 
 export default router;

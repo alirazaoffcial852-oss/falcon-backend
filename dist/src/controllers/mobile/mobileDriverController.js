@@ -58,6 +58,14 @@ exports.MobileDriverController = {
         const result = await mobileDriverService_1.MobileDriverService.legAction(getUserId(req), routeId, legId, action);
         ResponseHandler_1.ResponseHandler.success(res, result, "Action processed");
     }),
+    /** POST /f1/mobile/driver/session/:routeId/office-checkpoint */
+    officeCheckpoint: (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const routeId = parseInt(req.params.routeId);
+        if (isNaN(routeId))
+            throw ResponseHandler_1.ResponseHandler.badRequest("Invalid routeId");
+        const result = await mobileDriverService_1.MobileDriverService.officeCheckpoint(getUserId(req), routeId);
+        ResponseHandler_1.ResponseHandler.success(res, result, "Advanced to next segment");
+    }),
     /** POST /f1/mobile/driver/session/:routeId/complete */
     completeTrip: (0, catchAsync_1.catchAsync)(async (req, res) => {
         const routeId = parseInt(req.params.routeId);

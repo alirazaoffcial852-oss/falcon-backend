@@ -90,9 +90,9 @@ model Driver {
   // Mobile: availability & live location
   is_available             Boolean           @default(false)
   available_at             DateTime?
-  current_lat              Float?
-  current_long             Float?
-  location_updated_at      DateTime?
+  /// Fixed home location for pickup ordering (not drawn as a route waypoint). Filled from geocode if missing.
+  home_lat                 Float?
+  home_long                Float?
   created_at               DateTime          @default(now())
   updated_at               DateTime          @updatedAt
   driver_assign_cars       DriverAssignCar[]
@@ -170,32 +170,80 @@ model Route {
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
   legs           RouteLeg[]
+  batches        RouteBatch[]
+  segments       RouteSegment[]
 
   @@map("routes")
 }
 
+/// One load (e.g. up to 3 passengers) with its own pickup and drop cached directions.
+model RouteBatch {
+  id                          Int       @id @default(autoincrement())
+  route_id                    Int
+  route                       Route     @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  batch_order                 Int
+  pickup_directions_polyline  String?
+  pickup_waypoint_order       Json?
+  pickup_directions_legs      Json?
+  pickup_distance_meters      Int?
+  pickup_duration_seconds     Int?
+  pickup_updated_at           DateTime?
+  drop_directions_polyline    String?
+  drop_waypoint_order         Json?
+  drop_directions_legs        Json?
+  drop_distance_meters        Int?
+  drop_duration_seconds       Int?
+  drop_updated_at             DateTime?
+  legs                        RouteLeg[]
+  segments                    RouteSegment[]
+
+  @@unique([route_id, batch_order])
+  @@map("route_batches")
+}
+
+/// Ordered execution: all pickup batches first (office between), then drops in batch order.
+model RouteSegment {
+  id             Int            @id @default(autoincrement())
+  route_id       Int
+  route          Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  segment_order  Int
+  batch_id       Int
+  batch          RouteBatch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  kind           SegmentKind
+  status         SegmentStatus  @default(PENDING)
+
+  @@unique([route_id, segment_order])
+  @@map("route_segments")
+}
+
 model RouteLeg {
-  id                Int           @id @default(autoincrement())
+  id                Int            @id @default(autoincrement())
   route_id          Int
-  route             Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  route             Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  batch_id          Int
+  batch             RouteBatch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   passenger_id      Int
-  passenger         Passenger     @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  sequence          Int           @default(0) // order in pickup queue
+  passenger         Passenger      @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  sequence          Int            @default(0) // pickup order within batch
+  drop_sequence     Int            @default(0) // drop order within batch (1 = first drop after leaving office)
   pickup_address    String
   pickup_lat        Float
   pickup_long       Float
   pickup_time       String
-  pickup_status     PickupStatus  @default(PENDING)
-  driver_arrived_at DateTime? // when driver clicked "I am Here"
-  passenger_ack     PassengerAck? // passenger response: COMING / NOT_COMING
-  picked_at         DateTime? // when driver confirmed pickup
+  pickup_status     PickupStatus   @default(PENDING)
+  driver_arrived_at DateTime?
+  passenger_ack     PassengerAck?
+  picked_at         DateTime?
   dropoff_address   String
   dropoff_lat       Float
   dropoff_long      Float
   dropoff_time      String
+  dropoff_status    DropoffStatus  @default(PENDING)
+  dropoff_arrived_at DateTime?
+  dropped_at        DateTime?
   toll_amount       Float?
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
 
   @@map("route_legs")
 }
@@ -217,4 +265,22 @@ enum PickupStatus {
 enum PassengerAck {
   COMING
   NOT_COMING
+}
+
+enum SegmentKind {
+  PICKUP_TO_OFFICE
+  DROP_TO_HOMES
+}
+
+enum SegmentStatus {
+  PENDING
+  ONGOING
+  COMPLETED
+}
+
+enum DropoffStatus {
+  PENDING
+  ARRIVED
+  DROPPED
+  SKIPPED
 }

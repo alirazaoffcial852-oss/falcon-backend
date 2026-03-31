@@ -4,6 +4,7 @@ exports.MobilePassengerService = void 0;
 const database_1 = require("../../config/database");
 const ResponseHandler_1 = require("../../utils/responses/ResponseHandler");
 const socketService_1 = require("../../config/socketService");
+const liveLocationStore_1 = require("../../utils/liveLocationStore");
 const db = database_1.DatabaseService.getInstance().getPrisma();
 /** Resolve passenger profile from JWT user id */
 async function resolvePassenger(userId) {
@@ -22,15 +23,21 @@ exports.MobilePassengerService = {
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        // Find the route leg for today that is not yet completed
+        // Active leg: pickup in progress, or picked up and drop not done yet
         const leg = await db.routeLeg.findFirst({
             where: {
                 passenger_id: passenger.id,
-                pickup_status: { in: ["PENDING", "ARRIVED", "PICKED"] },
                 route: {
                     status: { in: ["PENDING", "ONGOING"] },
                     created_at: { gte: today, lt: tomorrow },
                 },
+                OR: [
+                    { pickup_status: { in: ["PENDING", "ARRIVED"] } },
+                    {
+                        pickup_status: "PICKED",
+                        dropoff_status: { in: ["PENDING", "ARRIVED"] },
+                    },
+                ],
             },
             include: {
                 route: {
@@ -50,7 +57,18 @@ exports.MobilePassengerService = {
         const route = leg.route;
         const driver = route.driver;
         const car = driver.driver_assign_cars[0]?.car ?? null;
-        // Determine UI state for passenger
+        const driverLive = (0, liveLocationStore_1.getDriverLiveLocation)(driver.id);
+        const activeDropSegment = leg.pickup_status === "PICKED" &&
+            (leg.dropoff_status === "PENDING" || leg.dropoff_status === "ARRIVED")
+            ? await db.routeSegment.findFirst({
+                where: {
+                    route_id: route.id,
+                    batch_id: leg.batch_id,
+                    kind: "DROP_TO_HOMES",
+                    status: "ONGOING",
+                },
+            })
+            : null;
         let state;
         if (route.status === "PENDING" && !driver.is_available) {
             state = "WAITING_FOR_DRIVER";
@@ -58,11 +76,24 @@ exports.MobilePassengerService = {
         else if (route.status === "PENDING" && driver.is_available) {
             state = "DRIVER_AVAILABLE";
         }
-        else if (route.status === "ONGOING" && leg.pickup_status === "PENDING") {
+        else if (route.status === "ONGOING" &&
+            leg.pickup_status === "PENDING") {
             state = "DRIVER_ON_WAY";
         }
-        else if (route.status === "ONGOING" && leg.pickup_status === "ARRIVED") {
+        else if (route.status === "ONGOING" &&
+            leg.pickup_status === "ARRIVED") {
             state = "DRIVER_ARRIVED";
+        }
+        else if (leg.pickup_status === "PICKED" &&
+            leg.dropoff_status === "PENDING" &&
+            activeDropSegment) {
+            state = "DRIVER_ON_WAY_HOME";
+        }
+        else if (leg.pickup_status === "PICKED" && leg.dropoff_status === "PENDING") {
+            state = "AT_OFFICE_OR_WAITING_DROP";
+        }
+        else if (leg.dropoff_status === "ARRIVED") {
+            state = "DRIVER_ARRIVED_HOME";
         }
         else if (leg.pickup_status === "PICKED") {
             state = "PICKED_UP";
@@ -82,15 +113,19 @@ exports.MobilePassengerService = {
                 pickup_lat: leg.pickup_lat,
                 pickup_long: leg.pickup_long,
                 pickup_time: leg.pickup_time,
+                dropoff_status: leg.dropoff_status,
+                dropoff_address: leg.dropoff_address,
+                dropoff_lat: leg.dropoff_lat,
+                dropoff_long: leg.dropoff_long,
                 driver: {
                     id: driver.id,
                     name: driver.name,
                     phone_no: driver.phone_no,
                     image_url: driver.driver_image_url,
                     is_available: driver.is_available,
-                    current_lat: driver.current_lat,
-                    current_long: driver.current_long,
-                    location_updated_at: driver.location_updated_at,
+                    current_lat: driverLive?.lat ?? null,
+                    current_long: driverLive?.long ?? null,
+                    location_updated_at: driverLive?.updated_at ?? null,
                 },
                 car: car
                     ? {
@@ -120,16 +155,31 @@ exports.MobilePassengerService = {
                     created_at: { gte: today, lt: tomorrow },
                 },
             },
-            include: { route: { include: { driver: true } } },
+            include: {
+                route: {
+                    include: {
+                        driver: {
+                            select: {
+                                id: true,
+                                name: true,
+                                phone_no: true,
+                                driver_image_url: true,
+                                is_available: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
         if (!leg)
             throw ResponseHandler_1.ResponseHandler.notFound("No active trip found");
         const driver = leg.route.driver;
+        const driverLive = (0, liveLocationStore_1.getDriverLiveLocation)(driver.id);
         return {
             driver_id: driver.id,
-            lat: driver.current_lat,
-            long: driver.current_long,
-            updated_at: driver.location_updated_at,
+            lat: driverLive?.lat ?? null,
+            long: driverLive?.long ?? null,
+            updated_at: driverLive?.updated_at ?? null,
         };
     },
     /**
@@ -141,7 +191,7 @@ exports.MobilePassengerService = {
             where: {
                 passenger_id: passenger.id,
                 route_id: routeId,
-                pickup_status: "ARRIVED",
+                OR: [{ pickup_status: "ARRIVED" }, { dropoff_status: "ARRIVED" }],
             },
             include: { route: { select: { driver_id: true } } },
         });

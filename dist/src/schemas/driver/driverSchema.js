@@ -26,6 +26,12 @@ exports.createDriverSchema = joi_1.default.object({
         "string.empty": "Address is required",
         "string.trim": "Address must be a string",
     }),
+    home_lat: joi_1.default.number().allow(null).messages({
+        "number.base": "home_lat must be a number",
+    }),
+    home_long: joi_1.default.number().allow(null).messages({
+        "number.base": "home_long must be a number",
+    }),
     emergency_phone_no: joi_1.default.string().trim().required().messages({
         "any.required": "Emergency phone number is required",
         "string.empty": "Emergency phone number is required",
@@ -62,6 +68,11 @@ exports.updateDriverSchema = joi_1.default.object({
         "any.required": "Name is required",
         "string.trim": "Name must be a string",
     }),
+    email: joi_1.default.string().trim().required().messages({
+        "any.required": "Email is required",
+        "string.email": "Email must be valid",
+        "string.empty": "Email is required",
+    }),
     phone_no: joi_1.default.string().trim().required().messages({
         "any.required": "Phone number is required",
         "string.trim": "Phone number must be a string",
@@ -69,6 +80,12 @@ exports.updateDriverSchema = joi_1.default.object({
     address: joi_1.default.string().trim().required().messages({
         "any.required": "Address is required",
         "string.trim": "Address must be a string",
+    }),
+    home_lat: joi_1.default.number().allow(null).messages({
+        "number.base": "home_lat must be a number",
+    }),
+    home_long: joi_1.default.number().allow(null).messages({
+        "number.base": "home_long must be a number",
     }),
     emergency_phone_no: joi_1.default.string().trim().required().messages({
         "any.required": "Emergency phone number is required",

@@ -30,16 +30,16 @@ export type DriverAvgAggregateOutputType = {
   id: number | null
   user_id: number | null
   rate_per_km: number | null
-  current_lat: number | null
-  current_long: number | null
+  home_lat: number | null
+  home_long: number | null
 }
 
 export type DriverSumAggregateOutputType = {
   id: number | null
   user_id: number | null
   rate_per_km: number | null
-  current_lat: number | null
-  current_long: number | null
+  home_lat: number | null
+  home_long: number | null
 }
 
 export type DriverMinAggregateOutputType = {
@@ -58,9 +58,8 @@ export type DriverMinAggregateOutputType = {
   driver_license_back_url: string | null
   is_available: boolean | null
   available_at: Date | null
-  current_lat: number | null
-  current_long: number | null
-  location_updated_at: Date | null
+  home_lat: number | null
+  home_long: number | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -81,9 +80,8 @@ export type DriverMaxAggregateOutputType = {
   driver_license_back_url: string | null
   is_available: boolean | null
   available_at: Date | null
-  current_lat: number | null
-  current_long: number | null
-  location_updated_at: Date | null
+  home_lat: number | null
+  home_long: number | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -104,9 +102,8 @@ export type DriverCountAggregateOutputType = {
   driver_license_back_url: number
   is_available: number
   available_at: number
-  current_lat: number
-  current_long: number
-  location_updated_at: number
+  home_lat: number
+  home_long: number
   created_at: number
   updated_at: number
   _all: number
@@ -117,16 +114,16 @@ export type DriverAvgAggregateInputType = {
   id?: true
   user_id?: true
   rate_per_km?: true
-  current_lat?: true
-  current_long?: true
+  home_lat?: true
+  home_long?: true
 }
 
 export type DriverSumAggregateInputType = {
   id?: true
   user_id?: true
   rate_per_km?: true
-  current_lat?: true
-  current_long?: true
+  home_lat?: true
+  home_long?: true
 }
 
 export type DriverMinAggregateInputType = {
@@ -145,9 +142,8 @@ export type DriverMinAggregateInputType = {
   driver_license_back_url?: true
   is_available?: true
   available_at?: true
-  current_lat?: true
-  current_long?: true
-  location_updated_at?: true
+  home_lat?: true
+  home_long?: true
   created_at?: true
   updated_at?: true
 }
@@ -168,9 +164,8 @@ export type DriverMaxAggregateInputType = {
   driver_license_back_url?: true
   is_available?: true
   available_at?: true
-  current_lat?: true
-  current_long?: true
-  location_updated_at?: true
+  home_lat?: true
+  home_long?: true
   created_at?: true
   updated_at?: true
 }
@@ -191,9 +186,8 @@ export type DriverCountAggregateInputType = {
   driver_license_back_url?: true
   is_available?: true
   available_at?: true
-  current_lat?: true
-  current_long?: true
-  location_updated_at?: true
+  home_lat?: true
+  home_long?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -301,9 +295,8 @@ export type DriverGroupByOutputType = {
   driver_license_back_url: string
   is_available: boolean
   available_at: Date | null
-  current_lat: number | null
-  current_long: number | null
-  location_updated_at: Date | null
+  home_lat: number | null
+  home_long: number | null
   created_at: Date
   updated_at: Date
   _count: DriverCountAggregateOutputType | null
@@ -347,9 +340,8 @@ export type DriverWhereInput = {
   driver_license_back_url?: Prisma.StringFilter<"Driver"> | string
   is_available?: Prisma.BoolFilter<"Driver"> | boolean
   available_at?: Prisma.DateTimeNullableFilter<"Driver"> | Date | string | null
-  current_lat?: Prisma.FloatNullableFilter<"Driver"> | number | null
-  current_long?: Prisma.FloatNullableFilter<"Driver"> | number | null
-  location_updated_at?: Prisma.DateTimeNullableFilter<"Driver"> | Date | string | null
+  home_lat?: Prisma.FloatNullableFilter<"Driver"> | number | null
+  home_long?: Prisma.FloatNullableFilter<"Driver"> | number | null
   created_at?: Prisma.DateTimeFilter<"Driver"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Driver"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -373,9 +365,8 @@ export type DriverOrderByWithRelationInput = {
   driver_license_back_url?: Prisma.SortOrder
   is_available?: Prisma.SortOrder
   available_at?: Prisma.SortOrderInput | Prisma.SortOrder
-  current_lat?: Prisma.SortOrderInput | Prisma.SortOrder
-  current_long?: Prisma.SortOrderInput | Prisma.SortOrder
-  location_updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_long?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -402,9 +393,8 @@ export type DriverWhereUniqueInput = Prisma.AtLeast<{
   driver_license_back_url?: Prisma.StringFilter<"Driver"> | string
   is_available?: Prisma.BoolFilter<"Driver"> | boolean
   available_at?: Prisma.DateTimeNullableFilter<"Driver"> | Date | string | null
-  current_lat?: Prisma.FloatNullableFilter<"Driver"> | number | null
-  current_long?: Prisma.FloatNullableFilter<"Driver"> | number | null
-  location_updated_at?: Prisma.DateTimeNullableFilter<"Driver"> | Date | string | null
+  home_lat?: Prisma.FloatNullableFilter<"Driver"> | number | null
+  home_long?: Prisma.FloatNullableFilter<"Driver"> | number | null
   created_at?: Prisma.DateTimeFilter<"Driver"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Driver"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -428,9 +418,8 @@ export type DriverOrderByWithAggregationInput = {
   driver_license_back_url?: Prisma.SortOrder
   is_available?: Prisma.SortOrder
   available_at?: Prisma.SortOrderInput | Prisma.SortOrder
-  current_lat?: Prisma.SortOrderInput | Prisma.SortOrder
-  current_long?: Prisma.SortOrderInput | Prisma.SortOrder
-  location_updated_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_lat?: Prisma.SortOrderInput | Prisma.SortOrder
+  home_long?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.DriverCountOrderByAggregateInput
@@ -459,9 +448,8 @@ export type DriverScalarWhereWithAggregatesInput = {
   driver_license_back_url?: Prisma.StringWithAggregatesFilter<"Driver"> | string
   is_available?: Prisma.BoolWithAggregatesFilter<"Driver"> | boolean
   available_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Driver"> | Date | string | null
-  current_lat?: Prisma.FloatNullableWithAggregatesFilter<"Driver"> | number | null
-  current_long?: Prisma.FloatNullableWithAggregatesFilter<"Driver"> | number | null
-  location_updated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Driver"> | Date | string | null
+  home_lat?: Prisma.FloatNullableWithAggregatesFilter<"Driver"> | number | null
+  home_long?: Prisma.FloatNullableWithAggregatesFilter<"Driver"> | number | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Driver"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"Driver"> | Date | string
 }
@@ -480,9 +468,8 @@ export type DriverCreateInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
@@ -506,9 +493,8 @@ export type DriverUncheckedCreateInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
@@ -529,9 +515,8 @@ export type DriverUpdateInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
@@ -555,9 +540,8 @@ export type DriverUncheckedUpdateInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
@@ -580,9 +564,8 @@ export type DriverCreateManyInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -601,9 +584,8 @@ export type DriverUpdateManyMutationInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -624,9 +606,8 @@ export type DriverUncheckedUpdateManyInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -652,9 +633,8 @@ export type DriverCountOrderByAggregateInput = {
   driver_license_back_url?: Prisma.SortOrder
   is_available?: Prisma.SortOrder
   available_at?: Prisma.SortOrder
-  current_lat?: Prisma.SortOrder
-  current_long?: Prisma.SortOrder
-  location_updated_at?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -663,8 +643,8 @@ export type DriverAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   user_id?: Prisma.SortOrder
   rate_per_km?: Prisma.SortOrder
-  current_lat?: Prisma.SortOrder
-  current_long?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
 }
 
 export type DriverMaxOrderByAggregateInput = {
@@ -683,9 +663,8 @@ export type DriverMaxOrderByAggregateInput = {
   driver_license_back_url?: Prisma.SortOrder
   is_available?: Prisma.SortOrder
   available_at?: Prisma.SortOrder
-  current_lat?: Prisma.SortOrder
-  current_long?: Prisma.SortOrder
-  location_updated_at?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -706,9 +685,8 @@ export type DriverMinOrderByAggregateInput = {
   driver_license_back_url?: Prisma.SortOrder
   is_available?: Prisma.SortOrder
   available_at?: Prisma.SortOrder
-  current_lat?: Prisma.SortOrder
-  current_long?: Prisma.SortOrder
-  location_updated_at?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -717,8 +695,8 @@ export type DriverSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   user_id?: Prisma.SortOrder
   rate_per_km?: Prisma.SortOrder
-  current_lat?: Prisma.SortOrder
-  current_long?: Prisma.SortOrder
+  home_lat?: Prisma.SortOrder
+  home_long?: Prisma.SortOrder
 }
 
 export type DriverScalarRelationFilter = {
@@ -824,9 +802,8 @@ export type DriverCreateWithoutUserInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
@@ -848,9 +825,8 @@ export type DriverUncheckedCreateWithoutUserInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
@@ -887,9 +863,8 @@ export type DriverUpdateWithoutUserInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
@@ -911,9 +886,8 @@ export type DriverUncheckedUpdateWithoutUserInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
@@ -934,9 +908,8 @@ export type DriverCreateWithoutDriver_assign_carsInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
@@ -959,9 +932,8 @@ export type DriverUncheckedCreateWithoutDriver_assign_carsInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
@@ -997,9 +969,8 @@ export type DriverUpdateWithoutDriver_assign_carsInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
@@ -1022,9 +993,8 @@ export type DriverUncheckedUpdateWithoutDriver_assign_carsInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
@@ -1044,9 +1014,8 @@ export type DriverCreateWithoutRoutesInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
@@ -1069,9 +1038,8 @@ export type DriverUncheckedCreateWithoutRoutesInput = {
   driver_license_back_url: string
   is_available?: boolean
   available_at?: Date | string | null
-  current_lat?: number | null
-  current_long?: number | null
-  location_updated_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
@@ -1107,9 +1075,8 @@ export type DriverUpdateWithoutRoutesInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
@@ -1132,9 +1099,8 @@ export type DriverUncheckedUpdateWithoutRoutesInput = {
   driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
   is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
   available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  current_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  current_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  location_updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
@@ -1196,9 +1162,8 @@ export type DriverSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   driver_license_back_url?: boolean
   is_available?: boolean
   available_at?: boolean
-  current_lat?: boolean
-  current_long?: boolean
-  location_updated_at?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   created_at?: boolean
   updated_at?: boolean
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
@@ -1223,9 +1188,8 @@ export type DriverSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   driver_license_back_url?: boolean
   is_available?: boolean
   available_at?: boolean
-  current_lat?: boolean
-  current_long?: boolean
-  location_updated_at?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   created_at?: boolean
   updated_at?: boolean
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
@@ -1247,9 +1211,8 @@ export type DriverSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   driver_license_back_url?: boolean
   is_available?: boolean
   available_at?: boolean
-  current_lat?: boolean
-  current_long?: boolean
-  location_updated_at?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   created_at?: boolean
   updated_at?: boolean
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
@@ -1271,14 +1234,13 @@ export type DriverSelectScalar = {
   driver_license_back_url?: boolean
   is_available?: boolean
   available_at?: boolean
-  current_lat?: boolean
-  current_long?: boolean
-  location_updated_at?: boolean
+  home_lat?: boolean
+  home_long?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type DriverOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "user_id" | "name" | "phone_no" | "address" | "emergency_phone_no" | "driver_image_url" | "rate_per_km" | "driver_cnic_front_url" | "driver_cnic_back_url" | "salary" | "driver_license_front_url" | "driver_license_back_url" | "is_available" | "available_at" | "current_lat" | "current_long" | "location_updated_at" | "created_at" | "updated_at", ExtArgs["result"]["driver"]>
+export type DriverOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "user_id" | "name" | "phone_no" | "address" | "emergency_phone_no" | "driver_image_url" | "rate_per_km" | "driver_cnic_front_url" | "driver_cnic_back_url" | "salary" | "driver_license_front_url" | "driver_license_back_url" | "is_available" | "available_at" | "home_lat" | "home_long" | "created_at" | "updated_at", ExtArgs["result"]["driver"]>
 export type DriverInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
   driver_assign_cars?: boolean | Prisma.Driver$driver_assign_carsArgs<ExtArgs>
@@ -1315,9 +1277,11 @@ export type $DriverPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     driver_license_back_url: string
     is_available: boolean
     available_at: Date | null
-    current_lat: number | null
-    current_long: number | null
-    location_updated_at: Date | null
+    /**
+     * Fixed home location for pickup ordering (not drawn as a route waypoint). Filled from geocode if missing.
+     */
+    home_lat: number | null
+    home_long: number | null
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["driver"]>
@@ -1761,9 +1725,8 @@ export interface DriverFieldRefs {
   readonly driver_license_back_url: Prisma.FieldRef<"Driver", 'String'>
   readonly is_available: Prisma.FieldRef<"Driver", 'Boolean'>
   readonly available_at: Prisma.FieldRef<"Driver", 'DateTime'>
-  readonly current_lat: Prisma.FieldRef<"Driver", 'Float'>
-  readonly current_long: Prisma.FieldRef<"Driver", 'Float'>
-  readonly location_updated_at: Prisma.FieldRef<"Driver", 'DateTime'>
+  readonly home_lat: Prisma.FieldRef<"Driver", 'Float'>
+  readonly home_long: Prisma.FieldRef<"Driver", 'Float'>
   readonly created_at: Prisma.FieldRef<"Driver", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"Driver", 'DateTime'>
 }

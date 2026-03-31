@@ -52,6 +52,11 @@ const routeLegSchema = joi_1.default.object({
         "number.base": "Toll amount must be a number",
     }),
 });
+const batchSchema = joi_1.default.object({
+    legs: joi_1.default.array().items(routeLegSchema).min(1).required().messages({
+        "array.min": "Each batch needs at least one leg",
+    }),
+});
 exports.createRouteSchema = joi_1.default.object({
     companyId: joi_1.default.number().integer().min(1).required().messages({
         "any.required": "Company id is required",
@@ -73,11 +78,14 @@ exports.createRouteSchema = joi_1.default.object({
         "any.required": "Office longitude is required",
         "number.base": "Office longitude must be a number",
     }),
-    legs: joi_1.default.array().items(routeLegSchema).min(1).required().messages({
-        "any.required": "At least one leg is required",
-        "array.min": "At least one leg is required",
-    }),
-}).required();
+    batches: joi_1.default.array().items(batchSchema).min(1),
+    legs: joi_1.default.array().items(routeLegSchema).min(1),
+})
+    .or("batches", "legs")
+    .messages({
+    "object.missing": "Provide batches (preferred) or legacy legs array",
+})
+    .required();
 exports.updateRouteSchema = joi_1.default.object({
     companyId: joi_1.default.number().integer().min(1).messages({
         "number.min": "Company id must be greater than 0",
@@ -94,9 +102,8 @@ exports.updateRouteSchema = joi_1.default.object({
     officeLong: joi_1.default.number().messages({
         "number.base": "Office longitude must be a number",
     }),
-    legs: joi_1.default.array().items(routeLegSchema).min(1).messages({
-        "array.min": "At least one leg is required",
-    }),
+    batches: joi_1.default.array().items(batchSchema).min(1),
+    legs: joi_1.default.array().items(routeLegSchema).min(1),
 }).min(1);
 exports.listRoutesQuerySchema = joi_1.default.object({
     page: joi_1.default.number().integer().min(1).default(1),

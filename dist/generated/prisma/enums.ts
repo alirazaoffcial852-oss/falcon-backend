@@ -35,3 +35,30 @@ export const PassengerAck = {
 } as const
 
 export type PassengerAck = (typeof PassengerAck)[keyof typeof PassengerAck]
+
+
+export const SegmentKind = {
+  PICKUP_TO_OFFICE: 'PICKUP_TO_OFFICE',
+  DROP_TO_HOMES: 'DROP_TO_HOMES'
+} as const
+
+export type SegmentKind = (typeof SegmentKind)[keyof typeof SegmentKind]
+
+
+export const SegmentStatus = {
+  PENDING: 'PENDING',
+  ONGOING: 'ONGOING',
+  COMPLETED: 'COMPLETED'
+} as const
+
+export type SegmentStatus = (typeof SegmentStatus)[keyof typeof SegmentStatus]
+
+
+export const DropoffStatus = {
+  PENDING: 'PENDING',
+  ARRIVED: 'ARRIVED',
+  DROPPED: 'DROPPED',
+  SKIPPED: 'SKIPPED'
+} as const
+
+export type DropoffStatus = (typeof DropoffStatus)[keyof typeof DropoffStatus]

@@ -106,6 +106,10 @@ export class DriverService {
 					name: data.name,
 					phone_no: data.phone_no,
 					address: data.address,
+					...(data.home_lat !== undefined &&
+						data.home_lat !== null && { home_lat: Number(data.home_lat) }),
+					...(data.home_long !== undefined &&
+						data.home_long !== null && { home_long: Number(data.home_long) }),
 					emergency_phone_no: data.emergency_phone_no,
 					driver_image_url: data.driver_image_url ?? "",
 					rate_per_km:
@@ -149,6 +153,14 @@ export class DriverService {
 				name: data.name,
 				phone_no: data.phone_no,
 				address: data.address,
+				...(data.home_lat !== undefined && {
+					home_lat:
+						data.home_lat === null ? null : Number(data.home_lat),
+				}),
+				...(data.home_long !== undefined && {
+					home_long:
+						data.home_long === null ? null : Number(data.home_long),
+				}),
 				emergency_phone_no: data.emergency_phone_no,
 				driver_image_url: data.driver_image_url ?? "",
 				rate_per_km:

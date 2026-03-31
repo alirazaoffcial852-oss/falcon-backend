@@ -75,6 +75,17 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Action processed");
 	}),
 
+	/** POST /f1/mobile/driver/session/:routeId/office-checkpoint */
+	officeCheckpoint: catchAsync(async (req: AuthRequest, res: Response) => {
+		const routeId = parseInt(req.params.routeId as string);
+		if (isNaN(routeId)) throw ResponseHandler.badRequest("Invalid routeId");
+		const result = await MobileDriverService.officeCheckpoint(
+			getUserId(req),
+			routeId,
+		);
+		ResponseHandler.success(res, result, "Advanced to next segment");
+	}),
+
 	/** POST /f1/mobile/driver/session/:routeId/complete */
 	completeTrip: catchAsync(async (req: AuthRequest, res: Response) => {
 		const routeId = parseInt(req.params.routeId as string);
