@@ -801,99 +801,26 @@ export const MobileDriverService = {
 							data: { status: "ONGOING" },
 						});
 						await routeService.syncRouteDisplayDirections(routeId);
-
-						// Pick first actionable leg from the newly activated segment.
-						if (nextSeg.kind === "PICKUP_TO_OFFICE") {
-							const firstNextPickup = await db.routeLeg.findFirst({
-								where: {
-									route_id: routeId,
-									batch_id: nextSeg.batch_id,
-									pickup_status: { in: ["PENDING", "ARRIVED"] },
-								},
-								include: { passenger: true },
-								orderBy: { sequence: "asc" },
-							});
-
-							emitToDriver(driver.id, "next:passenger", {
-								nextLeg: firstNextPickup
-									? {
-											leg_id: firstNextPickup.id,
-											passenger: {
-												id: firstNextPickup.passenger.id,
-												name: firstNextPickup.passenger.name,
-											},
-											pickup_address:
-												firstNextPickup.pickup_address,
-											pickup_lat: firstNextPickup.pickup_lat,
-											pickup_long: firstNextPickup.pickup_long,
-									  }
-									: null,
-							});
-
-							return {
-								action,
-								next_passenger: firstNextPickup
-									? {
-											leg_id: firstNextPickup.id,
-											passenger: {
-												id: firstNextPickup.passenger.id,
-												name: firstNextPickup.passenger.name,
-											},
-											pickup_address:
-												firstNextPickup.pickup_address,
-											pickup_lat: firstNextPickup.pickup_lat,
-											pickup_long: firstNextPickup.pickup_long,
-									  }
-									: null,
-								navigate_to_office: false,
-								message:
-									"Pickup batch complete. Next segment is started.",
-								execution_kind: nextSeg.kind,
-							};
-						}
-
-						// DROP_TO_HOMES
-						const firstNextDrop = await db.routeLeg.findFirst({
-							where: {
-								route_id: routeId,
-								batch_id: nextSeg.batch_id,
-								dropoff_status: { in: ["PENDING", "ARRIVED"] },
+						const routeOffice = await db.route.findUnique({
+							where: { id: routeId },
+							select: {
+								office_address: true,
+								office_lat: true,
+								office_long: true,
 							},
-							include: { passenger: true },
-							orderBy: { drop_sequence: "asc" },
 						});
-
-						emitToDriver(driver.id, "next:passenger", {
-							nextLeg: firstNextDrop
-								? {
-										leg_id: firstNextDrop.id,
-										passenger: {
-											id: firstNextDrop.passenger.id,
-											name: firstNextDrop.passenger.name,
-										},
-										dropoff_address: firstNextDrop.dropoff_address,
-										dropoff_lat: firstNextDrop.dropoff_lat,
-										dropoff_long: firstNextDrop.dropoff_long,
-								  }
-								: null,
-						});
-
 						return {
 							action,
-							next_passenger: firstNextDrop
+							next_passenger: null,
+							next_office: routeOffice
 								? {
-										leg_id: firstNextDrop.id,
-										passenger: {
-											id: firstNextDrop.passenger.id,
-											name: firstNextDrop.passenger.name,
-										},
-										dropoff_address: firstNextDrop.dropoff_address,
-										dropoff_lat: firstNextDrop.dropoff_lat,
-										dropoff_long: firstNextDrop.dropoff_long,
+										address: routeOffice.office_address,
+										lat: routeOffice.office_lat,
+										long: routeOffice.office_long,
 								  }
 								: null,
-							navigate_to_office: false,
-							message: "Pickup batch complete. Drop segment is started.",
+							navigate_to_office: true,
+							message: "Pickup batch complete. Navigate to office.",
 							execution_kind: nextSeg.kind,
 						};
 					}
