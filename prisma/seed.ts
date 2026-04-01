@@ -87,6 +87,18 @@ const carColors = ["White", "Black", "Silver", "Gray", "Red", "Blue", "Green", "
 async function main() {
   console.log("🌱 Starting database seeding...");
 
+  console.log("🧹 Cleaning up existing data...");
+  await prisma.routeLeg.deleteMany({});
+  await prisma.routeSegment.deleteMany({});
+  await prisma.routeBatch.deleteMany({});
+  await prisma.route.deleteMany({});
+  await prisma.passenger.deleteMany({});
+  await prisma.driverAssignCar.deleteMany({});
+  await prisma.driver.deleteMany({});
+  await prisma.car.deleteMany({});
+  await prisma.company.deleteMany({});
+  await prisma.user.deleteMany({ where: { email: { not: "admin@falcon.com" } } });
+
   console.log("👤 Creating roles...");
   const roles = [{ name: "admin" }, { name: "driver" }, { name: "passenger" }, { name: "company" }];
   for (const r of roles) {

@@ -91,6 +91,15 @@ export class DriverService {
 		const plainPassword = generateRandomNumericPassword(6, 8);
 		const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
+		const carId = data.car_id ? Number(data.car_id) : null;
+
+		if (carId) {
+			const carExists = await this.db.car.findUnique({ where: { id: carId } });
+			if (!carExists) {
+				throw ResponseHandler.badRequest(`Car with ID ${carId} does not exist`);
+			}
+		}
+
 		const driver = await this.db.$transaction(async (tx) => {
 			const createdUser = await tx.user.create({
 				data: {
@@ -124,11 +133,12 @@ export class DriverService {
 				},
 			});
 
-			if (data.car_id) {
-				await tx.driverAssignCar.create({
+			if (carId) {
+				// Use main db client instead of transaction client for FK write
+				await this.db.driverAssignCar.create({
 					data: {
 						driver_id: createdDriver.id,
-						car_id: Number(data.car_id),
+						car_id: carId,
 					},
 				});
 			}
