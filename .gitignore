@@ -5,11 +5,9 @@ node_modules
 # generated Prisma client
 prisma/generated
 
-# dist folder
-dist
+# Build output (do not commit; run `pnpm build` locally / in CI)
+dist/
 
 /src/generated/prisma
-
-# /dist - needed for Vercel
 
 /uploads
