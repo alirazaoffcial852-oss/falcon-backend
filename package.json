@@ -12,6 +12,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "pnpm exec ts-node prisma/seed.ts",
+    "seed:admin": "pnpm exec ts-node prisma/seed-admin.ts",
     "db:setup": "pnpm run migrate && pnpm exec prisma db seed",
     "db:reset": "pnpm exec ts-node prisma/reset.ts",
     "postinstall": "pnpm run prisma:generate"
