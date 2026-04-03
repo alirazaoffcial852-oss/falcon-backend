@@ -221,7 +221,6 @@ async function main() {
   const routes = [];
   for (let i = 0; i < 40; i++) {
     const city = lahoreLocations[i % lahoreLocations.length];
-    const statuses = [RouteStatus.PENDING, RouteStatus.ONGOING, RouteStatus.COMPLETED, RouteStatus.CANCELLED];
     const route = await prisma.route.create({
       data: {
         company_id: companies[i % companies.length].id,
@@ -229,9 +228,6 @@ async function main() {
         office_address: `Office Hub ${i + 1}, ${city.name}`,
         office_lat: city.lat,
         office_long: city.long,
-        status: statuses[i % statuses.length],
-        started_at: i % 2 === 0 ? new Date(Date.now() - Math.random() * 86400000) : null,
-        completed_at: i % 3 === 0 ? new Date() : null,
       },
     });
     routes.push(route);
