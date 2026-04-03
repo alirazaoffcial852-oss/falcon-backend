@@ -18,4 +18,5 @@ export interface Passenger {
 	companyId?: number;
 	pickUpTime?: string;
 	dropOffTime?: string;
+	officePickUpTime?: string;
 }

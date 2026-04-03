@@ -46,11 +46,11 @@ export const createPassengerSchema = Joi.object({
 		"any.required": "Company id is required",
 		"number.min": "Company id must be greater than 0",
 	}),
-	pickUpTime: Joi.string().trim().allow("", null).messages({
-		"string.trim": "Pick up time must be a string",
-	}),
 	dropOffTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Drop off time must be a string",
+	}),
+	officePickUpTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Office pick up time must be a string",
 	}),
 }).required();
 
@@ -86,11 +86,11 @@ export const updatePassengerSchema = Joi.object({
 	companyId: Joi.number().integer().min(1).messages({
 		"number.min": "Company id must be greater than 0",
 	}),
-	pickUpTime: Joi.string().trim().allow("", null).messages({
-		"string.trim": "Pick up time must be a string",
-	}),
 	dropOffTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Drop off time must be a string",
+	}),
+	officePickUpTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Office pick up time must be a string",
 	}),
 }).min(1);
 

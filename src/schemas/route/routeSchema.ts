@@ -1,12 +1,5 @@
 import Joi from "joi";
 
-const routeStatusValues = [
-	"PENDING",
-	"ONGOING",
-	"COMPLETED",
-	"CANCELLED",
-] as const;
-
 const routeLegSchema = Joi.object({
 	passengerId: Joi.number().integer().min(1).required().messages({
 		"any.required": "Passenger id is required",
@@ -24,10 +17,7 @@ const routeLegSchema = Joi.object({
 		"any.required": "Pickup longitude is required",
 		"number.base": "Pickup longitude must be a number",
 	}),
-	pickupTime: Joi.string().trim().required().messages({
-		"any.required": "Pickup time is required",
-		"string.empty": "Pickup time is required",
-	}),
+	pickupTime: Joi.string().trim().optional().allow(""),
 	dropoffAddress: Joi.string().trim().required().messages({
 		"any.required": "Dropoff address is required",
 		"string.empty": "Dropoff address is required",
@@ -40,10 +30,7 @@ const routeLegSchema = Joi.object({
 		"any.required": "Dropoff longitude is required",
 		"number.base": "Dropoff longitude must be a number",
 	}),
-	dropoffTime: Joi.string().trim().required().messages({
-		"any.required": "Dropoff time is required",
-		"string.empty": "Dropoff time is required",
-	}),
+	dropoffTime: Joi.string().trim().optional().allow(""),
 	tollAmount: Joi.number().allow(null).messages({
 		"number.base": "Toll amount must be a number",
 	}),
@@ -78,6 +65,11 @@ export const createRouteSchema = Joi.object({
 	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),
+	recurringPlanStartDate: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional()
+		.messages({ "string.pattern.base": "recurringPlanStartDate must be YYYY-MM-DD" }),
+	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
 })
 	.or("batches", "legs")
 	.messages({
@@ -103,21 +95,54 @@ export const updateRouteSchema = Joi.object({
 	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),
+	recurringPlanStartDate: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional(),
+	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
 }).min(1);
 
 export const listRoutesQuerySchema = Joi.object({
 	page: Joi.number().integer().min(1).default(1),
 	limit: Joi.number().integer().min(1).max(100).default(20),
 	search: Joi.string().trim().allow("").default(""),
-	status: Joi.string()
-		.valid(...routeStatusValues)
-		.optional(),
 	companyId: Joi.string()
 		.pattern(/^[1-9]\d*$/)
 		.allow(""),
 	driverId: Joi.string()
 		.pattern(/^[1-9]\d*$/)
 		.allow(""),
+});
+
+/** Optional calendar day (YYYY-MM-DD); defaults to today. */
+export const optionalDayBodySchema = Joi.object({
+	date: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional()
+		.messages({
+			"string.pattern.base": "date must be YYYY-MM-DD",
+		}),
+});
+
+/** POST /routes/generate-daily — optional `plannedOnly` matches cron (only templates inside plan window). */
+export const generateDailyBodySchema = Joi.object({
+	date: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional()
+		.messages({
+			"string.pattern.base": "date must be YYYY-MM-DD",
+		}),
+	plannedOnly: Joi.boolean().optional(),
+});
+
+export const planStatsQuerySchema = Joi.object({
+	from: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.required()
+		.messages({ "string.pattern.base": "from must be YYYY-MM-DD" }),
+	to: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.required()
+		.messages({ "string.pattern.base": "to must be YYYY-MM-DD" }),
 });
 
 export const routeIdParamSchema = Joi.object({

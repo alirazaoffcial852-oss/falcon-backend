@@ -10,6 +10,7 @@ import path from "path";
 import http from "http";
 import swaggerDocument from "./swagger";
 import { initSocket } from "./config/socketService";
+import { initDailyRouteCron } from "./config/dailyRouteCron";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -119,6 +120,7 @@ async function startServer() {
 		const server = httpServer.listen(PORT, () => {
 			console.log(`Server running on port ${PORT}`);
 			console.log(`Socket.IO enabled on port ${PORT}`);
+			initDailyRouteCron();
 		});
 
 		// Graceful shutdown

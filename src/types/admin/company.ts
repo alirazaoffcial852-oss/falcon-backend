@@ -7,7 +7,7 @@ export interface CompanyListQuery {
 export interface Company {
 	name: string;
 	email?: string;
-	phone_no: string;
+	phone_no?: string | null;
 	address: string;
 	lat?: number;
 	long?: number;
