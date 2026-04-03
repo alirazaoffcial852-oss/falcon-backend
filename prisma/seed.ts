@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, RouteStatus, PickupStatus, DropoffStatus, SegmentKind, SegmentStatus } from "../src/generated/prisma/client";
+import { PrismaClient, SegmentKind, SegmentStatus } from "../src/generated/prisma/client";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -272,12 +272,10 @@ async function main() {
         pickup_lat: passenger.home_lat || 0,
         pickup_long: passenger.home_long || 0,
         pickup_time: passenger.pick_up_time || "08:00 AM",
-        pickup_status: PickupStatus.PENDING,
         dropoff_address: passenger.office_address,
         dropoff_lat: passenger.office_lat || 0,
         dropoff_long: passenger.office_long || 0,
         dropoff_time: passenger.drop_off_time || "06:00 PM",
-        dropoff_status: DropoffStatus.PENDING,
         toll_amount: Math.random() > 0.7 ? 50 + Math.floor(Math.random() * 200) : null,
       },
     });

@@ -303,35 +303,28 @@ model RouteSegment {
 }
 
 model RouteLeg {
-  id                 Int           @id @default(autoincrement())
-  route_id           Int
-  route              Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
-  batch_id           Int
-  batch              RouteBatch    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
-  passenger_id       Int
-  passenger          Passenger     @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  sequence           Int           @default(0) // pickup order within batch
-  drop_sequence      Int           @default(0) // drop order within batch (1 = first drop after leaving office)
-  pickup_address     String
-  pickup_lat         Float
-  pickup_long        Float
-  pickup_time        String
-  pickup_status      PickupStatus  @default(PENDING)
-  driver_arrived_at  DateTime?
-  passenger_ack      PassengerAck?
-  picked_at          DateTime?
-  dropoff_address    String
-  dropoff_lat        Float
-  dropoff_long       Float
-  dropoff_time       String
+  id                  Int        @id @default(autoincrement())
+  route_id            Int
+  route               Route      @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  batch_id            Int
+  batch               RouteBatch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  passenger_id        Int
+  passenger           Passenger  @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  sequence            Int        @default(0) // pickup order within batch
+  drop_sequence       Int        @default(0) // drop order within batch (1 = first drop after leaving office)
+  pickup_address      String
+  pickup_lat          Float
+  pickup_long         Float
+  pickup_time         String
+  dropoff_address     String
+  dropoff_lat         Float
+  dropoff_long        Float
+  dropoff_time        String
   /// Scheduled office-side pickup time for this passenger/leg (copied from `passengers.office_pick_up_time`).
   office_pick_up_time String?
-  dropoff_status     DropoffStatus @default(PENDING)
-  dropoff_arrived_at DateTime?
-  dropped_at         DateTime?
-  toll_amount        Float?
-  created_at         DateTime      @default(now())
-  updated_at         DateTime      @updatedAt
+  toll_amount         Float?
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
 
   @@map("route_legs")
 }
@@ -343,15 +336,20 @@ model RouteDailyPlanPhaseDriver {
   phase                             RouteDailyPlanPhase
   driver_id                         Int
   driver                            Driver                         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  phase_started_at                  DateTime?
+  /// Same calendar day as `RouteDailyPlan.scheduled_date` (denormalized for driver queries).
+  scheduled_date                    DateTime                       @db.Date
   /// Planned time (HH:MM): PICKUP = first leg by batch_order then `sequence` (`pickup_time`); DROP = same leg's `office_pick_up_time`.
   trip_start_time                   String?
+  /// Set when this phase’s trip actually starts (e.g. PICKUP on `startTrip`).
+  trip_started_at                   DateTime?
+  status                            RouteStatus                    @default(PENDING)
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
 
   @@unique([route_daily_plan_id, phase])
   @@index([driver_id])
+  @@index([driver_id, scheduled_date])
   @@map("route_daily_plan_phase_drivers")
 }
 
@@ -361,18 +359,32 @@ model RouteDailyPlanPhasePassenger {
   route_daily_plan_phase_driver    RouteDailyPlanPhaseDriver @relation(fields: [route_daily_plan_phase_driver_id], references: [id], onDelete: Cascade)
   passenger_id                     Int
   passenger                        Passenger                 @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  status                           PickupStatus              @default(PENDING)
+  status                           PhasePassengerStatus      @default(PENDING)
+  /// PICKUP phase: driver arrived at pickup stop.
+  driver_arrived_at                DateTime?
+  /// PICKUP phase: passenger response after driver arrived.
+  passenger_ack                    PassengerAck?
+  /// PICKUP phase: passenger picked up.
+  picked_at                        DateTime?
+  /// DROP phase: driver arrived at drop-off stop.
+  dropoff_arrived_at               DateTime?
+  /// DROP phase: passenger dropped at home.
+  dropped_at                       DateTime?
   created_at                       DateTime                  @default(now())
   updated_at                       DateTime                  @updatedAt
 
   @@map("route_daily_plan_phase_passengers")
 }
 
-enum PickupStatus {
+/// Pickup + drop progress per passenger per phase (replaces `route_legs.pickup_status` / `dropoff_status`).
+enum PhasePassengerStatus {
   PENDING
-  ARRIVED // driver arrived at passenger location
+  ARRIVED
   PICKED
-  SKIPPED // move to next / not coming
+  SKIPPED
+  DROPPED
+  STILL_WAITING
+  MOVE_TO_NEXT
 }
 
 enum PassengerAck {
@@ -389,13 +401,6 @@ enum SegmentStatus {
   PENDING
   ONGOING
   COMPLETED
-}
-
-enum DropoffStatus {
-  PENDING
-  ARRIVED
-  DROPPED
-  SKIPPED
 }
 
 enum RouteStatus {

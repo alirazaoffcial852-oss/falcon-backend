@@ -4,6 +4,7 @@ import { emitToDriver } from "../../config/socketService";
 import { getDriverLiveLocation } from "../../utils/liveLocationStore";
 import { notificationService } from "../notificationService";
 import { dailyPlanForActiveDayWhere } from "../../utils/routeDayScope";
+import { getPhaseDriverId, getRouteDailyPlanId } from "../../utils/phasePassengerHelpers";
 
 const db = DatabaseService.getInstance().getPrisma();
 
@@ -21,7 +22,6 @@ export const MobilePassengerService = {
 	async getSession(userId: number) {
 		const passenger = await resolvePassenger(userId);
 
-		// Active leg: pickup in progress, or picked up and drop not done yet
 		const leg = await db.routeLeg.findFirst({
 			where: {
 				passenger_id: passenger.id,
@@ -32,13 +32,6 @@ export const MobilePassengerService = {
 						...dailyPlanForActiveDayWhere(),
 					},
 				},
-				OR: [
-					{ pickup_status: { in: ["PENDING", "ARRIVED"] } },
-					{
-						pickup_status: "PICKED",
-						dropoff_status: { in: ["PENDING", "ARRIVED"] },
-					},
-				],
 			},
 			include: {
 				route: {
@@ -58,14 +51,50 @@ export const MobilePassengerService = {
 		if (!leg) return { session: null, message: "No active trip today" };
 
 		const route = leg.route;
+		const planId = route.route_daily_plan_id;
+		if (!planId) return { session: null, message: "No active trip today" };
+
+		const pickupPdId = await getPhaseDriverId(db, planId, "PICKUP");
+		const dropPdId = await getPhaseDriverId(db, planId, "DROP");
+		const pickupPp = pickupPdId
+			? await db.routeDailyPlanPhasePassenger.findFirst({
+					where: {
+						route_daily_plan_phase_driver_id: pickupPdId,
+						passenger_id: passenger.id,
+					},
+				})
+			: null;
+		const dropPp = dropPdId
+			? await db.routeDailyPlanPhasePassenger.findFirst({
+					where: {
+						route_daily_plan_phase_driver_id: dropPdId,
+						passenger_id: passenger.id,
+					},
+				})
+			: null;
+
+		const pickupStatus = pickupPp?.status ?? "PENDING";
+		const dropStatus = dropPp?.status ?? "PENDING";
+
+		const stillInActiveTrip =
+			["PENDING", "ARRIVED", "STILL_WAITING"].includes(pickupStatus) ||
+			(pickupStatus === "PICKED" &&
+				["PENDING", "ARRIVED", "STILL_WAITING"].includes(dropStatus));
+
+		if (!stillInActiveTrip) {
+			return { session: null, message: "No active trip today" };
+		}
+
 		const planStatus = route.daily_plan?.status;
 		const driver = route.driver;
 		const car = driver.driver_assign_cars[0]?.car ?? null;
 		const driverLive = getDriverLiveLocation(driver.id);
 
 		const activeDropSegment =
-			leg.pickup_status === "PICKED" &&
-			(leg.dropoff_status === "PENDING" || leg.dropoff_status === "ARRIVED")
+			pickupStatus === "PICKED" &&
+			(dropStatus === "PENDING" ||
+				dropStatus === "ARRIVED" ||
+				dropStatus === "STILL_WAITING")
 				? await db.routeSegment.findFirst({
 						where: {
 							route_id: route.id,
@@ -81,27 +110,30 @@ export const MobilePassengerService = {
 			state = "WAITING_FOR_DRIVER";
 		} else if (planStatus === "PENDING" && driver.is_available) {
 			state = "DRIVER_AVAILABLE";
-		} else if (
-			planStatus === "ONGOING" &&
-			leg.pickup_status === "PENDING"
-		) {
+		} else if (planStatus === "ONGOING" && pickupStatus === "PENDING") {
 			state = "DRIVER_ON_WAY";
 		} else if (
 			planStatus === "ONGOING" &&
-			leg.pickup_status === "ARRIVED"
+			(pickupStatus === "ARRIVED" || pickupStatus === "STILL_WAITING")
 		) {
-			state = "DRIVER_ARRIVED";
+			state =
+				pickupStatus === "STILL_WAITING"
+					? "STILL_WAITING_AT_PICKUP"
+					: "DRIVER_ARRIVED";
 		} else if (
-			leg.pickup_status === "PICKED" &&
-			leg.dropoff_status === "PENDING" &&
+			pickupStatus === "PICKED" &&
+			dropStatus === "PENDING" &&
 			activeDropSegment
 		) {
 			state = "DRIVER_ON_WAY_HOME";
-		} else if (leg.pickup_status === "PICKED" && leg.dropoff_status === "PENDING") {
+		} else if (pickupStatus === "PICKED" && dropStatus === "PENDING") {
 			state = "AT_OFFICE_OR_WAITING_DROP";
-		} else if (leg.dropoff_status === "ARRIVED") {
-			state = "DRIVER_ARRIVED_HOME";
-		} else if (leg.pickup_status === "PICKED") {
+		} else if (dropStatus === "ARRIVED" || dropStatus === "STILL_WAITING") {
+			state =
+				dropStatus === "STILL_WAITING"
+					? "STILL_WAITING_AT_DROP"
+					: "DRIVER_ARRIVED_HOME";
+		} else if (pickupStatus === "PICKED") {
 			state = "PICKED_UP";
 		} else {
 			state = "UNKNOWN";
@@ -113,14 +145,14 @@ export const MobilePassengerService = {
 				route_id: route.id,
 				plan_id: route.daily_plan?.id,
 				leg_id: leg.id,
-				pickup_status: leg.pickup_status,
-				passenger_ack: leg.passenger_ack,
-				driver_arrived_at: leg.driver_arrived_at,
+				pickup_status: pickupStatus,
+				passenger_ack: pickupPp?.passenger_ack ?? null,
+				driver_arrived_at: pickupPp?.driver_arrived_at ?? null,
 				pickup_address: leg.pickup_address,
 				pickup_lat: leg.pickup_lat,
 				pickup_long: leg.pickup_long,
 				pickup_time: leg.pickup_time,
-				dropoff_status: leg.dropoff_status,
+				dropoff_status: dropStatus,
 				dropoff_address: leg.dropoff_address,
 				dropoff_lat: leg.dropoff_lat,
 				dropoff_long: leg.dropoff_long,
@@ -200,18 +232,30 @@ export const MobilePassengerService = {
 	) {
 		const passenger = await resolvePassenger(userId);
 
+		const planId = await getRouteDailyPlanId(db, routeId);
+		if (!planId) throw ResponseHandler.notFound("Active plan not found");
+
+		const pickupPdId = await getPhaseDriverId(db, planId, "PICKUP");
+		const arrivedPp = pickupPdId
+			? await db.routeDailyPlanPhasePassenger.findFirst({
+					where: {
+						route_daily_plan_phase_driver_id: pickupPdId,
+						passenger_id: passenger.id,
+						status: "ARRIVED",
+					},
+				})
+			: null;
+		if (!arrivedPp)
+			throw ResponseHandler.notFound("No arrived pickup phase found for this route");
+
 		const leg = await db.routeLeg.findFirst({
-			where: {
-				passenger_id: passenger.id,
-				route_id: routeId,
-				OR: [{ pickup_status: "ARRIVED" }, { dropoff_status: "ARRIVED" }],
-			},
+			where: { passenger_id: passenger.id, route_id: routeId },
 			include: { route: { select: { driver_id: true } } },
 		});
-		if (!leg) throw ResponseHandler.notFound("No arrived leg found for this route");
+		if (!leg) throw ResponseHandler.notFound("Route leg not found");
 
-		await db.routeLeg.update({
-			where: { id: leg.id },
+		await db.routeDailyPlanPhasePassenger.update({
+			where: { id: arrivedPp.id },
 			data: { passenger_ack: ack },
 		});
 

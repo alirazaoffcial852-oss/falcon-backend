@@ -21,3 +21,11 @@ export function dailyPlanForActiveDayWhere(
 		scheduled_date: { gte: start, lt: end },
 	};
 }
+
+/** Same day range for `RouteDailyPlanPhaseDriver.scheduled_date`. */
+export function phaseDriverScheduledDateWhere(
+	forDay: Date = new Date(),
+): Prisma.DateTimeFilter {
+	const { start, end } = getLocalDayRange(forDay);
+	return { gte: start, lt: end };
+}
