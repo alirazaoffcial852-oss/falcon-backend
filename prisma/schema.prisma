@@ -10,7 +10,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL") 
+  directUrl = env("DATABASE_URL")
 }
 
 model Role {
@@ -24,31 +24,64 @@ model Role {
 }
 
 model User {
-  id         Int        @id @default(autoincrement())
-  email      String     @unique
-  password   String
-  role_id    Int
-  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
-  driver     Driver?
-  passenger  Passenger?
+  id            Int                   @id @default(autoincrement())
+  email         String                @unique
+  password      String
+  role_id       Int
+  role          Role                  @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  created_at    DateTime              @default(now())
+  updated_at    DateTime              @updatedAt
+  driver        Driver?
+  passenger     Passenger?
+  deviceTokens  UserDeviceToken[]
+  notifications NotificationHistory[]
 
   @@map("users")
 }
 
+model NotificationHistory {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  data       Json?
+  is_read    Boolean   @default(false)
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@index([user_id, created_at])
+  @@map("notification_histories")
+}
+
+model UserDeviceToken {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  device_token String   @unique
+  platform     String?
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, is_active])
+  @@map("user_device_tokens")
+}
+
 model Company {
-  id         Int         @id @default(autoincrement())
+  id         Int              @id @default(autoincrement())
   name       String
   email      String?
-  phone_no   String
+  phone_no   String?
   address    String
   lat        Float?
   long       Float?
-  created_at DateTime    @default(now())
-  updated_at DateTime    @updatedAt
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
   passengers Passenger[]
   routes     Route[]
+  holidays   CompanyHoliday[]
 
   @@map("companies")
 }
@@ -73,9 +106,9 @@ model Car {
 }
 
 model Driver {
-  id                       Int               @id @default(autoincrement())
-  user_id                  Int?              @unique
-  user                     User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  id                       Int                         @id @default(autoincrement())
+  user_id                  Int?                        @unique
+  user                     User?                       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                     String
   phone_no                 String
   address                  String
@@ -88,15 +121,17 @@ model Driver {
   driver_license_front_url String
   driver_license_back_url  String
   // Mobile: availability & live location
-  is_available             Boolean           @default(false)
+  is_available             Boolean                     @default(false)
   available_at             DateTime?
   /// Fixed home location for pickup ordering (not drawn as a route waypoint). Filled from geocode if missing.
   home_lat                 Float?
   home_long                Float?
-  created_at               DateTime          @default(now())
-  updated_at               DateTime          @updatedAt
+  created_at               DateTime                    @default(now())
+  updated_at               DateTime                    @updatedAt
   driver_assign_cars       DriverAssignCar[]
   routes                   Route[]
+  leaves                   DriverLeave[]
+  daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
 
   @@map("drivers")
 }
@@ -114,24 +149,27 @@ model DriverAssignCar {
 }
 
 model Passenger {
-  id             Int        @id @default(autoincrement())
-  user_id        Int?       @unique
-  user           User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  name           String
-  phone_no       String
-  home_address   String?
-  home_lat       Float?
-  home_long      Float?
-  office_address String
-  office_lat     Float?
-  office_long    Float?
-  company_id     Int
-  company        Company    @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  pick_up_time   String?
-  drop_off_time  String?
-  created_at     DateTime   @default(now())
-  updated_at     DateTime   @updatedAt
-  routeLegs      RouteLeg[]
+  id                                Int                            @id @default(autoincrement())
+  user_id                           Int?                           @unique
+  user                              User?                          @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  name                              String
+  phone_no                          String
+  home_address                      String?
+  home_lat                          Float?
+  home_long                         Float?
+  office_address                    String
+  office_lat                        Float?
+  office_long                       Float?
+  company_id                        Int
+  company                           Company                        @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  pick_up_time                      String?
+  drop_off_time                     String?
+  /// Scheduled time for office-side pickup (e.g. evening route); format HH:MM like other time fields.
+  office_pick_up_time               String?
+  created_at                        DateTime                       @default(now())
+  updated_at                        DateTime                       @updatedAt
+  routeLegs                         RouteLeg[]
+  route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
 
   @@map("passengers")
 }
@@ -149,53 +187,101 @@ model DriverConfiguration {
   @@map("driver_configurations")
 }
 
+/// Admin-defined route (stops, passengers). Trip day/status — see RouteDailyPlan.
+/// `route_daily_plan_id` links this row to the active spawned `RouteDailyPlan` (no separate execution-route clone).
 model Route {
-  id             Int         @id @default(autoincrement())
-  company_id     Int
-  company        Company     @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  driver_id      Int
-  driver         Driver      @relation(fields: [driver_id], references: [id], onDelete: Cascade)
-  office_address String
-  office_lat     Float
-  office_long    Float
-  status         RouteStatus @default(PENDING)
-  directions_polyline         String?
-  directions_waypoint_order   Json?
-  directions_legs             Json?
-  directions_distance_meters  Int?
-  directions_duration_seconds Int?
-  directions_updated_at       DateTime?
-  started_at     DateTime?
-  completed_at   DateTime?
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
-  legs           RouteLeg[]
-  batches        RouteBatch[]
-  segments       RouteSegment[]
+  id                   Int              @id @default(autoincrement())
+  company_id           Int
+  company              Company          @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  driver_id            Int
+  driver               Driver           @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  office_address       String
+  office_lat           Float
+  office_long          Float
+  /// Inclusive window on the **definition** route for cron to create RouteDailyPlan rows.
+  recurring_plan_start DateTime?        @db.Date
+  recurring_plan_end   DateTime?        @db.Date
+  route_daily_plan_id  Int?             @unique
+  daily_plan           RouteDailyPlan?  @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  defined_plans        RouteDailyPlan[] @relation("RouteDefinitionPlans")
+  created_at           DateTime         @default(now())
+  updated_at           DateTime         @updatedAt
+  legs                 RouteLeg[]
+  batches              RouteBatch[]
+  segments             RouteSegment[]
 
+  @@index([driver_id])
   @@map("routes")
+}
+
+/// One calendar day of operation for a definition route: status and times live here only.
+model RouteDailyPlan {
+  id                  Int         @id @default(autoincrement())
+  definition_route_id Int
+  definition_route    Route       @relation("RouteDefinitionPlans", fields: [definition_route_id], references: [id], onDelete: Cascade)
+  scheduled_date      DateTime    @db.Date
+  status              RouteStatus @default(PENDING)
+  started_at          DateTime?
+  completed_at        DateTime?
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+
+  execution_route Route?                      @relation("PlanExecutionRoute")
+  phase_drivers   RouteDailyPlanPhaseDriver[]
+
+  @@unique([definition_route_id, scheduled_date])
+  @@index([scheduled_date])
+  @@map("route_daily_plans")
+}
+
+/// Company-wide non-working days: no daily route instances are generated.
+model CompanyHoliday {
+  id         Int      @id @default(autoincrement())
+  company_id Int
+  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  name       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([company_id, date])
+  @@map("company_holidays")
+}
+
+/// Driver-specific off days: no daily instance for that driver on this date.
+model DriverLeave {
+  id         Int      @id @default(autoincrement())
+  driver_id  Int
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  note       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([driver_id, date])
+  @@map("driver_leaves")
 }
 
 /// One load (e.g. up to 3 passengers) with its own pickup and drop cached directions.
 model RouteBatch {
-  id                          Int       @id @default(autoincrement())
-  route_id                    Int
-  route                       Route     @relation(fields: [route_id], references: [id], onDelete: Cascade)
-  batch_order                 Int
-  pickup_directions_polyline  String?
-  pickup_waypoint_order       Json?
-  pickup_directions_legs      Json?
-  pickup_distance_meters      Int?
-  pickup_duration_seconds     Int?
-  pickup_updated_at           DateTime?
-  drop_directions_polyline    String?
-  drop_waypoint_order         Json?
-  drop_directions_legs        Json?
-  drop_distance_meters        Int?
-  drop_duration_seconds       Int?
-  drop_updated_at             DateTime?
-  legs                        RouteLeg[]
-  segments                    RouteSegment[]
+  id                         Int            @id @default(autoincrement())
+  route_id                   Int
+  route                      Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  batch_order                Int
+  pickup_directions_polyline String?
+  pickup_waypoint_order      Json?
+  pickup_directions_legs     Json?
+  pickup_distance_meters     Int?
+  pickup_duration_seconds    Int?
+  pickup_updated_at          DateTime?
+  drop_directions_polyline   String?
+  drop_waypoint_order        Json?
+  drop_directions_legs       Json?
+  drop_distance_meters       Int?
+  drop_duration_seconds      Int?
+  drop_updated_at            DateTime?
+  legs                       RouteLeg[]
+  segments                   RouteSegment[]
 
   @@unique([route_id, batch_order])
   @@map("route_batches")
@@ -203,56 +289,83 @@ model RouteBatch {
 
 /// Ordered execution: all pickup batches first (office between), then drops in batch order.
 model RouteSegment {
-  id             Int            @id @default(autoincrement())
-  route_id       Int
-  route          Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
-  segment_order  Int
-  batch_id       Int
-  batch          RouteBatch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
-  kind           SegmentKind
-  status         SegmentStatus  @default(PENDING)
+  id            Int           @id @default(autoincrement())
+  route_id      Int
+  route         Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  segment_order Int
+  batch_id      Int
+  batch         RouteBatch    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  kind          SegmentKind
+  status        SegmentStatus @default(PENDING)
 
   @@unique([route_id, segment_order])
   @@map("route_segments")
 }
 
 model RouteLeg {
-  id                Int            @id @default(autoincrement())
-  route_id          Int
-  route             Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
-  batch_id          Int
-  batch             RouteBatch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
-  passenger_id      Int
-  passenger         Passenger      @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
-  sequence          Int            @default(0) // pickup order within batch
-  drop_sequence     Int            @default(0) // drop order within batch (1 = first drop after leaving office)
-  pickup_address    String
-  pickup_lat        Float
-  pickup_long       Float
-  pickup_time       String
-  pickup_status     PickupStatus   @default(PENDING)
-  driver_arrived_at DateTime?
-  passenger_ack     PassengerAck?
-  picked_at         DateTime?
-  dropoff_address   String
-  dropoff_lat       Float
-  dropoff_long      Float
-  dropoff_time      String
-  dropoff_status    DropoffStatus  @default(PENDING)
+  id                 Int           @id @default(autoincrement())
+  route_id           Int
+  route              Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  batch_id           Int
+  batch              RouteBatch    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  passenger_id       Int
+  passenger          Passenger     @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  sequence           Int           @default(0) // pickup order within batch
+  drop_sequence      Int           @default(0) // drop order within batch (1 = first drop after leaving office)
+  pickup_address     String
+  pickup_lat         Float
+  pickup_long        Float
+  pickup_time        String
+  pickup_status      PickupStatus  @default(PENDING)
+  driver_arrived_at  DateTime?
+  passenger_ack      PassengerAck?
+  picked_at          DateTime?
+  dropoff_address    String
+  dropoff_lat        Float
+  dropoff_long       Float
+  dropoff_time       String
+  /// Scheduled office-side pickup time for this passenger/leg (copied from `passengers.office_pick_up_time`).
+  office_pick_up_time String?
+  dropoff_status     DropoffStatus @default(PENDING)
   dropoff_arrived_at DateTime?
-  dropped_at        DateTime?
-  toll_amount       Float?
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  dropped_at         DateTime?
+  toll_amount        Float?
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
 
   @@map("route_legs")
 }
 
-enum RouteStatus {
-  PENDING
-  ONGOING
-  COMPLETED
-  CANCELLED
+model RouteDailyPlanPhaseDriver {
+  id                                Int                            @id @default(autoincrement())
+  route_daily_plan_id               Int
+  route_daily_plan                  RouteDailyPlan                 @relation(fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  phase                             RouteDailyPlanPhase
+  driver_id                         Int
+  driver                            Driver                         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  phase_started_at                  DateTime?
+  /// Planned time (HH:MM): PICKUP = first leg by batch_order then `sequence` (`pickup_time`); DROP = same leg's `office_pick_up_time`.
+  trip_start_time                   String?
+  created_at                        DateTime                       @default(now())
+  updated_at                        DateTime                       @updatedAt
+  route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
+
+  @@unique([route_daily_plan_id, phase])
+  @@index([driver_id])
+  @@map("route_daily_plan_phase_drivers")
+}
+
+model RouteDailyPlanPhasePassenger {
+  id                               Int                       @id @default(autoincrement())
+  route_daily_plan_phase_driver_id Int
+  route_daily_plan_phase_driver    RouteDailyPlanPhaseDriver @relation(fields: [route_daily_plan_phase_driver_id], references: [id], onDelete: Cascade)
+  passenger_id                     Int
+  passenger                        Passenger                 @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  status                           PickupStatus              @default(PENDING)
+  created_at                       DateTime                  @default(now())
+  updated_at                       DateTime                  @updatedAt
+
+  @@map("route_daily_plan_phase_passengers")
 }
 
 enum PickupStatus {
@@ -283,4 +396,16 @@ enum DropoffStatus {
   ARRIVED
   DROPPED
   SKIPPED
+}
+
+enum RouteStatus {
+  PENDING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum RouteDailyPlanPhase {
+  PICKUP
+  DROP
 }

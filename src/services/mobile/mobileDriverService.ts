@@ -7,14 +7,15 @@ import {
 	emitToAdmins,
 } from "../../config/socketService";
 import type { LegAction } from "../../types/mobile/driver";
-import { RouteService } from "../routeService";
 import {
 	getDriverLiveLocation,
 	setDriverLiveLocation,
 } from "../../utils/liveLocationStore";
+import { notificationService } from "../notificationService";
+import { dailyPlanForActiveDayWhere } from "../../utils/routeDayScope";
+import { getFirstRouteLegInPickupOrder } from "../../utils/routeFirstPickupLeg";
 
 const db = DatabaseService.getInstance().getPrisma();
-const routeService = new RouteService();
 
 // ---------- helpers ----------
 
@@ -201,33 +202,35 @@ export const MobileDriverService = {
 			},
 		});
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
-		const routes = await db.route.findMany({
+		const plans = await db.routeDailyPlan.findMany({
 			where: {
-				driver_id: driver.id,
+				definition_route: { driver_id: driver.id },
 				status: "PENDING",
-				created_at: { gte: today, lt: tomorrow },
+				...dailyPlanForActiveDayWhere(),
 			},
 			include: {
-				legs: { include: { passenger: true } },
-				batches: {
-					orderBy: { batch_order: "asc" },
-					include: { legs: { include: { passenger: true } } },
-				},
-				segments: { orderBy: { segment_order: "asc" } },
-				driver: {
+				execution_route: {
 					include: {
-						driver_assign_cars: { include: { car: true }, take: 1 },
+						legs: { include: { passenger: true } },
+						batches: {
+							orderBy: { batch_order: "asc" },
+							include: { legs: { include: { passenger: true } } },
+						},
+						segments: { orderBy: { segment_order: "asc" } },
+						driver: {
+							include: {
+								driver_assign_cars: { include: { car: true }, take: 1 },
+							},
+						},
 					},
 				},
 			},
+			orderBy: { id: "desc" },
 		});
 
-		for (const route of routes) {
+		for (const plan of plans) {
+			const route = plan.execution_route;
+			if (!route) continue;
 			const passengerIds = route.legs.map((l) => l.passenger_id);
 			emitToPassengers(passengerIds, "driver:available", {
 				driverId: driver.id,
@@ -239,13 +242,20 @@ export const MobileDriverService = {
 					availability_time: config.availability_time,
 				},
 			});
+			void notificationService.sendToPassengerIds(passengerIds, {
+				title: "Driver Available",
+				body: `${driver.name} is now available`,
+				data: { routeId: String(route.id), type: "driver_available" },
+			});
 		}
 
 		const mapped = await Promise.all(
-			routes
+			plans
 				.slice()
 				.sort((a, b) => b.id - a.id)
-				.map(async (route) => {
+				.map(async (plan) => {
+					const route = plan.execution_route;
+					if (!route) return null;
 					const dir = await getDisplayDirectionsForRoute(route.id);
 					const firstBatch = route.batches[0];
 					const legs = firstBatch?.legs ?? route.legs;
@@ -255,24 +265,20 @@ export const MobileDriverService = {
 						.map((leg, idx) => buildQueueItem(leg, idx, true, driverLive));
 					return {
 						id: route.id,
-						status: route.status,
+						plan_id: plan.id,
+						status: plan.status,
 						office_address: route.office_address,
 						office_lat: route.office_lat,
 						office_long: route.office_long,
-						started_at: route.started_at,
-						directions_polyline:
-							dir?.directions_polyline ?? route.directions_polyline,
-						directions_waypoint_order:
-							dir?.directions_waypoint_order ?? route.directions_waypoint_order,
-						directions_legs: dir?.directions_legs ?? route.directions_legs,
+						started_at: plan.started_at,
+						directions_polyline: dir?.directions_polyline ?? null,
+						directions_waypoint_order: dir?.directions_waypoint_order ?? null,
+						directions_legs: dir?.directions_legs ?? null,
 						directions_distance_meters:
-							dir?.directions_distance_meters ??
-							route.directions_distance_meters,
+							dir?.directions_distance_meters ?? null,
 						directions_duration_seconds:
-							dir?.directions_duration_seconds ??
-							route.directions_duration_seconds,
-						directions_updated_at:
-							dir?.directions_updated_at ?? route.directions_updated_at,
+							dir?.directions_duration_seconds ?? null,
+						directions_updated_at: dir?.directions_updated_at ?? null,
 						execution_kind: dir?.execution_kind ?? "PICKUP_TO_OFFICE",
 						batches: route.batches.map((b) => ({
 							id: b.id,
@@ -291,7 +297,7 @@ export const MobileDriverService = {
 		);
 
 		return {
-			routes: mapped,
+			routes: mapped.filter(Boolean),
 			driver: {
 				id: driver.id,
 				is_available: true,
@@ -310,18 +316,17 @@ export const MobileDriverService = {
 		const driverLive = getDriverLocationSnapshot(driver.id);
 		const config = await db.driverConfiguration.findFirst();
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
 		const route = await db.route.findFirst({
 			where: {
 				driver_id: driver.id,
-				status: { in: ["PENDING", "ONGOING"] },
-				created_at: { gte: today, lt: tomorrow },
+				route_daily_plan_id: { not: null },
+				daily_plan: {
+					status: { in: ["PENDING", "ONGOING"] },
+					...dailyPlanForActiveDayWhere(),
+				},
 			},
 			include: {
+				daily_plan: true,
 				legs: { include: { passenger: true } },
 				batches: {
 					orderBy: { batch_order: "asc" },
@@ -419,7 +424,6 @@ export const MobileDriverService = {
 				});
 
 				if (nextSeg) {
-					await routeService.syncRouteDisplayDirections(route.id);
 					const refreshed = await db.routeSegment.findUnique({
 						where: { id: nextSeg.id },
 						include: {
@@ -457,22 +461,18 @@ export const MobileDriverService = {
 		return {
 			route: {
 				id: route.id,
-				status: route.status,
+				plan_id: route.daily_plan?.id,
+				status: route.daily_plan?.status,
 				office_address: route.office_address,
 				office_lat: route.office_lat,
 				office_long: route.office_long,
-				started_at: route.started_at,
-				directions_polyline:
-					dir?.directions_polyline ?? route.directions_polyline,
-				directions_waypoint_order:
-					dir?.directions_waypoint_order ?? route.directions_waypoint_order,
-				directions_legs: dir?.directions_legs ?? route.directions_legs,
-				directions_distance_meters:
-					dir?.directions_distance_meters ?? route.directions_distance_meters,
-				directions_duration_seconds:
-					dir?.directions_duration_seconds ?? route.directions_duration_seconds,
-				directions_updated_at:
-					dir?.directions_updated_at ?? route.directions_updated_at,
+				started_at: route.daily_plan?.started_at,
+				directions_polyline: dir?.directions_polyline ?? null,
+				directions_waypoint_order: dir?.directions_waypoint_order ?? null,
+				directions_legs: dir?.directions_legs ?? null,
+				directions_distance_meters: dir?.directions_distance_meters ?? null,
+				directions_duration_seconds: dir?.directions_duration_seconds ?? null,
+				directions_updated_at: dir?.directions_updated_at ?? null,
 				execution_kind: activeSeg.kind,
 				active_segment_id: activeSeg.id,
 				batches: route.batches.map((b) => ({
@@ -505,8 +505,14 @@ export const MobileDriverService = {
 		const driverLive = getDriverLocationSnapshot(driver.id);
 
 		const route = await db.route.findFirst({
-			where: { id: routeId, driver_id: driver.id, status: "PENDING" },
+			where: {
+				id: routeId,
+				driver_id: driver.id,
+				route_daily_plan_id: { not: null },
+				daily_plan: { status: "PENDING" },
+			},
 			include: {
+				daily_plan: true,
 				legs: { include: { passenger: true }, orderBy: { sequence: "asc" } },
 				segments: { orderBy: { segment_order: "asc" } },
 				driver: {
@@ -524,21 +530,34 @@ export const MobileDriverService = {
 			throw ResponseHandler.badRequest("Route has no segments configured");
 
 		await db.$transaction(async (tx) => {
-			await tx.route.update({
-				where: { id: routeId },
-				data: { status: "ONGOING", started_at: new Date() },
-			});
+			const startedAt = new Date();
+			if (route.daily_plan) {
+				await tx.routeDailyPlan.update({
+					where: { id: route.daily_plan.id },
+					data: { status: "ONGOING", started_at: startedAt },
+				});
+
+				// Freeze pickup phase driver + phase start time.
+				// Driver id is pre-filled during cron/template spawn.
+				await tx.routeDailyPlanPhaseDriver.updateMany({
+					where: {
+						route_daily_plan_id: route.daily_plan.id,
+						phase: "PICKUP",
+						phase_started_at: null,
+					},
+					data: { phase_started_at: startedAt },
+				});
+			}
 			await tx.routeSegment.update({
 				where: { id: firstSeg.id },
 				data: { status: "ONGOING" },
 			});
 		});
 
-		await routeService.syncRouteDisplayDirections(routeId);
-
 		const startedRoute = await db.route.findUnique({
 			where: { id: routeId },
 			include: {
+				daily_plan: true,
 				legs: { include: { passenger: true }, orderBy: { sequence: "asc" } },
 				segments: { orderBy: { segment_order: "asc" } },
 				batches: {
@@ -559,7 +578,7 @@ export const MobileDriverService = {
 		);
 		const sortedLegs = activeBatch?.legs.length
 			? [...activeBatch.legs].sort((a, b) => a.sequence - b.sequence)
-			: startedRoute.legs;
+			: [...startedRoute.legs].sort((a, b) => a.sequence - b.sequence);
 
 		for (const leg of route.legs) {
 			emitToPassenger(leg.passenger_id, "driver:started", {
@@ -570,27 +589,48 @@ export const MobileDriverService = {
 					? { name: car.name, car_no: car.car_no, car_color: car.car_color }
 					: null,
 			});
+			void notificationService.sendToPassengerIds([leg.passenger_id], {
+				title: "Trip Started",
+				body: `${driver.name} has started your trip`,
+				data: { routeId: String(route.id), type: "trip_started" },
+			});
 		}
 
 		const firstLeg = sortedLegs[0];
+
+		// Refresh planned trip time for PICKUP (same rule as daily spawn: first leg by batch_order + sequence).
+		const firstLegGlobal = await getFirstRouteLegInPickupOrder(db, routeId);
+		if (route.daily_plan && firstLegGlobal?.pickup_time) {
+			void db.routeDailyPlanPhaseDriver.updateMany({
+				where: {
+					route_daily_plan_id: route.daily_plan.id,
+					phase: "PICKUP",
+				},
+				data: { trip_start_time: firstLegGlobal.pickup_time.trim() },
+			});
+		}
+
 		const queue = sortedLegs
 			.filter((l) => ["PENDING", "ARRIVED"].includes(l.pickup_status))
 			.map((leg, idx) => buildQueueItem(leg, idx, true, driverLive));
 
+		const dir = await getDisplayDirectionsForRoute(routeId);
+
 		return {
 			route: {
 				id: startedRoute.id,
-				status: startedRoute.status,
+				plan_id: startedRoute.daily_plan?.id,
+				status: startedRoute.daily_plan?.status,
 				office_address: startedRoute.office_address,
 				office_lat: startedRoute.office_lat,
 				office_long: startedRoute.office_long,
-				started_at: startedRoute.started_at,
-				directions_polyline: startedRoute.directions_polyline,
-				directions_waypoint_order: startedRoute.directions_waypoint_order,
-				directions_legs: startedRoute.directions_legs,
-				directions_distance_meters: startedRoute.directions_distance_meters,
-				directions_duration_seconds: startedRoute.directions_duration_seconds,
-				directions_updated_at: startedRoute.directions_updated_at,
+				started_at: startedRoute.daily_plan?.started_at,
+				directions_polyline: dir?.directions_polyline ?? null,
+				directions_waypoint_order: dir?.directions_waypoint_order ?? null,
+				directions_legs: dir?.directions_legs ?? null,
+				directions_distance_meters: dir?.directions_distance_meters ?? null,
+				directions_duration_seconds: dir?.directions_duration_seconds ?? null,
+				directions_updated_at: dir?.directions_updated_at ?? null,
 				execution_kind: "PICKUP_TO_OFFICE",
 				passengers_queue: queue,
 			},
@@ -615,16 +655,14 @@ export const MobileDriverService = {
 		const updatedAt = new Date();
 		setDriverLiveLocation(driver.id, lat, long, updatedAt);
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
 		const route = await db.route.findFirst({
 			where: {
 				driver_id: driver.id,
-				status: "ONGOING",
-				created_at: { gte: today, lt: tomorrow },
+				route_daily_plan_id: { not: null },
+				daily_plan: {
+					status: "ONGOING",
+					...dailyPlanForActiveDayWhere(),
+				},
 			},
 			include: { legs: { select: { passenger_id: true } } },
 		});
@@ -704,6 +742,11 @@ export const MobileDriverService = {
 			phase: seg.kind,
 			arrived_at: new Date(),
 		});
+		void notificationService.sendToPassengerIds([leg.passenger_id], {
+			title: "Driver Arrived",
+			body: `${driver.name} has arrived at your location`,
+			data: { routeId: String(routeId), legId: String(legId), type: "driver_arrived" },
+		});
 
 		return {
 			leg_id: legId,
@@ -762,6 +805,13 @@ export const MobileDriverService = {
 				routeId,
 				phase: "PICKUP",
 			});
+			if (action === "MOVE_TO_NEXT") {
+				void notificationService.sendToPassengerIds([leg.passenger_id], {
+					title: "Trip Update",
+					body: "Driver moved to next passenger",
+					data: { routeId: String(routeId), legId: String(legId), type: "driver_moved_next" },
+				});
+			}
 
 			const nextLeg = await db.routeLeg.findFirst({
 				where: {
@@ -800,7 +850,34 @@ export const MobileDriverService = {
 							where: { id: nextSeg.id },
 							data: { status: "ONGOING" },
 						});
-						await routeService.syncRouteDisplayDirections(routeId);
+
+						// When we transition into DROP segment, freeze drop phase start.
+						if (nextSeg.kind === "DROP_TO_HOMES") {
+							const execForPlan = await db.route.findUnique({
+								where: { id: routeId },
+								select: { route_daily_plan_id: true },
+							});
+							if (execForPlan?.route_daily_plan_id) {
+								const firstPickupLeg = await getFirstRouteLegInPickupOrder(
+									db,
+									routeId,
+								);
+								const plannedDropTime =
+									firstPickupLeg?.office_pick_up_time?.trim() ?? null;
+								await db.routeDailyPlanPhaseDriver.updateMany({
+									where: {
+										route_daily_plan_id: execForPlan.route_daily_plan_id,
+										phase: "DROP",
+										phase_started_at: null,
+									},
+									data: {
+										phase_started_at: new Date(),
+										trip_start_time: plannedDropTime,
+									},
+								});
+							}
+						}
+
 						const routeOffice = await db.route.findUnique({
 							where: { id: routeId },
 							select: {
@@ -809,6 +886,16 @@ export const MobileDriverService = {
 								office_long: true,
 							},
 						});
+						if (routeOffice) {
+							void notificationService.sendToDriverId(driver.id, {
+								title: "Next Location",
+								body: `Go to office: ${routeOffice.office_address}`,
+								data: {
+									routeId: String(routeId),
+									type: "driver_next_office",
+								},
+							});
+						}
 						return {
 							action,
 							next_passenger: null,
@@ -859,6 +946,15 @@ export const MobileDriverService = {
 						}
 					: null,
 			);
+			void notificationService.sendToDriverId(driver.id, {
+				title: "Next Location",
+				body: `Next pickup: ${nextLeg.pickup_address}`,
+				data: {
+					routeId: String(routeId),
+					legId: String(nextLeg.id),
+					type: "driver_next_pickup",
+				},
+			});
 
 			return {
 				action,
@@ -898,6 +994,13 @@ export const MobileDriverService = {
 			routeId,
 			phase: "DROP",
 		});
+		if (action === "PICKED") {
+			void notificationService.sendToPassengerIds([leg.passenger_id], {
+				title: "Drop Update",
+				body: "You have been marked as dropped",
+				data: { routeId: String(routeId), legId: String(legId), type: "passenger_dropped" },
+			});
+		}
 
 		const nextDrop = await db.routeLeg.findFirst({
 			where: {
@@ -934,7 +1037,6 @@ export const MobileDriverService = {
 						where: { id: nextSeg.id },
 						data: { status: "ONGOING" },
 					});
-					await routeService.syncRouteDisplayDirections(routeId);
 					return {
 						action,
 						next_passenger: null,
@@ -948,10 +1050,16 @@ export const MobileDriverService = {
 					};
 				}
 
-				await db.route.update({
+				const execForPlan = await db.route.findUnique({
 					where: { id: routeId },
-					data: { status: "COMPLETED", completed_at: new Date() },
+					select: { route_daily_plan_id: true },
 				});
+				if (execForPlan?.route_daily_plan_id) {
+					await db.routeDailyPlan.update({
+						where: { id: execForPlan.route_daily_plan_id },
+						data: { status: "COMPLETED", completed_at: new Date() },
+					});
+				}
 				await db.driver.update({
 					where: { id: driver.id },
 					data: { is_available: false, available_at: null },
@@ -969,6 +1077,14 @@ export const MobileDriverService = {
 							routeId,
 							driverId: driver.id,
 							completed_at: new Date(),
+						},
+					);
+					void notificationService.sendToPassengerIds(
+						route.legs.map((l) => l.passenger_id),
+						{
+							title: "Ride Completed",
+							body: "Your ride has been completed",
+							data: { routeId: String(routeId), type: "ride_completed" },
 						},
 					);
 				}
@@ -1000,6 +1116,17 @@ export const MobileDriverService = {
 					}
 				: null,
 		);
+		if (nextDrop) {
+			void notificationService.sendToDriverId(driver.id, {
+				title: "Next Location",
+				body: `Next drop: ${nextDrop.dropoff_address}`,
+				data: {
+					routeId: String(routeId),
+					legId: String(nextDrop.id),
+					type: "driver_next_drop",
+				},
+			});
+		}
 
 		return {
 			action,
@@ -1083,7 +1210,30 @@ export const MobileDriverService = {
 			where: { id: nextSeg.id },
 			data: { status: "ONGOING" },
 		});
-		await routeService.syncRouteDisplayDirections(routeId);
+
+		// If this checkpoint transitions into DROP phase, freeze the phase start time.
+		if (nextSeg.kind === "DROP_TO_HOMES") {
+			const execForPlan = await db.route.findUnique({
+				where: { id: routeId },
+				select: { route_daily_plan_id: true },
+			});
+			if (execForPlan?.route_daily_plan_id) {
+				const firstPickupLeg = await getFirstRouteLegInPickupOrder(db, routeId);
+				const plannedDropTime =
+					firstPickupLeg?.office_pick_up_time?.trim() ?? null;
+				await db.routeDailyPlanPhaseDriver.updateMany({
+					where: {
+						route_daily_plan_id: execForPlan.route_daily_plan_id,
+						phase: "DROP",
+						phase_started_at: null,
+					},
+					data: {
+						phase_started_at: new Date(),
+						trip_start_time: plannedDropTime,
+					},
+				});
+			}
+		}
 
 		return {
 			next_segment_kind: nextSeg.kind,
@@ -1102,7 +1252,13 @@ export const MobileDriverService = {
 		const driver = await resolveDriver(userId);
 
 		const route = await db.route.findFirst({
-			where: { id: routeId, driver_id: driver.id, status: "ONGOING" },
+			where: {
+				id: routeId,
+				driver_id: driver.id,
+				route_daily_plan_id: { not: null },
+				daily_plan: { status: "ONGOING" },
+			},
+			include: { daily_plan: true },
 		});
 		if (!route) throw ResponseHandler.notFound("Active route not found");
 
@@ -1118,10 +1274,12 @@ export const MobileDriverService = {
 			);
 		}
 
-		await db.route.update({
-			where: { id: routeId },
-			data: { status: "COMPLETED", completed_at: new Date() },
-		});
+		if (route.daily_plan) {
+			await db.routeDailyPlan.update({
+				where: { id: route.daily_plan.id },
+				data: { status: "COMPLETED", completed_at: new Date() },
+			});
+		}
 
 		await db.driver.update({
 			where: { id: driver.id },
@@ -1142,8 +1300,16 @@ export const MobileDriverService = {
 					completed_at: new Date(),
 				},
 			);
+			void notificationService.sendToPassengerIds(
+				r.legs.map((l) => l.passenger_id),
+				{
+					title: "Ride Completed",
+					body: "Your ride has been completed",
+					data: { routeId: String(routeId), type: "ride_completed" },
+				},
+			);
 		}
 
-		return { route_id: routeId, status: "COMPLETED" };
+		return { route_id: routeId, plan_status: "COMPLETED" };
 	},
 };

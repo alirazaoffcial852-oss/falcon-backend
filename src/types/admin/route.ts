@@ -3,12 +3,14 @@ export interface RouteLegInput {
 	pickupAddress: string;
 	pickupLat: number;
 	pickupLong: number;
-	pickupTime: string;
+	/** Omit to compute from passenger `drop_off_time` + directions after route optimize. */
+	pickupTime?: string;
 	pickupStatus?: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
 	dropoffAddress: string;
 	dropoffLat: number;
 	dropoffLong: number;
-	dropoffTime: string;
+	/** Omit to use passenger `drop_off_time` when computing pickup schedule. */
+	dropoffTime?: string;
 	dropoffStatus?: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
 	tollAmount?: number | null;
 }
@@ -24,6 +26,9 @@ export interface CreateRouteInput {
 	officeAddress: string;
 	officeLat: number;
 	officeLong: number;
+	/** Inclusive recurring window on this definition route (default 1 month). Use `0` to disable cron. */
+	recurringPlanStartDate?: string;
+	recurringPlanMonths?: number;
 	/** One or more batches. Omit if using legacy `legs` (single batch). */
 	batches?: RouteBatchInput[];
 	/** @deprecated use batches: [{ legs }] */
@@ -37,13 +42,14 @@ export interface UpdateRouteInput {
 	officeLat?: number;
 	officeLong?: number;
 	batches?: RouteBatchInput[];
+	recurringPlanStartDate?: string;
+	recurringPlanMonths?: number;
 }
 
 export interface RouteListQuery {
 	page: number;
 	limit: number;
 	search?: string;
-	status?: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
 	companyId?: number;
 	driverId?: number;
 }

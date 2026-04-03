@@ -6,7 +6,7 @@ node_modules
 prisma/generated
 
 # Build output (do not commit; run `pnpm build` locally / in CI)
-dist/
+dist
 
 /src/generated/prisma
 
