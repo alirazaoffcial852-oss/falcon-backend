@@ -39,7 +39,7 @@ class CompanyService {
             data: {
                 name: data.name,
                 email: data.email ?? null,
-                phone_no: data.phone_no,
+                phone_no: data.phone_no ?? null,
                 address: data.address,
                 lat: data.lat ?? null,
                 long: data.long ?? null,

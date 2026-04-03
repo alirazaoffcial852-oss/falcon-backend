@@ -258,6 +258,7 @@ export type CompanyWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   passengers?: Prisma.PassengerListRelationFilter
   routes?: Prisma.RouteListRelationFilter
+  holidays?: Prisma.CompanyHolidayListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -272,6 +273,7 @@ export type CompanyOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   passengers?: Prisma.PassengerOrderByRelationAggregateInput
   routes?: Prisma.RouteOrderByRelationAggregateInput
+  holidays?: Prisma.CompanyHolidayOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -289,6 +291,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"Company"> | Date | string
   passengers?: Prisma.PassengerListRelationFilter
   routes?: Prisma.RouteListRelationFilter
+  holidays?: Prisma.CompanyHolidayListRelationFilter
 }, "id">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -334,6 +337,7 @@ export type CompanyCreateInput = {
   updated_at?: Date | string
   passengers?: Prisma.PassengerCreateNestedManyWithoutCompanyInput
   routes?: Prisma.RouteCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -348,6 +352,7 @@ export type CompanyUncheckedCreateInput = {
   updated_at?: Date | string
   passengers?: Prisma.PassengerUncheckedCreateNestedManyWithoutCompanyInput
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -361,6 +366,7 @@ export type CompanyUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUpdateManyWithoutCompanyNestedInput
   routes?: Prisma.RouteUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -375,6 +381,7 @@ export type CompanyUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUncheckedUpdateManyWithoutCompanyNestedInput
   routes?: Prisma.RouteUncheckedUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -465,10 +472,6 @@ export type CompanyScalarRelationFilter = {
   isNot?: Prisma.CompanyWhereInput
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type NullableFloatFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
@@ -505,6 +508,20 @@ export type CompanyUpdateOneRequiredWithoutRoutesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutRoutesInput, Prisma.CompanyUpdateWithoutRoutesInput>, Prisma.CompanyUncheckedUpdateWithoutRoutesInput>
 }
 
+export type CompanyCreateNestedOneWithoutHolidaysInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutHolidaysInput, Prisma.CompanyUncheckedCreateWithoutHolidaysInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutHolidaysInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutHolidaysNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutHolidaysInput, Prisma.CompanyUncheckedCreateWithoutHolidaysInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutHolidaysInput
+  upsert?: Prisma.CompanyUpsertWithoutHolidaysInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutHolidaysInput, Prisma.CompanyUpdateWithoutHolidaysInput>, Prisma.CompanyUncheckedUpdateWithoutHolidaysInput>
+}
+
 export type CompanyCreateWithoutPassengersInput = {
   name: string
   email?: string | null
@@ -515,6 +532,7 @@ export type CompanyCreateWithoutPassengersInput = {
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPassengersInput = {
@@ -528,6 +546,7 @@ export type CompanyUncheckedCreateWithoutPassengersInput = {
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPassengersInput = {
@@ -556,6 +575,7 @@ export type CompanyUpdateWithoutPassengersInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPassengersInput = {
@@ -569,6 +589,7 @@ export type CompanyUncheckedUpdateWithoutPassengersInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUncheckedUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutRoutesInput = {
@@ -581,6 +602,7 @@ export type CompanyCreateWithoutRoutesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoutesInput = {
@@ -594,6 +616,7 @@ export type CompanyUncheckedCreateWithoutRoutesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   passengers?: Prisma.PassengerUncheckedCreateNestedManyWithoutCompanyInput
+  holidays?: Prisma.CompanyHolidayUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoutesInput = {
@@ -622,6 +645,7 @@ export type CompanyUpdateWithoutRoutesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoutesInput = {
@@ -635,6 +659,77 @@ export type CompanyUncheckedUpdateWithoutRoutesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passengers?: Prisma.PassengerUncheckedUpdateManyWithoutCompanyNestedInput
+  holidays?: Prisma.CompanyHolidayUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutHolidaysInput = {
+  name: string
+  email?: string | null
+  phone_no: string
+  address: string
+  lat?: number | null
+  long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  passengers?: Prisma.PassengerCreateNestedManyWithoutCompanyInput
+  routes?: Prisma.RouteCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutHolidaysInput = {
+  id?: number
+  name: string
+  email?: string | null
+  phone_no: string
+  address: string
+  lat?: number | null
+  long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  passengers?: Prisma.PassengerUncheckedCreateNestedManyWithoutCompanyInput
+  routes?: Prisma.RouteUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutHolidaysInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutHolidaysInput, Prisma.CompanyUncheckedCreateWithoutHolidaysInput>
+}
+
+export type CompanyUpsertWithoutHolidaysInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutHolidaysInput, Prisma.CompanyUncheckedUpdateWithoutHolidaysInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutHolidaysInput, Prisma.CompanyUncheckedCreateWithoutHolidaysInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutHolidaysInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutHolidaysInput, Prisma.CompanyUncheckedUpdateWithoutHolidaysInput>
+}
+
+export type CompanyUpdateWithoutHolidaysInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  passengers?: Prisma.PassengerUpdateManyWithoutCompanyNestedInput
+  routes?: Prisma.RouteUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutHolidaysInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  passengers?: Prisma.PassengerUncheckedUpdateManyWithoutCompanyNestedInput
+  routes?: Prisma.RouteUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 
@@ -645,11 +740,13 @@ export type CompanyUncheckedUpdateWithoutRoutesInput = {
 export type CompanyCountOutputType = {
   passengers: number
   routes: number
+  holidays: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   passengers?: boolean | CompanyCountOutputTypeCountPassengersArgs
   routes?: boolean | CompanyCountOutputTypeCountRoutesArgs
+  holidays?: boolean | CompanyCountOutputTypeCountHolidaysArgs
 }
 
 /**
@@ -676,6 +773,13 @@ export type CompanyCountOutputTypeCountRoutesArgs<ExtArgs extends runtime.Types.
   where?: Prisma.RouteWhereInput
 }
 
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountHolidaysArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CompanyHolidayWhereInput
+}
+
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -689,6 +793,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updated_at?: boolean
   passengers?: boolean | Prisma.Company$passengersArgs<ExtArgs>
   routes?: boolean | Prisma.Company$routesArgs<ExtArgs>
+  holidays?: boolean | Prisma.Company$holidaysArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -732,6 +837,7 @@ export type CompanyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   passengers?: boolean | Prisma.Company$passengersArgs<ExtArgs>
   routes?: boolean | Prisma.Company$routesArgs<ExtArgs>
+  holidays?: boolean | Prisma.Company$holidaysArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -742,6 +848,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     passengers: Prisma.$PassengerPayload<ExtArgs>[]
     routes: Prisma.$RoutePayload<ExtArgs>[]
+    holidays: Prisma.$CompanyHolidayPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1149,6 +1256,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   passengers<T extends Prisma.Company$passengersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$passengersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PassengerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   routes<T extends Prisma.Company$routesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$routesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoutePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  holidays<T extends Prisma.Company$holidaysArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$holidaysArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyHolidayPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1620,6 +1728,30 @@ export type Company$routesArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.RouteScalarFieldEnum | Prisma.RouteScalarFieldEnum[]
+}
+
+/**
+ * Company.holidays
+ */
+export type Company$holidaysArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CompanyHoliday
+   */
+  select?: Prisma.CompanyHolidaySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CompanyHoliday
+   */
+  omit?: Prisma.CompanyHolidayOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CompanyHolidayInclude<ExtArgs> | null
+  where?: Prisma.CompanyHolidayWhereInput
+  orderBy?: Prisma.CompanyHolidayOrderByWithRelationInput | Prisma.CompanyHolidayOrderByWithRelationInput[]
+  cursor?: Prisma.CompanyHolidayWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CompanyHolidayScalarFieldEnum | Prisma.CompanyHolidayScalarFieldEnum[]
 }
 
 /**

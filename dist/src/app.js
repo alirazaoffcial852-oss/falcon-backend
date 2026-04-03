@@ -16,6 +16,7 @@ const path_1 = __importDefault(require("path"));
 const http_1 = __importDefault(require("http"));
 const swagger_1 = __importDefault(require("./swagger"));
 const socketService_1 = require("./config/socketService");
+const dailyRouteCron_1 = require("./config/dailyRouteCron");
 const app = (0, express_1.default)();
 exports.app = app;
 const httpServer = http_1.default.createServer(app);
@@ -111,6 +112,7 @@ async function startServer() {
         const server = httpServer.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Socket.IO enabled on port ${PORT}`);
+            (0, dailyRouteCron_1.initDailyRouteCron)();
         });
         // Graceful shutdown
         process.on("SIGTERM", async () => {

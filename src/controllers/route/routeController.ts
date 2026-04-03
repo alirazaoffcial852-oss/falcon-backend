@@ -3,22 +3,6 @@ import { RouteService } from "../../services/routeService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { parseIdParam } from "../../utils/parseId";
-import type { RouteListQuery } from "../../types/admin/route";
-
-const ROUTE_STATUSES = [
-	"PENDING",
-	"ONGOING",
-	"COMPLETED",
-	"CANCELLED",
-] as const;
-
-function parseStatus(value: unknown): RouteListQuery["status"] {
-	if (typeof value !== "string") return undefined;
-	return ROUTE_STATUSES.includes(value as (typeof ROUTE_STATUSES)[number])
-		? (value as RouteListQuery["status"])
-		: undefined;
-}
-
 const routeService = new RouteService();
 
 export const RouteController = {
@@ -27,7 +11,6 @@ export const RouteController = {
 			page: parseInt(req.query.page as string) || 1,
 			limit: parseInt(req.query.limit as string) || 20,
 			search: (req.query.search as string) || "",
-			status: parseStatus(req.query.status),
 			companyId: req.query.companyId
 				? parseInt(req.query.companyId as string)
 				: undefined,
@@ -74,5 +57,61 @@ export const RouteController = {
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
 		await routeService.delete(id);
 		ResponseHandler.success(res, null, "Route deleted");
+	}),
+
+	/** Spawn daily instances from all templates (skip holidays / leave / duplicates). */
+	generateDaily: catchAsync(async (req: Request, res: Response) => {
+		const body = req.body as {
+			date?: string;
+			plannedOnly?: boolean;
+		};
+		const raw = body?.date;
+		const day = raw
+			? new Date(
+					Number(raw.slice(0, 4)),
+					Number(raw.slice(5, 7)) - 1,
+					Number(raw.slice(8, 10)),
+				)
+			: new Date();
+		const result = await routeService.generateDailyInstancesForDate(day, {
+			plannedOnly: body?.plannedOnly === true,
+		});
+		ResponseHandler.success(res, result, "Daily route generation finished");
+	}),
+
+	/** Per-day passenger counts for spawned instances (template id = master route). */
+	getTemplatePlanStats: catchAsync(async (req: Request, res: Response) => {
+		const id = parseIdParam(req.params.id);
+		if (id === null) throw ResponseHandler.badRequest("Invalid id");
+		const fromStr = req.query.from as string;
+		const toStr = req.query.to as string;
+		const from = new Date(
+			Number(fromStr.slice(0, 4)),
+			Number(fromStr.slice(5, 7)) - 1,
+			Number(fromStr.slice(8, 10)),
+		);
+		const to = new Date(
+			Number(toStr.slice(0, 4)),
+			Number(toStr.slice(5, 7)) - 1,
+			Number(toStr.slice(8, 10)),
+		);
+		const stats = await routeService.getTemplatePlanStats(id, from, to);
+		ResponseHandler.success(res, stats, "Template plan stats");
+	}),
+
+	/** Create one instance from a template for a calendar day. */
+	spawnFromTemplate: catchAsync(async (req: Request, res: Response) => {
+		const id = parseIdParam(req.params.id);
+		if (id === null) throw ResponseHandler.badRequest("Invalid id");
+		const raw = (req.body as { date?: string })?.date;
+		const day = raw
+			? new Date(
+					Number(raw.slice(0, 4)),
+					Number(raw.slice(5, 7)) - 1,
+					Number(raw.slice(8, 10)),
+				)
+			: new Date();
+		const route = await routeService.cloneTemplateToInstance(id, day);
+		ResponseHandler.created(res, route, "Daily instance created");
 	}),
 };

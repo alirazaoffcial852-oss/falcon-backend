@@ -15,6 +15,8 @@ const routeRoutes_1 = __importDefault(require("./admin/routeRoutes"));
 const uploadRoutes_1 = __importDefault(require("./admin/uploadRoutes"));
 const mobileDriverRoutes_1 = __importDefault(require("./mobile/mobileDriverRoutes"));
 const mobilePassengerRoutes_1 = __importDefault(require("./mobile/mobilePassengerRoutes"));
+const mobileNotificationRoutes_1 = __importDefault(require("./mobile/mobileNotificationRoutes"));
+const scheduleRoutes_1 = __importDefault(require("./admin/scheduleRoutes"));
 const authMiddleware_1 = require("../middleware/authMiddleware");
 function Routes(app) {
     const router = (0, express_1.Router)();
@@ -27,10 +29,12 @@ function Routes(app) {
     router.use("/cars", ...admin, carRoutes_1.default);
     router.use("/driver-configurations", ...admin, driverConfigurationRoutes_1.default);
     router.use("/routes", ...admin, routeRoutes_1.default);
+    router.use("/schedule", ...admin, scheduleRoutes_1.default);
     router.use("/uploads", ...admin, uploadRoutes_1.default);
     // Mobile app routes (require authenticated driver/passenger)
     const mobile = [authMiddleware_1.authMiddleware];
     router.use("/mobile/driver", ...mobile, mobileDriverRoutes_1.default);
     router.use("/mobile/passenger", ...mobile, mobilePassengerRoutes_1.default);
+    router.use("/mobile/notifications", ...mobile, mobileNotificationRoutes_1.default);
     app.use("/f1", router);
 }

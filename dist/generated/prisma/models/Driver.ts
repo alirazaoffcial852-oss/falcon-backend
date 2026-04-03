@@ -347,6 +347,8 @@ export type DriverWhereInput = {
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   driver_assign_cars?: Prisma.DriverAssignCarListRelationFilter
   routes?: Prisma.RouteListRelationFilter
+  leaves?: Prisma.DriverLeaveListRelationFilter
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverListRelationFilter
 }
 
 export type DriverOrderByWithRelationInput = {
@@ -372,6 +374,8 @@ export type DriverOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   driver_assign_cars?: Prisma.DriverAssignCarOrderByRelationAggregateInput
   routes?: Prisma.RouteOrderByRelationAggregateInput
+  leaves?: Prisma.DriverLeaveOrderByRelationAggregateInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverOrderByRelationAggregateInput
 }
 
 export type DriverWhereUniqueInput = Prisma.AtLeast<{
@@ -400,6 +404,8 @@ export type DriverWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   driver_assign_cars?: Prisma.DriverAssignCarListRelationFilter
   routes?: Prisma.RouteListRelationFilter
+  leaves?: Prisma.DriverLeaveListRelationFilter
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverListRelationFilter
 }, "id" | "user_id">
 
 export type DriverOrderByWithAggregationInput = {
@@ -475,6 +481,8 @@ export type DriverCreateInput = {
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
   driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
   routes?: Prisma.RouteCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverCreateNestedManyWithoutDriverInput
 }
 
 export type DriverUncheckedCreateInput = {
@@ -499,6 +507,8 @@ export type DriverUncheckedCreateInput = {
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveUncheckedCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedCreateNestedManyWithoutDriverInput
 }
 
 export type DriverUpdateInput = {
@@ -522,6 +532,8 @@ export type DriverUpdateInput = {
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
   driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
   routes?: Prisma.RouteUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverUncheckedUpdateInput = {
@@ -546,6 +558,8 @@ export type DriverUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
   routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUncheckedUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverCreateManyInput = {
@@ -744,14 +758,6 @@ export type FloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
@@ -788,6 +794,34 @@ export type DriverUpdateOneRequiredWithoutRoutesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DriverUpdateToOneWithWhereWithoutRoutesInput, Prisma.DriverUpdateWithoutRoutesInput>, Prisma.DriverUncheckedUpdateWithoutRoutesInput>
 }
 
+export type DriverCreateNestedOneWithoutLeavesInput = {
+  create?: Prisma.XOR<Prisma.DriverCreateWithoutLeavesInput, Prisma.DriverUncheckedCreateWithoutLeavesInput>
+  connectOrCreate?: Prisma.DriverCreateOrConnectWithoutLeavesInput
+  connect?: Prisma.DriverWhereUniqueInput
+}
+
+export type DriverUpdateOneRequiredWithoutLeavesNestedInput = {
+  create?: Prisma.XOR<Prisma.DriverCreateWithoutLeavesInput, Prisma.DriverUncheckedCreateWithoutLeavesInput>
+  connectOrCreate?: Prisma.DriverCreateOrConnectWithoutLeavesInput
+  upsert?: Prisma.DriverUpsertWithoutLeavesInput
+  connect?: Prisma.DriverWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DriverUpdateToOneWithWhereWithoutLeavesInput, Prisma.DriverUpdateWithoutLeavesInput>, Prisma.DriverUncheckedUpdateWithoutLeavesInput>
+}
+
+export type DriverCreateNestedOneWithoutDaily_plan_phase_driversInput = {
+  create?: Prisma.XOR<Prisma.DriverCreateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedCreateWithoutDaily_plan_phase_driversInput>
+  connectOrCreate?: Prisma.DriverCreateOrConnectWithoutDaily_plan_phase_driversInput
+  connect?: Prisma.DriverWhereUniqueInput
+}
+
+export type DriverUpdateOneRequiredWithoutDaily_plan_phase_driversNestedInput = {
+  create?: Prisma.XOR<Prisma.DriverCreateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedCreateWithoutDaily_plan_phase_driversInput>
+  connectOrCreate?: Prisma.DriverCreateOrConnectWithoutDaily_plan_phase_driversInput
+  upsert?: Prisma.DriverUpsertWithoutDaily_plan_phase_driversInput
+  connect?: Prisma.DriverWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DriverUpdateToOneWithWhereWithoutDaily_plan_phase_driversInput, Prisma.DriverUpdateWithoutDaily_plan_phase_driversInput>, Prisma.DriverUncheckedUpdateWithoutDaily_plan_phase_driversInput>
+}
+
 export type DriverCreateWithoutUserInput = {
   name: string
   phone_no: string
@@ -808,6 +842,8 @@ export type DriverCreateWithoutUserInput = {
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
   routes?: Prisma.RouteCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverCreateNestedManyWithoutDriverInput
 }
 
 export type DriverUncheckedCreateWithoutUserInput = {
@@ -831,6 +867,8 @@ export type DriverUncheckedCreateWithoutUserInput = {
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveUncheckedCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedCreateNestedManyWithoutDriverInput
 }
 
 export type DriverCreateOrConnectWithoutUserInput = {
@@ -869,6 +907,8 @@ export type DriverUpdateWithoutUserInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
   routes?: Prisma.RouteUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverUncheckedUpdateWithoutUserInput = {
@@ -892,6 +932,8 @@ export type DriverUncheckedUpdateWithoutUserInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
   routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUncheckedUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverCreateWithoutDriver_assign_carsInput = {
@@ -914,6 +956,8 @@ export type DriverCreateWithoutDriver_assign_carsInput = {
   updated_at?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
   routes?: Prisma.RouteCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverCreateNestedManyWithoutDriverInput
 }
 
 export type DriverUncheckedCreateWithoutDriver_assign_carsInput = {
@@ -937,6 +981,8 @@ export type DriverUncheckedCreateWithoutDriver_assign_carsInput = {
   created_at?: Date | string
   updated_at?: Date | string
   routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveUncheckedCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedCreateNestedManyWithoutDriverInput
 }
 
 export type DriverCreateOrConnectWithoutDriver_assign_carsInput = {
@@ -975,6 +1021,8 @@ export type DriverUpdateWithoutDriver_assign_carsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
   routes?: Prisma.RouteUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverUncheckedUpdateWithoutDriver_assign_carsInput = {
@@ -998,6 +1046,8 @@ export type DriverUncheckedUpdateWithoutDriver_assign_carsInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUncheckedUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverCreateWithoutRoutesInput = {
@@ -1020,6 +1070,8 @@ export type DriverCreateWithoutRoutesInput = {
   updated_at?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutDriverInput
   driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverCreateNestedManyWithoutDriverInput
 }
 
 export type DriverUncheckedCreateWithoutRoutesInput = {
@@ -1043,6 +1095,8 @@ export type DriverUncheckedCreateWithoutRoutesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveUncheckedCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedCreateNestedManyWithoutDriverInput
 }
 
 export type DriverCreateOrConnectWithoutRoutesInput = {
@@ -1081,6 +1135,8 @@ export type DriverUpdateWithoutRoutesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutDriverNestedInput
   driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUpdateManyWithoutDriverNestedInput
 }
 
 export type DriverUncheckedUpdateWithoutRoutesInput = {
@@ -1104,6 +1160,236 @@ export type DriverUncheckedUpdateWithoutRoutesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUncheckedUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedUpdateManyWithoutDriverNestedInput
+}
+
+export type DriverCreateWithoutLeavesInput = {
+  name: string
+  phone_no: string
+  address: string
+  emergency_phone_no: string
+  driver_image_url: string
+  rate_per_km: number
+  driver_cnic_front_url: string
+  driver_cnic_back_url: string
+  salary: string
+  driver_license_front_url: string
+  driver_license_back_url: string
+  is_available?: boolean
+  available_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutDriverInput
+  driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
+  routes?: Prisma.RouteCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverCreateNestedManyWithoutDriverInput
+}
+
+export type DriverUncheckedCreateWithoutLeavesInput = {
+  id?: number
+  user_id?: number | null
+  name: string
+  phone_no: string
+  address: string
+  emergency_phone_no: string
+  driver_image_url: string
+  rate_per_km: number
+  driver_cnic_front_url: string
+  driver_cnic_back_url: string
+  salary: string
+  driver_license_front_url: string
+  driver_license_back_url: string
+  is_available?: boolean
+  available_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
+  routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedCreateNestedManyWithoutDriverInput
+}
+
+export type DriverCreateOrConnectWithoutLeavesInput = {
+  where: Prisma.DriverWhereUniqueInput
+  create: Prisma.XOR<Prisma.DriverCreateWithoutLeavesInput, Prisma.DriverUncheckedCreateWithoutLeavesInput>
+}
+
+export type DriverUpsertWithoutLeavesInput = {
+  update: Prisma.XOR<Prisma.DriverUpdateWithoutLeavesInput, Prisma.DriverUncheckedUpdateWithoutLeavesInput>
+  create: Prisma.XOR<Prisma.DriverCreateWithoutLeavesInput, Prisma.DriverUncheckedCreateWithoutLeavesInput>
+  where?: Prisma.DriverWhereInput
+}
+
+export type DriverUpdateToOneWithWhereWithoutLeavesInput = {
+  where?: Prisma.DriverWhereInput
+  data: Prisma.XOR<Prisma.DriverUpdateWithoutLeavesInput, Prisma.DriverUncheckedUpdateWithoutLeavesInput>
+}
+
+export type DriverUpdateWithoutLeavesInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  emergency_phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_image_url?: Prisma.StringFieldUpdateOperationsInput | string
+  rate_per_km?: Prisma.FloatFieldUpdateOperationsInput | number
+  driver_cnic_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_cnic_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  salary?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutDriverNestedInput
+  driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
+  routes?: Prisma.RouteUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUpdateManyWithoutDriverNestedInput
+}
+
+export type DriverUncheckedUpdateWithoutLeavesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  emergency_phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_image_url?: Prisma.StringFieldUpdateOperationsInput | string
+  rate_per_km?: Prisma.FloatFieldUpdateOperationsInput | number
+  driver_cnic_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_cnic_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  salary?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
+  routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
+  daily_plan_phase_drivers?: Prisma.RouteDailyPlanPhaseDriverUncheckedUpdateManyWithoutDriverNestedInput
+}
+
+export type DriverCreateWithoutDaily_plan_phase_driversInput = {
+  name: string
+  phone_no: string
+  address: string
+  emergency_phone_no: string
+  driver_image_url: string
+  rate_per_km: number
+  driver_cnic_front_url: string
+  driver_cnic_back_url: string
+  salary: string
+  driver_license_front_url: string
+  driver_license_back_url: string
+  is_available?: boolean
+  available_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutDriverInput
+  driver_assign_cars?: Prisma.DriverAssignCarCreateNestedManyWithoutDriverInput
+  routes?: Prisma.RouteCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveCreateNestedManyWithoutDriverInput
+}
+
+export type DriverUncheckedCreateWithoutDaily_plan_phase_driversInput = {
+  id?: number
+  user_id?: number | null
+  name: string
+  phone_no: string
+  address: string
+  emergency_phone_no: string
+  driver_image_url: string
+  rate_per_km: number
+  driver_cnic_front_url: string
+  driver_cnic_back_url: string
+  salary: string
+  driver_license_front_url: string
+  driver_license_back_url: string
+  is_available?: boolean
+  available_at?: Date | string | null
+  home_lat?: number | null
+  home_long?: number | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  driver_assign_cars?: Prisma.DriverAssignCarUncheckedCreateNestedManyWithoutDriverInput
+  routes?: Prisma.RouteUncheckedCreateNestedManyWithoutDriverInput
+  leaves?: Prisma.DriverLeaveUncheckedCreateNestedManyWithoutDriverInput
+}
+
+export type DriverCreateOrConnectWithoutDaily_plan_phase_driversInput = {
+  where: Prisma.DriverWhereUniqueInput
+  create: Prisma.XOR<Prisma.DriverCreateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedCreateWithoutDaily_plan_phase_driversInput>
+}
+
+export type DriverUpsertWithoutDaily_plan_phase_driversInput = {
+  update: Prisma.XOR<Prisma.DriverUpdateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedUpdateWithoutDaily_plan_phase_driversInput>
+  create: Prisma.XOR<Prisma.DriverCreateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedCreateWithoutDaily_plan_phase_driversInput>
+  where?: Prisma.DriverWhereInput
+}
+
+export type DriverUpdateToOneWithWhereWithoutDaily_plan_phase_driversInput = {
+  where?: Prisma.DriverWhereInput
+  data: Prisma.XOR<Prisma.DriverUpdateWithoutDaily_plan_phase_driversInput, Prisma.DriverUncheckedUpdateWithoutDaily_plan_phase_driversInput>
+}
+
+export type DriverUpdateWithoutDaily_plan_phase_driversInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  emergency_phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_image_url?: Prisma.StringFieldUpdateOperationsInput | string
+  rate_per_km?: Prisma.FloatFieldUpdateOperationsInput | number
+  driver_cnic_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_cnic_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  salary?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutDriverNestedInput
+  driver_assign_cars?: Prisma.DriverAssignCarUpdateManyWithoutDriverNestedInput
+  routes?: Prisma.RouteUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUpdateManyWithoutDriverNestedInput
+}
+
+export type DriverUncheckedUpdateWithoutDaily_plan_phase_driversInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  user_id?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  address?: Prisma.StringFieldUpdateOperationsInput | string
+  emergency_phone_no?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_image_url?: Prisma.StringFieldUpdateOperationsInput | string
+  rate_per_km?: Prisma.FloatFieldUpdateOperationsInput | number
+  driver_cnic_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_cnic_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  salary?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_front_url?: Prisma.StringFieldUpdateOperationsInput | string
+  driver_license_back_url?: Prisma.StringFieldUpdateOperationsInput | string
+  is_available?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  available_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  home_lat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  home_long?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver_assign_cars?: Prisma.DriverAssignCarUncheckedUpdateManyWithoutDriverNestedInput
+  routes?: Prisma.RouteUncheckedUpdateManyWithoutDriverNestedInput
+  leaves?: Prisma.DriverLeaveUncheckedUpdateManyWithoutDriverNestedInput
 }
 
 
@@ -1114,11 +1400,15 @@ export type DriverUncheckedUpdateWithoutRoutesInput = {
 export type DriverCountOutputType = {
   driver_assign_cars: number
   routes: number
+  leaves: number
+  daily_plan_phase_drivers: number
 }
 
 export type DriverCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   driver_assign_cars?: boolean | DriverCountOutputTypeCountDriver_assign_carsArgs
   routes?: boolean | DriverCountOutputTypeCountRoutesArgs
+  leaves?: boolean | DriverCountOutputTypeCountLeavesArgs
+  daily_plan_phase_drivers?: boolean | DriverCountOutputTypeCountDaily_plan_phase_driversArgs
 }
 
 /**
@@ -1145,6 +1435,20 @@ export type DriverCountOutputTypeCountRoutesArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.RouteWhereInput
 }
 
+/**
+ * DriverCountOutputType without action
+ */
+export type DriverCountOutputTypeCountLeavesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DriverLeaveWhereInput
+}
+
+/**
+ * DriverCountOutputType without action
+ */
+export type DriverCountOutputTypeCountDaily_plan_phase_driversArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RouteDailyPlanPhaseDriverWhereInput
+}
+
 
 export type DriverSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1169,6 +1473,8 @@ export type DriverSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
   driver_assign_cars?: boolean | Prisma.Driver$driver_assign_carsArgs<ExtArgs>
   routes?: boolean | Prisma.Driver$routesArgs<ExtArgs>
+  leaves?: boolean | Prisma.Driver$leavesArgs<ExtArgs>
+  daily_plan_phase_drivers?: boolean | Prisma.Driver$daily_plan_phase_driversArgs<ExtArgs>
   _count?: boolean | Prisma.DriverCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["driver"]>
 
@@ -1245,6 +1551,8 @@ export type DriverInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   user?: boolean | Prisma.Driver$userArgs<ExtArgs>
   driver_assign_cars?: boolean | Prisma.Driver$driver_assign_carsArgs<ExtArgs>
   routes?: boolean | Prisma.Driver$routesArgs<ExtArgs>
+  leaves?: boolean | Prisma.Driver$leavesArgs<ExtArgs>
+  daily_plan_phase_drivers?: boolean | Prisma.Driver$daily_plan_phase_driversArgs<ExtArgs>
   _count?: boolean | Prisma.DriverCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DriverIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1260,6 +1568,8 @@ export type $DriverPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     user: Prisma.$UserPayload<ExtArgs> | null
     driver_assign_cars: Prisma.$DriverAssignCarPayload<ExtArgs>[]
     routes: Prisma.$RoutePayload<ExtArgs>[]
+    leaves: Prisma.$DriverLeavePayload<ExtArgs>[]
+    daily_plan_phase_drivers: Prisma.$RouteDailyPlanPhaseDriverPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1681,6 +1991,8 @@ export interface Prisma__DriverClient<T, Null = never, ExtArgs extends runtime.T
   user<T extends Prisma.Driver$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Driver$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   driver_assign_cars<T extends Prisma.Driver$driver_assign_carsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Driver$driver_assign_carsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DriverAssignCarPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   routes<T extends Prisma.Driver$routesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Driver$routesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoutePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  leaves<T extends Prisma.Driver$leavesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Driver$leavesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DriverLeavePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  daily_plan_phase_drivers<T extends Prisma.Driver$daily_plan_phase_driversArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Driver$daily_plan_phase_driversArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RouteDailyPlanPhaseDriverPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2189,6 +2501,54 @@ export type Driver$routesArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.RouteScalarFieldEnum | Prisma.RouteScalarFieldEnum[]
+}
+
+/**
+ * Driver.leaves
+ */
+export type Driver$leavesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DriverLeave
+   */
+  select?: Prisma.DriverLeaveSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DriverLeave
+   */
+  omit?: Prisma.DriverLeaveOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DriverLeaveInclude<ExtArgs> | null
+  where?: Prisma.DriverLeaveWhereInput
+  orderBy?: Prisma.DriverLeaveOrderByWithRelationInput | Prisma.DriverLeaveOrderByWithRelationInput[]
+  cursor?: Prisma.DriverLeaveWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DriverLeaveScalarFieldEnum | Prisma.DriverLeaveScalarFieldEnum[]
+}
+
+/**
+ * Driver.daily_plan_phase_drivers
+ */
+export type Driver$daily_plan_phase_driversArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RouteDailyPlanPhaseDriver
+   */
+  select?: Prisma.RouteDailyPlanPhaseDriverSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RouteDailyPlanPhaseDriver
+   */
+  omit?: Prisma.RouteDailyPlanPhaseDriverOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RouteDailyPlanPhaseDriverInclude<ExtArgs> | null
+  where?: Prisma.RouteDailyPlanPhaseDriverWhereInput
+  orderBy?: Prisma.RouteDailyPlanPhaseDriverOrderByWithRelationInput | Prisma.RouteDailyPlanPhaseDriverOrderByWithRelationInput[]
+  cursor?: Prisma.RouteDailyPlanPhaseDriverWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RouteDailyPlanPhaseDriverScalarFieldEnum | Prisma.RouteDailyPlanPhaseDriverScalarFieldEnum[]
 }
 
 /**

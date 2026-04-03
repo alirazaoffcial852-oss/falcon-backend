@@ -9,12 +9,16 @@
 * 🟢 You can import this file directly.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DropoffStatus = exports.SegmentStatus = exports.SegmentKind = exports.PassengerAck = exports.PickupStatus = exports.RouteStatus = void 0;
+exports.DropoffStatus = exports.SegmentStatus = exports.SegmentKind = exports.PassengerAck = exports.PickupStatus = exports.RouteDailyPlanPhase = exports.RouteStatus = void 0;
 exports.RouteStatus = {
     PENDING: 'PENDING',
     ONGOING: 'ONGOING',
     COMPLETED: 'COMPLETED',
     CANCELLED: 'CANCELLED'
+};
+exports.RouteDailyPlanPhase = {
+    PICKUP: 'PICKUP',
+    DROP: 'DROP'
 };
 exports.PickupStatus = {
     PENDING: 'PENDING',

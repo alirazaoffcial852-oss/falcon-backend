@@ -51,6 +51,8 @@ export const AnyNull = runtime.objectEnumValues.instances.AnyNull
 export const ModelName = {
   Role: 'Role',
   User: 'User',
+  NotificationHistory: 'NotificationHistory',
+  UserDeviceToken: 'UserDeviceToken',
   Company: 'Company',
   Car: 'Car',
   Driver: 'Driver',
@@ -58,9 +60,13 @@ export const ModelName = {
   Passenger: 'Passenger',
   DriverConfiguration: 'DriverConfiguration',
   Route: 'Route',
+  RouteDailyPlan: 'RouteDailyPlan',
+  CompanyHoliday: 'CompanyHoliday',
+  DriverLeave: 'DriverLeave',
   RouteBatch: 'RouteBatch',
   RouteSegment: 'RouteSegment',
-  RouteLeg: 'RouteLeg'
+  RouteLeg: 'RouteLeg',
+  RouteDailyPlanPhaseDriver: 'RouteDailyPlanPhaseDriver'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -99,6 +105,34 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const NotificationHistoryScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  title: 'title',
+  body: 'body',
+  data: 'data',
+  is_read: 'is_read',
+  read_at: 'read_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type NotificationHistoryScalarFieldEnum = (typeof NotificationHistoryScalarFieldEnum)[keyof typeof NotificationHistoryScalarFieldEnum]
+
+
+export const UserDeviceTokenScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  device_token: 'device_token',
+  platform: 'platform',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type UserDeviceTokenScalarFieldEnum = (typeof UserDeviceTokenScalarFieldEnum)[keyof typeof UserDeviceTokenScalarFieldEnum]
 
 
 export const CompanyScalarFieldEnum = {
@@ -213,20 +247,52 @@ export const RouteScalarFieldEnum = {
   office_address: 'office_address',
   office_lat: 'office_lat',
   office_long: 'office_long',
+  recurring_plan_start: 'recurring_plan_start',
+  recurring_plan_end: 'recurring_plan_end',
+  route_daily_plan_id: 'route_daily_plan_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+
+
+export const RouteDailyPlanScalarFieldEnum = {
+  id: 'id',
+  definition_route_id: 'definition_route_id',
+  scheduled_date: 'scheduled_date',
   status: 'status',
-  directions_polyline: 'directions_polyline',
-  directions_waypoint_order: 'directions_waypoint_order',
-  directions_legs: 'directions_legs',
-  directions_distance_meters: 'directions_distance_meters',
-  directions_duration_seconds: 'directions_duration_seconds',
-  directions_updated_at: 'directions_updated_at',
   started_at: 'started_at',
   completed_at: 'completed_at',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
 
-export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+export type RouteDailyPlanScalarFieldEnum = (typeof RouteDailyPlanScalarFieldEnum)[keyof typeof RouteDailyPlanScalarFieldEnum]
+
+
+export const CompanyHolidayScalarFieldEnum = {
+  id: 'id',
+  company_id: 'company_id',
+  date: 'date',
+  name: 'name',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type CompanyHolidayScalarFieldEnum = (typeof CompanyHolidayScalarFieldEnum)[keyof typeof CompanyHolidayScalarFieldEnum]
+
+
+export const DriverLeaveScalarFieldEnum = {
+  id: 'id',
+  driver_id: 'driver_id',
+  date: 'date',
+  note: 'note',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type DriverLeaveScalarFieldEnum = (typeof DriverLeaveScalarFieldEnum)[keyof typeof DriverLeaveScalarFieldEnum]
 
 
 export const RouteBatchScalarFieldEnum = {
@@ -292,6 +358,19 @@ export const RouteLegScalarFieldEnum = {
 export type RouteLegScalarFieldEnum = (typeof RouteLegScalarFieldEnum)[keyof typeof RouteLegScalarFieldEnum]
 
 
+export const RouteDailyPlanPhaseDriverScalarFieldEnum = {
+  id: 'id',
+  route_daily_plan_id: 'route_daily_plan_id',
+  phase: 'phase',
+  driver_id: 'driver_id',
+  phase_started_at: 'phase_started_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type RouteDailyPlanPhaseDriverScalarFieldEnum = (typeof RouteDailyPlanPhaseDriverScalarFieldEnum)[keyof typeof RouteDailyPlanPhaseDriverScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -316,14 +395,6 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -331,4 +402,12 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

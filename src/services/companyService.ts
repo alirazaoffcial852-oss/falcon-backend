@@ -41,7 +41,7 @@ export class CompanyService {
 			data: {
 				name: data.name,
 				email: data.email ?? null,
-				phone_no: data.phone_no,
+				phone_no: data.phone_no ?? null,
 				address: data.address,
 				lat: data.lat ?? null,
 				long: data.long ?? null,
@@ -62,14 +62,15 @@ export class CompanyService {
 		const updateData: {
 			name?: string;
 			email?: string | null;
-			phone_no?: string;
+			phone_no?: string | null;
 			address?: string;
 			lat?: number | null;
 			long?: number | null;
 		} = {};
 		if (data.name !== undefined) updateData.name = data.name.trim();
 		if (data.email !== undefined) updateData.email = data.email?.trim() ?? null;
-		if (data.phone_no !== undefined) updateData.phone_no = data.phone_no.trim();
+		if (data.phone_no !== undefined)
+			updateData.phone_no = data.phone_no === null ? null : data.phone_no.trim();
 		if (data.address !== undefined) updateData.address = data.address.trim();
 		const company = await this.db.company.update({
 			where: { id },

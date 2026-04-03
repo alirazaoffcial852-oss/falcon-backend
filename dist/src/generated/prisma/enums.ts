@@ -19,6 +19,14 @@ export const RouteStatus = {
 export type RouteStatus = (typeof RouteStatus)[keyof typeof RouteStatus]
 
 
+export const RouteDailyPlanPhase = {
+  PICKUP: 'PICKUP',
+  DROP: 'DROP'
+} as const
+
+export type RouteDailyPlanPhase = (typeof RouteDailyPlanPhase)[keyof typeof RouteDailyPlanPhase]
+
+
 export const PickupStatus = {
   PENDING: 'PENDING',
   ARRIVED: 'ARRIVED',

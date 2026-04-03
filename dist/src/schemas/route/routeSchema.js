@@ -3,14 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.routeIdParamSchema = exports.listRoutesQuerySchema = exports.updateRouteSchema = exports.createRouteSchema = void 0;
+exports.routeIdParamSchema = exports.planStatsQuerySchema = exports.generateDailyBodySchema = exports.optionalDayBodySchema = exports.listRoutesQuerySchema = exports.updateRouteSchema = exports.createRouteSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
-const routeStatusValues = [
-    "PENDING",
-    "ONGOING",
-    "COMPLETED",
-    "CANCELLED",
-];
 const routeLegSchema = joi_1.default.object({
     passengerId: joi_1.default.number().integer().min(1).required().messages({
         "any.required": "Passenger id is required",
@@ -80,6 +74,11 @@ exports.createRouteSchema = joi_1.default.object({
     }),
     batches: joi_1.default.array().items(batchSchema).min(1),
     legs: joi_1.default.array().items(routeLegSchema).min(1),
+    recurringPlanStartDate: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .messages({ "string.pattern.base": "recurringPlanStartDate must be YYYY-MM-DD" }),
+    recurringPlanMonths: joi_1.default.number().integer().min(0).max(36).optional(),
 })
     .or("batches", "legs")
     .messages({
@@ -104,20 +103,50 @@ exports.updateRouteSchema = joi_1.default.object({
     }),
     batches: joi_1.default.array().items(batchSchema).min(1),
     legs: joi_1.default.array().items(routeLegSchema).min(1),
+    recurringPlanStartDate: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+    recurringPlanMonths: joi_1.default.number().integer().min(0).max(36).optional(),
 }).min(1);
 exports.listRoutesQuerySchema = joi_1.default.object({
     page: joi_1.default.number().integer().min(1).default(1),
     limit: joi_1.default.number().integer().min(1).max(100).default(20),
     search: joi_1.default.string().trim().allow("").default(""),
-    status: joi_1.default.string()
-        .valid(...routeStatusValues)
-        .optional(),
     companyId: joi_1.default.string()
         .pattern(/^[1-9]\d*$/)
         .allow(""),
     driverId: joi_1.default.string()
         .pattern(/^[1-9]\d*$/)
         .allow(""),
+});
+/** Optional calendar day (YYYY-MM-DD); defaults to today. */
+exports.optionalDayBodySchema = joi_1.default.object({
+    date: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .messages({
+        "string.pattern.base": "date must be YYYY-MM-DD",
+    }),
+});
+/** POST /routes/generate-daily — optional `plannedOnly` matches cron (only templates inside plan window). */
+exports.generateDailyBodySchema = joi_1.default.object({
+    date: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .messages({
+        "string.pattern.base": "date must be YYYY-MM-DD",
+    }),
+    plannedOnly: joi_1.default.boolean().optional(),
+});
+exports.planStatsQuerySchema = joi_1.default.object({
+    from: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .required()
+        .messages({ "string.pattern.base": "from must be YYYY-MM-DD" }),
+    to: joi_1.default.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .required()
+        .messages({ "string.pattern.base": "to must be YYYY-MM-DD" }),
 });
 exports.routeIdParamSchema = joi_1.default.object({
     id: joi_1.default.number().integer().min(1).required().messages({

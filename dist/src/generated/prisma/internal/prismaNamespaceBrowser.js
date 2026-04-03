@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JsonNullValueFilter = exports.NullsOrder = exports.QueryMode = exports.NullableJsonNullValueInput = exports.SortOrder = exports.RouteLegScalarFieldEnum = exports.RouteSegmentScalarFieldEnum = exports.RouteBatchScalarFieldEnum = exports.RouteScalarFieldEnum = exports.DriverConfigurationScalarFieldEnum = exports.PassengerScalarFieldEnum = exports.DriverAssignCarScalarFieldEnum = exports.DriverScalarFieldEnum = exports.CarScalarFieldEnum = exports.CompanyScalarFieldEnum = exports.UserScalarFieldEnum = exports.RoleScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.NullsOrder = exports.JsonNullValueFilter = exports.QueryMode = exports.NullableJsonNullValueInput = exports.SortOrder = exports.RouteDailyPlanPhaseDriverScalarFieldEnum = exports.RouteLegScalarFieldEnum = exports.RouteSegmentScalarFieldEnum = exports.RouteBatchScalarFieldEnum = exports.DriverLeaveScalarFieldEnum = exports.CompanyHolidayScalarFieldEnum = exports.RouteDailyPlanScalarFieldEnum = exports.RouteScalarFieldEnum = exports.DriverConfigurationScalarFieldEnum = exports.PassengerScalarFieldEnum = exports.DriverAssignCarScalarFieldEnum = exports.DriverScalarFieldEnum = exports.CarScalarFieldEnum = exports.CompanyScalarFieldEnum = exports.UserDeviceTokenScalarFieldEnum = exports.NotificationHistoryScalarFieldEnum = exports.UserScalarFieldEnum = exports.RoleScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -77,6 +77,8 @@ exports.AnyNull = runtime.objectEnumValues.instances.AnyNull;
 exports.ModelName = {
     Role: 'Role',
     User: 'User',
+    NotificationHistory: 'NotificationHistory',
+    UserDeviceToken: 'UserDeviceToken',
     Company: 'Company',
     Car: 'Car',
     Driver: 'Driver',
@@ -84,9 +86,13 @@ exports.ModelName = {
     Passenger: 'Passenger',
     DriverConfiguration: 'DriverConfiguration',
     Route: 'Route',
+    RouteDailyPlan: 'RouteDailyPlan',
+    CompanyHoliday: 'CompanyHoliday',
+    DriverLeave: 'DriverLeave',
     RouteBatch: 'RouteBatch',
     RouteSegment: 'RouteSegment',
-    RouteLeg: 'RouteLeg'
+    RouteLeg: 'RouteLeg',
+    RouteDailyPlanPhaseDriver: 'RouteDailyPlanPhaseDriver'
 };
 /*
  * Enums
@@ -108,6 +114,26 @@ exports.UserScalarFieldEnum = {
     email: 'email',
     password: 'password',
     role_id: 'role_id',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
+exports.NotificationHistoryScalarFieldEnum = {
+    id: 'id',
+    user_id: 'user_id',
+    title: 'title',
+    body: 'body',
+    data: 'data',
+    is_read: 'is_read',
+    read_at: 'read_at',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
+exports.UserDeviceTokenScalarFieldEnum = {
+    id: 'id',
+    user_id: 'user_id',
+    device_token: 'device_token',
+    platform: 'platform',
+    is_active: 'is_active',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
@@ -199,15 +225,35 @@ exports.RouteScalarFieldEnum = {
     office_address: 'office_address',
     office_lat: 'office_lat',
     office_long: 'office_long',
+    recurring_plan_start: 'recurring_plan_start',
+    recurring_plan_end: 'recurring_plan_end',
+    route_daily_plan_id: 'route_daily_plan_id',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
+exports.RouteDailyPlanScalarFieldEnum = {
+    id: 'id',
+    definition_route_id: 'definition_route_id',
+    scheduled_date: 'scheduled_date',
     status: 'status',
-    directions_polyline: 'directions_polyline',
-    directions_waypoint_order: 'directions_waypoint_order',
-    directions_legs: 'directions_legs',
-    directions_distance_meters: 'directions_distance_meters',
-    directions_duration_seconds: 'directions_duration_seconds',
-    directions_updated_at: 'directions_updated_at',
     started_at: 'started_at',
     completed_at: 'completed_at',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
+exports.CompanyHolidayScalarFieldEnum = {
+    id: 'id',
+    company_id: 'company_id',
+    date: 'date',
+    name: 'name',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
+exports.DriverLeaveScalarFieldEnum = {
+    id: 'id',
+    driver_id: 'driver_id',
+    date: 'date',
+    note: 'note',
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
@@ -262,6 +308,15 @@ exports.RouteLegScalarFieldEnum = {
     created_at: 'created_at',
     updated_at: 'updated_at'
 };
+exports.RouteDailyPlanPhaseDriverScalarFieldEnum = {
+    id: 'id',
+    route_daily_plan_id: 'route_daily_plan_id',
+    phase: 'phase',
+    driver_id: 'driver_id',
+    phase_started_at: 'phase_started_at',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+};
 exports.SortOrder = {
     asc: 'asc',
     desc: 'desc'
@@ -274,12 +329,12 @@ exports.QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
 };
-exports.NullsOrder = {
-    first: 'first',
-    last: 'last'
-};
 exports.JsonNullValueFilter = {
     DbNull: exports.DbNull,
     JsonNull: exports.JsonNull,
     AnyNull: exports.AnyNull
+};
+exports.NullsOrder = {
+    first: 'first',
+    last: 'last'
 };

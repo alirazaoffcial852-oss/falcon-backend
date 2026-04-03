@@ -231,6 +231,8 @@ export type UserWhereInput = {
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   driver?: Prisma.XOR<Prisma.DriverNullableScalarRelationFilter, Prisma.DriverWhereInput> | null
   passenger?: Prisma.XOR<Prisma.PassengerNullableScalarRelationFilter, Prisma.PassengerWhereInput> | null
+  deviceTokens?: Prisma.UserDeviceTokenListRelationFilter
+  notifications?: Prisma.NotificationHistoryListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -243,6 +245,8 @@ export type UserOrderByWithRelationInput = {
   role?: Prisma.RoleOrderByWithRelationInput
   driver?: Prisma.DriverOrderByWithRelationInput
   passenger?: Prisma.PassengerOrderByWithRelationInput
+  deviceTokens?: Prisma.UserDeviceTokenOrderByRelationAggregateInput
+  notifications?: Prisma.NotificationHistoryOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -258,6 +262,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   driver?: Prisma.XOR<Prisma.DriverNullableScalarRelationFilter, Prisma.DriverWhereInput> | null
   passenger?: Prisma.XOR<Prisma.PassengerNullableScalarRelationFilter, Prisma.PassengerWhereInput> | null
+  deviceTokens?: Prisma.UserDeviceTokenListRelationFilter
+  notifications?: Prisma.NotificationHistoryListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -294,6 +300,8 @@ export type UserCreateInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   driver?: Prisma.DriverCreateNestedOneWithoutUserInput
   passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -305,6 +313,8 @@ export type UserUncheckedCreateInput = {
   updated_at?: Date | string
   driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
   passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -315,6 +325,8 @@ export type UserUpdateInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
   passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -326,6 +338,8 @@ export type UserUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
   passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -400,6 +414,11 @@ export type UserSumOrderByAggregateInput = {
   role_id?: Prisma.SortOrder
 }
 
+export type UserScalarRelationFilter = {
+  is?: Prisma.UserWhereInput
+  isNot?: Prisma.UserWhereInput
+}
+
 export type UserNullableScalarRelationFilter = {
   is?: Prisma.UserWhereInput | null
   isNot?: Prisma.UserWhereInput | null
@@ -447,6 +466,34 @@ export type UserUncheckedUpdateManyWithoutRoleNestedInput = {
   deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[]
 }
 
+export type UserCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserCreateNestedOneWithoutDeviceTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeviceTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDeviceTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeviceTokensInput
+  upsert?: Prisma.UserUpsertWithoutDeviceTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDeviceTokensInput, Prisma.UserUpdateWithoutDeviceTokensInput>, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+}
+
 export type UserCreateNestedOneWithoutDriverInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutDriverInput, Prisma.UserUncheckedCreateWithoutDriverInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutDriverInput
@@ -486,6 +533,8 @@ export type UserCreateWithoutRoleInput = {
   updated_at?: Date | string
   driver?: Prisma.DriverCreateNestedOneWithoutUserInput
   passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
@@ -496,6 +545,8 @@ export type UserUncheckedCreateWithoutRoleInput = {
   updated_at?: Date | string
   driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
   passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -536,6 +587,130 @@ export type UserScalarWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
 }
 
+export type UserCreateWithoutNotificationsInput = {
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutNotificationsInput = {
+  id?: number
+  email: string
+  password: string
+  role_id: number
+  created_at?: Date | string
+  updated_at?: Date | string
+  driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutNotificationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+}
+
+export type UserUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserUpdateWithoutNotificationsInput = {
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role_id?: Prisma.IntFieldUpdateOperationsInput | number
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutDeviceTokensInput = {
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationHistoryCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDeviceTokensInput = {
+  id?: number
+  email: string
+  password: string
+  role_id: number
+  created_at?: Date | string
+  updated_at?: Date | string
+  driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+  passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationHistoryUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDeviceTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+}
+
+export type UserUpsertWithoutDeviceTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDeviceTokensInput, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeviceTokensInput, Prisma.UserUncheckedCreateWithoutDeviceTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDeviceTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDeviceTokensInput, Prisma.UserUncheckedUpdateWithoutDeviceTokensInput>
+}
+
+export type UserUpdateWithoutDeviceTokensInput = {
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDeviceTokensInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  role_id?: Prisma.IntFieldUpdateOperationsInput | number
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+  passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUncheckedUpdateManyWithoutUserNestedInput
+}
+
 export type UserCreateWithoutDriverInput = {
   email: string
   password: string
@@ -543,6 +718,8 @@ export type UserCreateWithoutDriverInput = {
   updated_at?: Date | string
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   passenger?: Prisma.PassengerCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDriverInput = {
@@ -553,6 +730,8 @@ export type UserUncheckedCreateWithoutDriverInput = {
   created_at?: Date | string
   updated_at?: Date | string
   passenger?: Prisma.PassengerUncheckedCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDriverInput = {
@@ -578,6 +757,8 @@ export type UserUpdateWithoutDriverInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDriverInput = {
@@ -588,6 +769,8 @@ export type UserUncheckedUpdateWithoutDriverInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPassengerInput = {
@@ -597,6 +780,8 @@ export type UserCreateWithoutPassengerInput = {
   updated_at?: Date | string
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   driver?: Prisma.DriverCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPassengerInput = {
@@ -607,6 +792,8 @@ export type UserUncheckedCreateWithoutPassengerInput = {
   created_at?: Date | string
   updated_at?: Date | string
   driver?: Prisma.DriverUncheckedCreateNestedOneWithoutUserInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationHistoryUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPassengerInput = {
@@ -632,6 +819,8 @@ export type UserUpdateWithoutPassengerInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPassengerInput = {
@@ -642,6 +831,8 @@ export type UserUncheckedUpdateWithoutPassengerInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyRoleInput = {
@@ -659,6 +850,8 @@ export type UserUpdateWithoutRoleInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver?: Prisma.DriverUpdateOneWithoutUserNestedInput
   passenger?: Prisma.PassengerUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
@@ -669,6 +862,8 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   driver?: Prisma.DriverUncheckedUpdateOneWithoutUserNestedInput
   passenger?: Prisma.PassengerUncheckedUpdateOneWithoutUserNestedInput
+  deviceTokens?: Prisma.UserDeviceTokenUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationHistoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
@@ -679,6 +874,44 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type UserCountOutputType
+ */
+
+export type UserCountOutputType = {
+  deviceTokens: number
+  notifications: number
+}
+
+export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  deviceTokens?: boolean | UserCountOutputTypeCountDeviceTokensArgs
+  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserCountOutputType
+   */
+  select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDeviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserDeviceTokenWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationHistoryWhereInput
+}
 
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -691,6 +924,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   driver?: boolean | Prisma.User$driverArgs<ExtArgs>
   passenger?: boolean | Prisma.User$passengerArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.User$deviceTokensArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -727,6 +963,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   driver?: boolean | Prisma.User$driverArgs<ExtArgs>
   passenger?: boolean | Prisma.User$passengerArgs<ExtArgs>
+  deviceTokens?: boolean | Prisma.User$deviceTokensArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
@@ -741,6 +980,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     role: Prisma.$RolePayload<ExtArgs>
     driver: Prisma.$DriverPayload<ExtArgs> | null
     passenger: Prisma.$PassengerPayload<ExtArgs> | null
+    deviceTokens: Prisma.$UserDeviceTokenPayload<ExtArgs>[]
+    notifications: Prisma.$NotificationHistoryPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1146,6 +1387,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   driver<T extends Prisma.User$driverArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$driverArgs<ExtArgs>>): Prisma.Prisma__DriverClient<runtime.Types.Result.GetResult<Prisma.$DriverPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   passenger<T extends Prisma.User$passengerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passengerArgs<ExtArgs>>): Prisma.Prisma__PassengerClient<runtime.Types.Result.GetResult<Prisma.$PassengerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  deviceTokens<T extends Prisma.User$deviceTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deviceTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserDeviceTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1612,6 +1855,54 @@ export type User$passengerArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   include?: Prisma.PassengerInclude<ExtArgs> | null
   where?: Prisma.PassengerWhereInput
+}
+
+/**
+ * User.deviceTokens
+ */
+export type User$deviceTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserDeviceToken
+   */
+  select?: Prisma.UserDeviceTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserDeviceToken
+   */
+  omit?: Prisma.UserDeviceTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserDeviceTokenInclude<ExtArgs> | null
+  where?: Prisma.UserDeviceTokenWhereInput
+  orderBy?: Prisma.UserDeviceTokenOrderByWithRelationInput | Prisma.UserDeviceTokenOrderByWithRelationInput[]
+  cursor?: Prisma.UserDeviceTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserDeviceTokenScalarFieldEnum | Prisma.UserDeviceTokenScalarFieldEnum[]
+}
+
+/**
+ * User.notifications
+ */
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationHistory
+   */
+  select?: Prisma.NotificationHistorySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NotificationHistory
+   */
+  omit?: Prisma.NotificationHistoryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationHistoryInclude<ExtArgs> | null
+  where?: Prisma.NotificationHistoryWhereInput
+  orderBy?: Prisma.NotificationHistoryOrderByWithRelationInput | Prisma.NotificationHistoryOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationHistoryWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationHistoryScalarFieldEnum | Prisma.NotificationHistoryScalarFieldEnum[]
 }
 
 /**

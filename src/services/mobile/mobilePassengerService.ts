@@ -2,6 +2,8 @@ import { DatabaseService } from "../../config/database";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { emitToDriver } from "../../config/socketService";
 import { getDriverLiveLocation } from "../../utils/liveLocationStore";
+import { notificationService } from "../notificationService";
+import { dailyPlanForActiveDayWhere } from "../../utils/routeDayScope";
 
 const db = DatabaseService.getInstance().getPrisma();
 
@@ -19,18 +21,16 @@ export const MobilePassengerService = {
 	async getSession(userId: number) {
 		const passenger = await resolvePassenger(userId);
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
 		// Active leg: pickup in progress, or picked up and drop not done yet
 		const leg = await db.routeLeg.findFirst({
 			where: {
 				passenger_id: passenger.id,
 				route: {
-					status: { in: ["PENDING", "ONGOING"] },
-					created_at: { gte: today, lt: tomorrow },
+					route_daily_plan_id: { not: null },
+					daily_plan: {
+						status: { in: ["PENDING", "ONGOING"] },
+						...dailyPlanForActiveDayWhere(),
+					},
 				},
 				OR: [
 					{ pickup_status: { in: ["PENDING", "ARRIVED"] } },
@@ -43,6 +43,7 @@ export const MobilePassengerService = {
 			include: {
 				route: {
 					include: {
+						daily_plan: true,
 						driver: {
 							include: {
 								driver_assign_cars: { include: { car: true }, take: 1 },
@@ -57,6 +58,7 @@ export const MobilePassengerService = {
 		if (!leg) return { session: null, message: "No active trip today" };
 
 		const route = leg.route;
+		const planStatus = route.daily_plan?.status;
 		const driver = route.driver;
 		const car = driver.driver_assign_cars[0]?.car ?? null;
 		const driverLive = getDriverLiveLocation(driver.id);
@@ -75,17 +77,17 @@ export const MobilePassengerService = {
 				: null;
 
 		let state: string;
-		if (route.status === "PENDING" && !driver.is_available) {
+		if (planStatus === "PENDING" && !driver.is_available) {
 			state = "WAITING_FOR_DRIVER";
-		} else if (route.status === "PENDING" && driver.is_available) {
+		} else if (planStatus === "PENDING" && driver.is_available) {
 			state = "DRIVER_AVAILABLE";
 		} else if (
-			route.status === "ONGOING" &&
+			planStatus === "ONGOING" &&
 			leg.pickup_status === "PENDING"
 		) {
 			state = "DRIVER_ON_WAY";
 		} else if (
-			route.status === "ONGOING" &&
+			planStatus === "ONGOING" &&
 			leg.pickup_status === "ARRIVED"
 		) {
 			state = "DRIVER_ARRIVED";
@@ -109,6 +111,7 @@ export const MobilePassengerService = {
 			session: {
 				state,
 				route_id: route.id,
+				plan_id: route.daily_plan?.id,
 				leg_id: leg.id,
 				pickup_status: leg.pickup_status,
 				passenger_ack: leg.passenger_ack,
@@ -149,17 +152,14 @@ export const MobilePassengerService = {
 	async getDriverLocation(userId: number) {
 		const passenger = await resolvePassenger(userId);
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
 		const leg = await db.routeLeg.findFirst({
 			where: {
 				passenger_id: passenger.id,
 				route: {
-					status: "ONGOING",
-					created_at: { gte: today, lt: tomorrow },
+					daily_plan: {
+						status: "ONGOING",
+						...dailyPlanForActiveDayWhere(),
+					},
 				},
 			},
 			include: {
@@ -222,6 +222,19 @@ export const MobilePassengerService = {
 			passengerName: passenger.name,
 			ack,
 			routeId,
+		});
+		void notificationService.sendToDriverId(leg.route.driver_id, {
+			title: "Passenger Response",
+			body:
+				ack === "COMING"
+					? `${passenger.name} is coming`
+					: `${passenger.name} is not coming`,
+			data: {
+				routeId: String(routeId),
+				legId: String(leg.id),
+				ack,
+				type: "passenger_ack",
+			},
 		});
 
 		return {

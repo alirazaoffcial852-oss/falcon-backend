@@ -9,6 +9,8 @@ import routeRoutes from "./admin/routeRoutes";
 import uploadRoutes from "./admin/uploadRoutes";
 import mobileDriverRoutes from "./mobile/mobileDriverRoutes";
 import mobilePassengerRoutes from "./mobile/mobilePassengerRoutes";
+import mobileNotificationRoutes from "./mobile/mobileNotificationRoutes";
+import scheduleRoutes from "./admin/scheduleRoutes";
 
 import { authMiddleware, roleMiddleware } from "../middleware/authMiddleware";
 
@@ -25,12 +27,14 @@ export default function Routes(app: Express) {
 	router.use("/cars", ...admin, carRoutes);
 	router.use("/driver-configurations", ...admin, driverConfigurationRoutes);
 	router.use("/routes", ...admin, routeRoutes);
+	router.use("/schedule", ...admin, scheduleRoutes);
 	router.use("/uploads", ...admin, uploadRoutes);
 
 	// Mobile app routes (require authenticated driver/passenger)
 	const mobile = [authMiddleware];
 	router.use("/mobile/driver", ...mobile, mobileDriverRoutes);
 	router.use("/mobile/passenger", ...mobile, mobilePassengerRoutes);
+	router.use("/mobile/notifications", ...mobile, mobileNotificationRoutes);
 
 	app.use("/f1", router);
 }

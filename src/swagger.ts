@@ -153,6 +153,11 @@ const swaggerDocument = {
 					companyId: { type: "integer", minimum: 1 },
 					pickUpTime: { type: "string", nullable: true },
 					dropOffTime: { type: "string", nullable: true },
+					officePickUpTime: {
+						type: "string",
+						nullable: true,
+						description: "HH:MM — office pickup (e.g. evening route)",
+					},
 				},
 			},
 			UpdatePassengerBody: {
@@ -170,6 +175,11 @@ const swaggerDocument = {
 					companyId: { type: "integer", minimum: 1 },
 					pickUpTime: { type: "string", nullable: true },
 					dropOffTime: { type: "string", nullable: true },
+					officePickUpTime: {
+						type: "string",
+						nullable: true,
+						description: "HH:MM — office pickup (e.g. evening route)",
+					},
 				},
 			},
 			// Car
@@ -282,22 +292,30 @@ const swaggerDocument = {
 					"pickupAddress",
 					"pickupLat",
 					"pickupLong",
-					"pickupTime",
 					"dropoffAddress",
 					"dropoffLat",
 					"dropoffLong",
-					"dropoffTime",
 				],
 				properties: {
 					passengerId: { type: "integer", minimum: 1 },
 					pickupAddress: { type: "string" },
 					pickupLat: { type: "number" },
 					pickupLong: { type: "number" },
-					pickupTime: { type: "string", example: "08:00 am" },
+					pickupTime: {
+						type: "string",
+						example: "08:00",
+						description:
+							"Optional. If omitted, computed from each passenger drop_off_time (office) and Google pickup durations (24h HH:MM).",
+					},
 					dropoffAddress: { type: "string" },
 					dropoffLat: { type: "number" },
 					dropoffLong: { type: "number" },
-					dropoffTime: { type: "string", example: "05:00 pm" },
+					dropoffTime: {
+						type: "string",
+						example: "17:00",
+						description:
+							"Optional on the leg; office deadline is taken from passenger.drop_off_time when pickup/dropoff times are auto-computed.",
+					},
 					tollAmount: { type: "number", nullable: true },
 				},
 			},

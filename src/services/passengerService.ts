@@ -124,8 +124,8 @@ export class PassengerService {
 				office_lat: Number(officeLat),
 				office_long: Number(officeLong),
 				company_id: Number(companyId),
-				pick_up_time: data.pickUpTime?.trim(),
 				drop_off_time: data.dropOffTime?.trim(),
+				office_pick_up_time: data.officePickUpTime?.trim() || null,
 			},
 			include: { company: { select: { id: true, name: true } } },
 		});
@@ -142,6 +142,7 @@ export class PassengerService {
 			companyId: passenger.company_id,
 			pickUpTime: passenger.pick_up_time ?? undefined,
 			dropOffTime: passenger.drop_off_time ?? undefined,
+			officePickUpTime: passenger.office_pick_up_time ?? undefined,
 		};
 	}
 
@@ -175,6 +176,9 @@ export class PassengerService {
 				...(data.dropOffTime !== undefined && {
 					drop_off_time: data.dropOffTime.trim(),
 				}),
+				...(data.officePickUpTime !== undefined && {
+					office_pick_up_time: data.officePickUpTime.trim() || null,
+				}),
 			},
 		});
 		return {
@@ -189,6 +193,7 @@ export class PassengerService {
 			companyId: passenger.company_id,
 			pickUpTime: passenger.pick_up_time ?? undefined,
 			dropOffTime: passenger.drop_off_time ?? undefined,
+			officePickUpTime: passenger.office_pick_up_time ?? undefined,
 		};
 	}
 

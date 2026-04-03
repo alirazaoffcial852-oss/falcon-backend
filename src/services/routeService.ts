@@ -10,11 +10,43 @@ import type {
 import { buildWhereCondition } from "../utils/buildWhereCondition";
 import { fetchGoogleDirections, type LatLng } from "../utils/googleDirections";
 import { geocodeAddressToLatLng } from "../utils/geocodeAddress";
+import {
+	computeInclusivePlanEnd,
+	getLocalDateOnly,
+	getTomorrowLocalDateOnly,
+	isDateInPlanWindow,
+	parseLocalYmd,
+} from "../utils/recurringPlan";
+import {
+	formatSecondsFromMidnightToHHMM,
+	getOfficeArrivalBufferMinutes,
+	parseTimeToMinutesFromMidnight,
+} from "../utils/pickupSchedule";
+import { getFirstRouteLegInPickupOrder } from "../utils/routeFirstPickupLeg";
 
 type SortOriginMode = "driver_home" | "office";
 
 export class RouteService {
 	private db = DatabaseService.getInstance().getPrisma();
+
+	/**
+	 * Sets `trip_start_time` on PICKUP/DROP phase rows: PICKUP = first leg's `pickup_time`,
+	 * DROP = same leg's `office_pick_up_time` (batch_order asc, then sequence asc).
+	 */
+	async setTripStartTimesForDailyPlan(routeId: number, planId: number): Promise<void> {
+		const firstLeg = await getFirstRouteLegInPickupOrder(this.db, routeId);
+		if (!firstLeg) return;
+		const pickupTime = firstLeg.pickup_time?.trim() ?? null;
+		const officePickUp = firstLeg.office_pick_up_time?.trim() ?? null;
+		await this.db.routeDailyPlanPhaseDriver.updateMany({
+			where: { route_daily_plan_id: planId, phase: "PICKUP" },
+			data: { trip_start_time: pickupTime },
+		});
+		await this.db.routeDailyPlanPhaseDriver.updateMany({
+			where: { route_daily_plan_id: planId, phase: "DROP" },
+			data: { trip_start_time: officePickUp },
+		});
+	}
 
 	private distanceKm(a: LatLng, b: LatLng): number {
 		const R = 6371;
@@ -44,16 +76,18 @@ export class RouteService {
 	}
 
 	private mapLegCreate(leg: RouteBatchInput["legs"][0]) {
+		const pickupTime = leg.pickupTime?.trim();
+		const dropoffTime = leg.dropoffTime?.trim();
 		return {
 			passenger_id: leg.passengerId,
 			pickup_address: leg.pickupAddress.trim(),
 			pickup_lat: leg.pickupLat,
 			pickup_long: leg.pickupLong,
-			pickup_time: leg.pickupTime.trim(),
+			pickup_time: pickupTime || "00:00",
 			dropoff_address: leg.dropoffAddress.trim(),
 			dropoff_lat: leg.dropoffLat,
 			dropoff_long: leg.dropoffLong,
-			dropoff_time: leg.dropoffTime.trim(),
+			dropoff_time: dropoffTime || "00:00",
 			toll_amount: leg.tollAmount ?? null,
 		};
 	}
@@ -245,29 +279,117 @@ export class RouteService {
 			await this.optimizeBatchPickup(b.id, sortOrigin, office);
 			await this.optimizeBatchDrop(b.id, office);
 		}
-
-		await this.syncRouteLegacyDirectionsFromBatch(routeId);
 	}
 
-	/** Keep Route.directions_* in sync with batch 1 pickup for admin list / older clients. */
-	private async syncRouteLegacyDirectionsFromBatch(routeId: number): Promise<void> {
+	/**
+	 * Sets each leg's `pickup_time` / `dropoff_time` from passengers' `drop_off_time`
+	 * (office deadline) and Google pickup leg durations: arrive at office
+	 * `ROUTE_OFFICE_ARRIVAL_BUFFER_MINUTES` (default 7) before the earliest deadline.
+	 */
+	private async applyComputedPickupTimesForRoute(routeId: number): Promise<void> {
 		const route = await this.db.route.findUnique({
 			where: { id: routeId },
-			include: { batches: { orderBy: { batch_order: "asc" }, take: 1 } },
-		});
-		const first = route?.batches[0];
-		if (!first) return;
-		await this.db.route.update({
-			where: { id: routeId },
-			data: {
-				directions_polyline: first.pickup_directions_polyline,
-				directions_waypoint_order: first.pickup_waypoint_order as Prisma.InputJsonValue,
-				directions_legs: first.pickup_directions_legs as Prisma.InputJsonValue,
-				directions_distance_meters: first.pickup_distance_meters,
-				directions_duration_seconds: first.pickup_duration_seconds,
-				directions_updated_at: first.pickup_updated_at,
+			include: {
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: {
+						legs: { orderBy: { sequence: "asc" }, include: { passenger: true } },
+					},
+				},
 			},
 		});
+		if (!route) return;
+
+		const bufferSec = getOfficeArrivalBufferMinutes() * 60;
+
+		for (const batch of route.batches) {
+			const legs = batch.legs
+				.filter((l) => l.sequence >= 1)
+				.sort((a, b) => a.sequence - b.sequence);
+			if (legs.length === 0) continue;
+
+			const deadlines: number[] = [];
+			for (const leg of legs) {
+				const raw =
+					leg.passenger.drop_off_time?.trim() || leg.dropoff_time?.trim();
+				const mins = parseTimeToMinutesFromMidnight(raw ?? "");
+				if (mins == null) {
+					deadlines.length = 0;
+					break;
+				}
+				deadlines.push(mins);
+			}
+			if (deadlines.length !== legs.length) continue;
+
+			const minDeadlineMinutes = Math.min(...deadlines);
+			const rawJson = batch.pickup_directions_legs;
+			let legDurations: number[] = Array.isArray(rawJson)
+				? rawJson.map((x) => {
+						const o = x as { duration_seconds?: number };
+						return Math.max(0, Math.round(Number(o?.duration_seconds ?? 0)));
+					})
+				: [];
+
+			if (legDurations.length !== legs.length) {
+				const total = batch.pickup_duration_seconds;
+				if (total != null && total > 0) {
+					const n = legs.length;
+					const base = Math.floor(total / n);
+					const extra = total - base * n;
+					legDurations = [];
+					for (let i = 0; i < n; i++) {
+						legDurations.push(base + (i < extra ? 1 : 0));
+					}
+				} else {
+					continue;
+				}
+			}
+
+			const sumPickupToOffice = legDurations.reduce((a, b) => a + b, 0);
+			if (sumPickupToOffice <= 0) continue;
+
+			const deadlineSec = minDeadlineMinutes * 60;
+			const targetArrivalSec = deadlineSec - bufferSec;
+			const tFirstPickupSec = targetArrivalSec - sumPickupToOffice;
+
+			let cumBefore = 0;
+			const officeHHMM = formatSecondsFromMidnightToHHMM(targetArrivalSec);
+
+			for (let i = 0; i < legs.length; i++) {
+				const arrivalSec = tFirstPickupSec + cumBefore;
+				const pickupHHMM = formatSecondsFromMidnightToHHMM(arrivalSec);
+
+				await this.db.routeLeg.update({
+					where: { id: legs[i].id },
+					data: {
+						pickup_time: pickupHHMM,
+						dropoff_time: officeHHMM,
+						office_pick_up_time:
+							legs[i].passenger.office_pick_up_time?.trim() ?? null,
+					},
+				});
+
+				await this.db.passenger.update({
+					where: { id: legs[i].passenger_id },
+					data: { pick_up_time: pickupHHMM },
+				});
+
+				cumBefore += legDurations[i] ?? 0;
+			}
+		}
+	}
+
+	/** Default 1-month recurring window unless `recurringPlanMonths: 0`. */
+	private computeRecurringPlanForCreate(
+		data: CreateRouteInput & { legs?: RouteBatchInput["legs"] },
+	): { start: Date; end: Date } | null {
+		const months = data.recurringPlanMonths ?? 1;
+		if (months <= 0) return null;
+		const start = data.recurringPlanStartDate
+			? parseLocalYmd(data.recurringPlanStartDate)
+			: getTomorrowLocalDateOnly();
+		const end = computeInclusivePlanEnd(start, months);
+		return { start, end };
 	}
 
 	private normalizeCreateBatches(
@@ -282,9 +404,31 @@ export class RouteService {
 	}
 
 	async list(params: RouteListQuery) {
-		const where = buildWhereCondition(params, ["office_address"], ["status"]);
+		const where = buildWhereCondition(
+			{
+				page: params.page,
+				limit: params.limit,
+				search: params.search,
+			} as RouteListQuery,
+			["office_address"],
+			[],
+		);
 		if (params.companyId !== undefined) where.company_id = params.companyId;
 		if (params.driverId !== undefined) where.driver_id = params.driverId;
+		// Hide legacy execution-only rows (old clones: recurring null + plan set).
+		const legacyListable: Prisma.RouteWhereInput = {
+			OR: [
+				{ recurring_plan_start: { not: null } },
+				{ route_daily_plan_id: null },
+			],
+		};
+		if (where.OR !== undefined) {
+			const searchOr = where.OR;
+			delete where.OR;
+			where.AND = [{ OR: searchOr as Prisma.Enumerable<Prisma.RouteWhereInput> }, legacyListable];
+		} else {
+			Object.assign(where, legacyListable);
+		}
 
 		const total = await this.db.route.count({ where });
 		const data = await this.db.route.findMany({
@@ -349,6 +493,8 @@ export class RouteService {
 	async create(data: CreateRouteInput & { legs?: RouteBatchInput["legs"] }) {
 		const batchInputs = this.normalizeCreateBatches(data);
 
+		const recurringPlan = this.computeRecurringPlanForCreate(data);
+
 		const route = await this.db.$transaction(async (tx) => {
 			const created = await tx.route.create({
 				data: {
@@ -357,7 +503,10 @@ export class RouteService {
 					office_address: data.officeAddress.trim(),
 					office_lat: data.officeLat,
 					office_long: data.officeLong,
-					status: "PENDING",
+					...(recurringPlan && {
+						recurring_plan_start: recurringPlan.start,
+						recurring_plan_end: recurringPlan.end,
+					}),
 				},
 			});
 
@@ -407,6 +556,7 @@ export class RouteService {
 		});
 
 		await this.optimizeAllBatches(route.id);
+		await this.applyComputedPickupTimesForRoute(route.id);
 		return this.getById(route.id);
 	}
 
@@ -480,6 +630,7 @@ export class RouteService {
 				});
 			});
 			await this.optimizeAllBatches(id);
+			await this.applyComputedPickupTimesForRoute(id);
 		} else {
 			await this.db.route.update({
 				where: { id },
@@ -497,6 +648,36 @@ export class RouteService {
 			});
 		}
 
+		if (
+			data.recurringPlanStartDate !== undefined ||
+			data.recurringPlanMonths !== undefined
+		) {
+			const r = await this.db.route.findUnique({ where: { id } });
+			if (!r) throw ResponseHandler.notFound("Route not found");
+			const months = data.recurringPlanMonths ?? 1;
+			if (months <= 0) {
+				await this.db.route.update({
+					where: { id },
+					data: {
+						recurring_plan_start: null,
+						recurring_plan_end: null,
+					},
+				});
+			} else {
+				const start = data.recurringPlanStartDate
+					? parseLocalYmd(data.recurringPlanStartDate)
+					: r.recurring_plan_start ?? getTomorrowLocalDateOnly();
+				const end = computeInclusivePlanEnd(start, months);
+				await this.db.route.update({
+					where: { id },
+					data: {
+						recurring_plan_start: start,
+						recurring_plan_end: end,
+					},
+				});
+			}
+		}
+
 		return this.getById(id);
 	}
 
@@ -507,40 +688,266 @@ export class RouteService {
 	}
 
 	/**
-	 * Copies the ONGOING segment's cached directions onto Route.directions_* for mobile clients.
+	 * Create `RouteDailyPlan` for one calendar day and set `routes.route_daily_plan_id`
+	 * on the template route (no second `routes` row; legs/batches stay on that route).
 	 */
-	async syncRouteDisplayDirections(routeId: number): Promise<void> {
-		const seg = await this.db.routeSegment.findFirst({
-			where: { route_id: routeId, status: "ONGOING" },
-			include: { batch: true },
-		});
-		if (!seg) return;
-		const b = seg.batch;
-		const pickup = seg.kind === "PICKUP_TO_OFFICE";
-		await this.db.route.update({
-			where: { id: routeId },
-			data: {
-				directions_polyline: pickup
-					? b.pickup_directions_polyline
-					: b.drop_directions_polyline,
-				directions_waypoint_order: (pickup
-					? b.pickup_waypoint_order
-					: b.drop_waypoint_order) as Prisma.InputJsonValue,
-				directions_legs: (pickup
-					? b.pickup_directions_legs
-					: b.drop_directions_legs) as Prisma.InputJsonValue,
-				directions_distance_meters: pickup
-					? b.pickup_distance_meters
-					: b.drop_distance_meters,
-				directions_duration_seconds: pickup
-					? b.pickup_duration_seconds
-					: b.drop_duration_seconds,
-				directions_updated_at: pickup
-					? b.pickup_updated_at
-					: b.drop_updated_at,
+	async createDailyPlanWithExecution(definitionRouteId: number, day: Date) {
+		const dayStart = new Date(day);
+		dayStart.setHours(0, 0, 0, 0);
+		const dayEnd = new Date(dayStart);
+		dayEnd.setDate(dayEnd.getDate() + 1);
+
+		const definition = await this.db.route.findUnique({
+			where: { id: definitionRouteId },
+			include: {
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: { legs: { orderBy: { sequence: "asc" } } },
+				},
 			},
 		});
+		if (!definition)
+			throw ResponseHandler.notFound("Route definition", definitionRouteId);
+
+		if (
+			definition.recurring_plan_start &&
+			definition.recurring_plan_end &&
+			!isDateInPlanWindow(
+				dayStart,
+				definition.recurring_plan_start,
+				definition.recurring_plan_end,
+			)
+		) {
+			throw ResponseHandler.badRequest(
+				"Date is outside this route's recurring plan window",
+			);
+		}
+
+		const dup = await this.db.routeDailyPlan.findFirst({
+			where: {
+				definition_route_id: definitionRouteId,
+				scheduled_date: { gte: dayStart, lt: dayEnd },
+			},
+		});
+		if (dup) {
+			throw ResponseHandler.badRequest(
+				"A daily plan already exists for this definition on this date",
+			);
+		}
+
+		const hol = await this.db.companyHoliday.findUnique({
+			where: {
+				company_id_date: {
+					company_id: definition.company_id,
+					date: dayStart,
+				},
+			},
+		});
+		if (hol) {
+			throw ResponseHandler.badRequest(
+				"Company holiday on this date — plan not created",
+			);
+		}
+
+		const leave = await this.db.driverLeave.findUnique({
+			where: {
+				driver_id_date: {
+					driver_id: definition.driver_id,
+					date: dayStart,
+				},
+			},
+		});
+		if (leave) {
+			throw ResponseHandler.badRequest(
+				"Driver on leave this date — plan not created",
+			);
+		}
+
+		const { routeId: templateRouteId, planId } = await this.db.$transaction(
+			async (tx) => {
+			const plan = await tx.routeDailyPlan.create({
+				data: {
+					definition_route_id: definitionRouteId,
+					scheduled_date: dayStart,
+					status: "PENDING",
+				},
+			});
+
+			await tx.route.update({
+				where: { id: definitionRouteId },
+				data: { route_daily_plan_id: plan.id },
+			});
+
+			// Freeze who was assigned for this daily plan (pickup + drop),
+			// so later admin updates to `routes.driver_id` won't rewrite reports.
+			await tx.routeDailyPlanPhaseDriver.createMany({
+				data: [
+					{
+						route_daily_plan_id: plan.id,
+						phase: "PICKUP",
+						driver_id: definition.driver_id,
+						phase_started_at: null,
+					},
+					{
+						route_daily_plan_id: plan.id,
+						phase: "DROP",
+						driver_id: definition.driver_id,
+						phase_started_at: null,
+					},
+				],
+			});
+
+			const phaseDrivers = await tx.routeDailyPlanPhaseDriver.findMany({
+				where: { route_daily_plan_id: plan.id },
+			});
+			const pickupPhaseDriver = phaseDrivers.find((x) => x.phase === "PICKUP");
+			const dropPhaseDriver = phaseDrivers.find((x) => x.phase === "DROP");
+			if (!pickupPhaseDriver || !dropPhaseDriver) {
+				throw ResponseHandler.internal(
+					"Missing PICKUP/DROP phase driver rows after create",
+				);
+			}
+
+			const passengerIds = [
+				...new Set(
+					definition.batches.flatMap((b) =>
+						b.legs.map((leg) => leg.passenger_id),
+					),
+				),
+			];
+			if (passengerIds.length > 0) {
+				await tx.routeDailyPlanPhasePassenger.createMany({
+					data: passengerIds.flatMap((passenger_id) => [
+						{
+							route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
+							passenger_id,
+							status: "PENDING" as const,
+						},
+						{
+							route_daily_plan_phase_driver_id: dropPhaseDriver.id,
+							passenger_id,
+							status: "PENDING" as const,
+						},
+					]),
+				});
+			}
+
+			await tx.routeLeg.updateMany({
+				where: { route_id: definitionRouteId },
+				data: {
+					pickup_status: "PENDING",
+					driver_arrived_at: null,
+					passenger_ack: null,
+					picked_at: null,
+					dropoff_status: "PENDING",
+					dropoff_arrived_at: null,
+					dropped_at: null,
+				},
+			});
+
+			await tx.routeSegment.updateMany({
+				where: { route_id: definitionRouteId },
+				data: { status: "PENDING" },
+			});
+
+			return { routeId: definitionRouteId, planId: plan.id };
+		});
+
+		await this.optimizeAllBatches(templateRouteId);
+		// Ensure pickup_time / office_pick_up_time are computed before phase trip times.
+		await this.applyComputedPickupTimesForRoute(templateRouteId);
+		await this.setTripStartTimesForDailyPlan(templateRouteId, planId);
+		return this.getById(templateRouteId);
 	}
+
+	/** @deprecated alias */
+	async cloneTemplateToInstance(definitionRouteId: number, day: Date) {
+		return this.createDailyPlanWithExecution(definitionRouteId, day);
+	}
+
+	/**
+	 * For each eligible template route, create daily plan + link `route_daily_plan_id` unless duplicate / holiday / leave.
+	 * @param plannedOnly - cron: only routes with recurring window covering `forDay`.
+	 */
+	async generateDailyInstancesForDate(
+		forDay: Date = new Date(),
+		options?: { plannedOnly?: boolean },
+	) {
+		const dayStart = new Date(forDay);
+		dayStart.setHours(0, 0, 0, 0);
+
+		const where: Prisma.RouteWhereInput = {};
+
+		if (options?.plannedOnly) {
+			where.recurring_plan_start = { lte: dayStart };
+			where.recurring_plan_end = { gte: dayStart };
+		} else {
+			where.OR = [
+				{ recurring_plan_start: { not: null } },
+				{ route_daily_plan_id: null },
+			];
+		}
+
+		const definitions = await this.db.route.findMany({ where });
+
+		const created: number[] = [];
+		const skipped: { definitionRouteId: number; reason: string }[] = [];
+
+		for (const d of definitions) {
+			try {
+				const route = await this.createDailyPlanWithExecution(d.id, dayStart);
+				created.push(route.id);
+			} catch (e: unknown) {
+				const err = e as { message?: string };
+				skipped.push({
+					definitionRouteId: d.id,
+					reason: err?.message ?? "unknown error",
+				});
+			}
+		}
+
+		return { created, skipped };
+	}
+
+	/** Per-day passenger counts from RouteDailyPlan + route legs (same template row as `execution_route`). */
+	async getTemplatePlanStats(definitionRouteId: number, from: Date, to: Date) {
+		const def = await this.db.route.findUnique({
+			where: { id: definitionRouteId },
+		});
+		if (!def) throw ResponseHandler.notFound("Route definition", definitionRouteId);
+
+		const fromDay = getLocalDateOnly(from);
+		const toDay = getLocalDateOnly(to);
+
+		const plans = await this.db.routeDailyPlan.findMany({
+			where: {
+				definition_route_id: definitionRouteId,
+				scheduled_date: { gte: fromDay, lte: toDay },
+			},
+			include: {
+				execution_route: {
+					include: {
+						_count: { select: { legs: true } },
+					},
+				},
+			},
+			orderBy: { scheduled_date: "asc" },
+		});
+
+		return {
+			definition_route_id: definitionRouteId,
+			recurring_plan_start: def.recurring_plan_start,
+			recurring_plan_end: def.recurring_plan_end,
+			days: plans.map((p) => ({
+				date: p.scheduled_date,
+				plan_id: p.id,
+				route_id: p.execution_route?.id ?? null,
+				passenger_count: p.execution_route?._count.legs ?? 0,
+				status: p.status,
+			})),
+		};
+	}
+
 
 	async delete(id: number) {
 		await this.getById(id);

@@ -392,6 +392,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Role: 'Role',
   User: 'User',
+  NotificationHistory: 'NotificationHistory',
+  UserDeviceToken: 'UserDeviceToken',
   Company: 'Company',
   Car: 'Car',
   Driver: 'Driver',
@@ -399,9 +401,13 @@ export const ModelName = {
   Passenger: 'Passenger',
   DriverConfiguration: 'DriverConfiguration',
   Route: 'Route',
+  RouteDailyPlan: 'RouteDailyPlan',
+  CompanyHoliday: 'CompanyHoliday',
+  DriverLeave: 'DriverLeave',
   RouteBatch: 'RouteBatch',
   RouteSegment: 'RouteSegment',
-  RouteLeg: 'RouteLeg'
+  RouteLeg: 'RouteLeg',
+  RouteDailyPlanPhaseDriver: 'RouteDailyPlanPhaseDriver'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "company" | "car" | "driver" | "driverAssignCar" | "passenger" | "driverConfiguration" | "route" | "routeBatch" | "routeSegment" | "routeLeg"
+    modelProps: "role" | "user" | "notificationHistory" | "userDeviceToken" | "company" | "car" | "driver" | "driverAssignCar" | "passenger" | "driverConfiguration" | "route" | "routeDailyPlan" | "companyHoliday" | "driverLeave" | "routeBatch" | "routeSegment" | "routeLeg" | "routeDailyPlanPhaseDriver"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -566,6 +572,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    NotificationHistory: {
+      payload: Prisma.$NotificationHistoryPayload<ExtArgs>
+      fields: Prisma.NotificationHistoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NotificationHistoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NotificationHistoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        findFirst: {
+          args: Prisma.NotificationHistoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NotificationHistoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        findMany: {
+          args: Prisma.NotificationHistoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>[]
+        }
+        create: {
+          args: Prisma.NotificationHistoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        createMany: {
+          args: Prisma.NotificationHistoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NotificationHistoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>[]
+        }
+        delete: {
+          args: Prisma.NotificationHistoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        update: {
+          args: Prisma.NotificationHistoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.NotificationHistoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NotificationHistoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NotificationHistoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.NotificationHistoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NotificationHistoryPayload>
+        }
+        aggregate: {
+          args: Prisma.NotificationHistoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNotificationHistory>
+        }
+        groupBy: {
+          args: Prisma.NotificationHistoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationHistoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NotificationHistoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NotificationHistoryCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserDeviceToken: {
+      payload: Prisma.$UserDeviceTokenPayload<ExtArgs>
+      fields: Prisma.UserDeviceTokenFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserDeviceTokenFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserDeviceTokenFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        findFirst: {
+          args: Prisma.UserDeviceTokenFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserDeviceTokenFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        findMany: {
+          args: Prisma.UserDeviceTokenFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>[]
+        }
+        create: {
+          args: Prisma.UserDeviceTokenCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        createMany: {
+          args: Prisma.UserDeviceTokenCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserDeviceTokenCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>[]
+        }
+        delete: {
+          args: Prisma.UserDeviceTokenDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        update: {
+          args: Prisma.UserDeviceTokenUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserDeviceTokenDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserDeviceTokenUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserDeviceTokenUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserDeviceTokenUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserDeviceTokenPayload>
+        }
+        aggregate: {
+          args: Prisma.UserDeviceTokenAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserDeviceToken>
+        }
+        groupBy: {
+          args: Prisma.UserDeviceTokenGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserDeviceTokenGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserDeviceTokenCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserDeviceTokenCountAggregateOutputType> | number
         }
       }
     }
@@ -1087,6 +1241,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RouteDailyPlan: {
+      payload: Prisma.$RouteDailyPlanPayload<ExtArgs>
+      fields: Prisma.RouteDailyPlanFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RouteDailyPlanFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RouteDailyPlanFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        findFirst: {
+          args: Prisma.RouteDailyPlanFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RouteDailyPlanFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        findMany: {
+          args: Prisma.RouteDailyPlanFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>[]
+        }
+        create: {
+          args: Prisma.RouteDailyPlanCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        createMany: {
+          args: Prisma.RouteDailyPlanCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RouteDailyPlanCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>[]
+        }
+        delete: {
+          args: Prisma.RouteDailyPlanDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        update: {
+          args: Prisma.RouteDailyPlanUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        deleteMany: {
+          args: Prisma.RouteDailyPlanDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RouteDailyPlanUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RouteDailyPlanUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>[]
+        }
+        upsert: {
+          args: Prisma.RouteDailyPlanUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPayload>
+        }
+        aggregate: {
+          args: Prisma.RouteDailyPlanAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRouteDailyPlan>
+        }
+        groupBy: {
+          args: Prisma.RouteDailyPlanGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteDailyPlanGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RouteDailyPlanCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteDailyPlanCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanyHoliday: {
+      payload: Prisma.$CompanyHolidayPayload<ExtArgs>
+      fields: Prisma.CompanyHolidayFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanyHolidayFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanyHolidayFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        findFirst: {
+          args: Prisma.CompanyHolidayFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanyHolidayFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        findMany: {
+          args: Prisma.CompanyHolidayFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>[]
+        }
+        create: {
+          args: Prisma.CompanyHolidayCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        createMany: {
+          args: Prisma.CompanyHolidayCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanyHolidayCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>[]
+        }
+        delete: {
+          args: Prisma.CompanyHolidayDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        update: {
+          args: Prisma.CompanyHolidayUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanyHolidayDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanyHolidayUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanyHolidayUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanyHolidayUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyHolidayPayload>
+        }
+        aggregate: {
+          args: Prisma.CompanyHolidayAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanyHoliday>
+        }
+        groupBy: {
+          args: Prisma.CompanyHolidayGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyHolidayGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanyHolidayCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyHolidayCountAggregateOutputType> | number
+        }
+      }
+    }
+    DriverLeave: {
+      payload: Prisma.$DriverLeavePayload<ExtArgs>
+      fields: Prisma.DriverLeaveFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DriverLeaveFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DriverLeaveFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        findFirst: {
+          args: Prisma.DriverLeaveFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DriverLeaveFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        findMany: {
+          args: Prisma.DriverLeaveFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>[]
+        }
+        create: {
+          args: Prisma.DriverLeaveCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        createMany: {
+          args: Prisma.DriverLeaveCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DriverLeaveCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>[]
+        }
+        delete: {
+          args: Prisma.DriverLeaveDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        update: {
+          args: Prisma.DriverLeaveUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        deleteMany: {
+          args: Prisma.DriverLeaveDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DriverLeaveUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DriverLeaveUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>[]
+        }
+        upsert: {
+          args: Prisma.DriverLeaveUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DriverLeavePayload>
+        }
+        aggregate: {
+          args: Prisma.DriverLeaveAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDriverLeave>
+        }
+        groupBy: {
+          args: Prisma.DriverLeaveGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DriverLeaveGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DriverLeaveCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DriverLeaveCountAggregateOutputType> | number
+        }
+      }
+    }
     RouteBatch: {
       payload: Prisma.$RouteBatchPayload<ExtArgs>
       fields: Prisma.RouteBatchFieldRefs
@@ -1309,6 +1685,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RouteDailyPlanPhaseDriver: {
+      payload: Prisma.$RouteDailyPlanPhaseDriverPayload<ExtArgs>
+      fields: Prisma.RouteDailyPlanPhaseDriverFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RouteDailyPlanPhaseDriverFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RouteDailyPlanPhaseDriverFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        findFirst: {
+          args: Prisma.RouteDailyPlanPhaseDriverFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RouteDailyPlanPhaseDriverFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        findMany: {
+          args: Prisma.RouteDailyPlanPhaseDriverFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>[]
+        }
+        create: {
+          args: Prisma.RouteDailyPlanPhaseDriverCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        createMany: {
+          args: Prisma.RouteDailyPlanPhaseDriverCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RouteDailyPlanPhaseDriverCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>[]
+        }
+        delete: {
+          args: Prisma.RouteDailyPlanPhaseDriverDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        update: {
+          args: Prisma.RouteDailyPlanPhaseDriverUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        deleteMany: {
+          args: Prisma.RouteDailyPlanPhaseDriverDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RouteDailyPlanPhaseDriverUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RouteDailyPlanPhaseDriverUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>[]
+        }
+        upsert: {
+          args: Prisma.RouteDailyPlanPhaseDriverUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RouteDailyPlanPhaseDriverPayload>
+        }
+        aggregate: {
+          args: Prisma.RouteDailyPlanPhaseDriverAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRouteDailyPlanPhaseDriver>
+        }
+        groupBy: {
+          args: Prisma.RouteDailyPlanPhaseDriverGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteDailyPlanPhaseDriverGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RouteDailyPlanPhaseDriverCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RouteDailyPlanPhaseDriverCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1368,6 +1818,34 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const NotificationHistoryScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  title: 'title',
+  body: 'body',
+  data: 'data',
+  is_read: 'is_read',
+  read_at: 'read_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type NotificationHistoryScalarFieldEnum = (typeof NotificationHistoryScalarFieldEnum)[keyof typeof NotificationHistoryScalarFieldEnum]
+
+
+export const UserDeviceTokenScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  device_token: 'device_token',
+  platform: 'platform',
+  is_active: 'is_active',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type UserDeviceTokenScalarFieldEnum = (typeof UserDeviceTokenScalarFieldEnum)[keyof typeof UserDeviceTokenScalarFieldEnum]
 
 
 export const CompanyScalarFieldEnum = {
@@ -1482,20 +1960,52 @@ export const RouteScalarFieldEnum = {
   office_address: 'office_address',
   office_lat: 'office_lat',
   office_long: 'office_long',
+  recurring_plan_start: 'recurring_plan_start',
+  recurring_plan_end: 'recurring_plan_end',
+  route_daily_plan_id: 'route_daily_plan_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+
+
+export const RouteDailyPlanScalarFieldEnum = {
+  id: 'id',
+  definition_route_id: 'definition_route_id',
+  scheduled_date: 'scheduled_date',
   status: 'status',
-  directions_polyline: 'directions_polyline',
-  directions_waypoint_order: 'directions_waypoint_order',
-  directions_legs: 'directions_legs',
-  directions_distance_meters: 'directions_distance_meters',
-  directions_duration_seconds: 'directions_duration_seconds',
-  directions_updated_at: 'directions_updated_at',
   started_at: 'started_at',
   completed_at: 'completed_at',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
 
-export type RouteScalarFieldEnum = (typeof RouteScalarFieldEnum)[keyof typeof RouteScalarFieldEnum]
+export type RouteDailyPlanScalarFieldEnum = (typeof RouteDailyPlanScalarFieldEnum)[keyof typeof RouteDailyPlanScalarFieldEnum]
+
+
+export const CompanyHolidayScalarFieldEnum = {
+  id: 'id',
+  company_id: 'company_id',
+  date: 'date',
+  name: 'name',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type CompanyHolidayScalarFieldEnum = (typeof CompanyHolidayScalarFieldEnum)[keyof typeof CompanyHolidayScalarFieldEnum]
+
+
+export const DriverLeaveScalarFieldEnum = {
+  id: 'id',
+  driver_id: 'driver_id',
+  date: 'date',
+  note: 'note',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type DriverLeaveScalarFieldEnum = (typeof DriverLeaveScalarFieldEnum)[keyof typeof DriverLeaveScalarFieldEnum]
 
 
 export const RouteBatchScalarFieldEnum = {
@@ -1561,6 +2071,19 @@ export const RouteLegScalarFieldEnum = {
 export type RouteLegScalarFieldEnum = (typeof RouteLegScalarFieldEnum)[keyof typeof RouteLegScalarFieldEnum]
 
 
+export const RouteDailyPlanPhaseDriverScalarFieldEnum = {
+  id: 'id',
+  route_daily_plan_id: 'route_daily_plan_id',
+  phase: 'phase',
+  driver_id: 'driver_id',
+  phase_started_at: 'phase_started_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type RouteDailyPlanPhaseDriverScalarFieldEnum = (typeof RouteDailyPlanPhaseDriverScalarFieldEnum)[keyof typeof RouteDailyPlanPhaseDriverScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1585,14 +2108,6 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -1600,6 +2115,14 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 
@@ -1651,6 +2174,27 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1665,13 +2209,6 @@ export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMode
 
 
 /**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-/**
  * Reference to a field of type 'RouteStatus'
  */
 export type EnumRouteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RouteStatus'>
@@ -1682,20 +2219,6 @@ export type EnumRouteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'RouteStatus[]'
  */
 export type ListEnumRouteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RouteStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-/**
- * Reference to a field of type 'QueryMode'
- */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -1766,6 +2289,20 @@ export type EnumDropoffStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'DropoffStatus[]'
  */
 export type ListEnumDropoffStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DropoffStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RouteDailyPlanPhase'
+ */
+export type EnumRouteDailyPlanPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RouteDailyPlanPhase'>
+    
+
+
+/**
+ * Reference to a field of type 'RouteDailyPlanPhase[]'
+ */
+export type ListEnumRouteDailyPlanPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RouteDailyPlanPhase[]'>
     
 
 /**
@@ -1857,6 +2394,8 @@ export interface PrismaClientOptions {
 export type GlobalOmitConfig = {
   role?: Prisma.RoleOmit
   user?: Prisma.UserOmit
+  notificationHistory?: Prisma.NotificationHistoryOmit
+  userDeviceToken?: Prisma.UserDeviceTokenOmit
   company?: Prisma.CompanyOmit
   car?: Prisma.CarOmit
   driver?: Prisma.DriverOmit
@@ -1864,9 +2403,13 @@ export type GlobalOmitConfig = {
   passenger?: Prisma.PassengerOmit
   driverConfiguration?: Prisma.DriverConfigurationOmit
   route?: Prisma.RouteOmit
+  routeDailyPlan?: Prisma.RouteDailyPlanOmit
+  companyHoliday?: Prisma.CompanyHolidayOmit
+  driverLeave?: Prisma.DriverLeaveOmit
   routeBatch?: Prisma.RouteBatchOmit
   routeSegment?: Prisma.RouteSegmentOmit
   routeLeg?: Prisma.RouteLegOmit
+  routeDailyPlanPhaseDriver?: Prisma.RouteDailyPlanPhaseDriverOmit
 }
 
 /* Types for Logging */

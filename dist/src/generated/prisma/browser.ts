@@ -28,6 +28,16 @@ export type Role = Prisma.RoleModel
  */
 export type User = Prisma.UserModel
 /**
+ * Model NotificationHistory
+ * 
+ */
+export type NotificationHistory = Prisma.NotificationHistoryModel
+/**
+ * Model UserDeviceToken
+ * 
+ */
+export type UserDeviceToken = Prisma.UserDeviceTokenModel
+/**
  * Model Company
  * 
  */
@@ -59,9 +69,25 @@ export type Passenger = Prisma.PassengerModel
 export type DriverConfiguration = Prisma.DriverConfigurationModel
 /**
  * Model Route
- * 
+ * Admin-defined route (stops, passengers). No trip status here — see RouteDailyPlan.
+ * `route_daily_plan_id` null = definition row; set = execution clone for one calendar day.
  */
 export type Route = Prisma.RouteModel
+/**
+ * Model RouteDailyPlan
+ * One calendar day of operation for a definition route: status and times live here only.
+ */
+export type RouteDailyPlan = Prisma.RouteDailyPlanModel
+/**
+ * Model CompanyHoliday
+ * Company-wide non-working days: no daily route instances are generated.
+ */
+export type CompanyHoliday = Prisma.CompanyHolidayModel
+/**
+ * Model DriverLeave
+ * Driver-specific off days: no daily instance for that driver on this date.
+ */
+export type DriverLeave = Prisma.DriverLeaveModel
 /**
  * Model RouteBatch
  * One load (e.g. up to 3 passengers) with its own pickup and drop cached directions.
@@ -77,3 +103,8 @@ export type RouteSegment = Prisma.RouteSegmentModel
  * 
  */
 export type RouteLeg = Prisma.RouteLegModel
+/**
+ * Model RouteDailyPlanPhaseDriver
+ * 
+ */
+export type RouteDailyPlanPhaseDriver = Prisma.RouteDailyPlanPhaseDriverModel

@@ -9,6 +9,7 @@ exports.emitToAdmins = emitToAdmins;
 const socket_io_1 = require("socket.io");
 const database_1 = require("./database");
 const liveLocationStore_1 = require("../utils/liveLocationStore");
+const routeDayScope_1 = require("../utils/routeDayScope");
 let io = null;
 const db = database_1.DatabaseService.getInstance().getPrisma();
 function initSocket(httpServer) {
@@ -23,16 +24,17 @@ function initSocket(httpServer) {
         // Driver joins a room named "driver:<driverId>"
         socket.on("join:driver", (driverId) => {
             socket.join(`driver:${driverId}`);
-            console.log(`Driver ${driverId} joined room`);
+            console.log(`🚗 [DRIVER][join] socket=${socket.id} room=driver:${driverId}`);
         });
         // Passenger joins a room named "passenger:<passengerId>"
         socket.on("join:passenger", (passengerId) => {
             socket.join(`passenger:${passengerId}`);
-            console.log(`Passenger ${passengerId} joined room`);
+            console.log(`🧍 [PASSENGER][join] socket=${socket.id} room=passenger:${passengerId}`);
         });
         // Admin dashboard joins to receive live locations
         socket.on("join:admin", () => {
             socket.join("admin:dashboard");
+            console.log(`🛡️ [ADMIN][join] socket=${socket.id} room=admin:dashboard`);
         });
         // Driver app pushes live location through socket
         socket.on("driver:location:update", async (payload) => {
@@ -50,20 +52,35 @@ function initSocket(httpServer) {
                 }
                 const updatedAt = new Date();
                 (0, liveLocationStore_1.setDriverLiveLocation)(driverId, lat, long, updatedAt);
+                console.log(`📍 [DRIVER][location:update] driver=${driverId} lat=${lat} long=${long} at=${updatedAt.toISOString()}`);
                 const route = await db.route.findFirst({
-                    where: { driver_id: driverId, status: "ONGOING" },
+                    where: {
+                        driver_id: driverId,
+                        route_daily_plan_id: { not: null },
+                        daily_plan: {
+                            status: "ONGOING",
+                            ...(0, routeDayScope_1.dailyPlanForActiveDayWhere)(),
+                        },
+                    },
                     include: { legs: { select: { passenger_id: true } } },
                     orderBy: { id: "desc" },
                 });
                 const data = { driverId, lat, long, updated_at: updatedAt };
                 if (route) {
                     const passengerIds = route.legs.map((l) => l.passenger_id);
+                    console.log(`🧍📡 [PASSENGER][emit] event=driver:location route=${route.id} passengers=${passengerIds.join(",")} driver=${driverId} lat=${lat} long=${long}`);
                     emitToPassengers(passengerIds, "driver:location", data);
                 }
+                else {
+                    console.log(`🧍⚠️ [PASSENGER][emit:skip] no ONGOING route driver=${driverId} lat=${lat} long=${long}`);
+                }
+                console.log(`🚗📡 [DRIVER][emit] event=driver:location room=driver:${driverId} lat=${lat} long=${long}`);
                 emitToDriver(driverId, "driver:location", data);
+                console.log(`🛡️📡 [ADMIN][emit] event=driver:location room=admin:dashboard driver=${driverId} lat=${lat} long=${long}`);
                 emitToAdmins("driver:location", data);
             }
             catch (error) {
+                console.error(`❌ [DRIVER][location:error] socket=${socket.id} message=Failed to process live location`, error);
                 socket.emit("driver:location:error", {
                     message: "Failed to process live location",
                 });
