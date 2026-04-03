@@ -786,13 +786,15 @@ export class RouteService {
 						route_daily_plan_id: plan.id,
 						phase: "PICKUP",
 						driver_id: definition.driver_id,
-						phase_started_at: null,
+						scheduled_date: dayStart,
+						status: "PENDING",
 					},
 					{
 						route_daily_plan_id: plan.id,
 						phase: "DROP",
 						driver_id: definition.driver_id,
-						phase_started_at: null,
+						scheduled_date: dayStart,
+						status: "PENDING",
 					},
 				],
 			});
@@ -832,14 +834,22 @@ export class RouteService {
 				});
 			}
 
-			await tx.routeLeg.updateMany({
-				where: { route_id: definitionRouteId },
+			await tx.routeDailyPlanPhasePassenger.updateMany({
+				where: {
+					OR: [
+						{
+							route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
+						},
+						{
+							route_daily_plan_phase_driver_id: dropPhaseDriver.id,
+						},
+					],
+				},
 				data: {
-					pickup_status: "PENDING",
+					status: "PENDING",
 					driver_arrived_at: null,
 					passenger_ack: null,
 					picked_at: null,
-					dropoff_status: "PENDING",
 					dropoff_arrived_at: null,
 					dropped_at: null,
 				},

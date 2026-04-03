@@ -24,11 +24,15 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Driver session");
 	}),
 
-	/** POST /f1/mobile/driver/session/:routeId/start */
+	/** POST /f1/mobile/driver/session/:phaseDriverId/start — `RouteDailyPlanPhaseDriver.id` (PICKUP or DROP) from GET /session */
 	startTrip: catchAsync(async (req: AuthRequest, res: Response) => {
-		const routeId = parseInt(req.params.routeId as string);
-		if (isNaN(routeId)) throw ResponseHandler.badRequest("Invalid routeId");
-		const result = await MobileDriverService.startTrip(getUserId(req), routeId);
+		const phaseDriverId = parseInt(req.params.phaseDriverId as string);
+		if (isNaN(phaseDriverId))
+			throw ResponseHandler.badRequest("Invalid phaseDriverId");
+		const result = await MobileDriverService.startTrip(
+			getUserId(req),
+			phaseDriverId,
+		);
 		ResponseHandler.success(res, result, "Trip started");
 	}),
 
@@ -42,25 +46,24 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Location updated");
 	}),
 
-	/** POST /f1/mobile/driver/session/:routeId/legs/:legId/arrive */
+	/** POST /f1/mobile/driver/session/phase-passengers/:phasePassengerId/arrive — `phasePassengerId` = RouteDailyPlanPhasePassenger.id from GET /session */
 	arriveAtPassenger: catchAsync(async (req: AuthRequest, res: Response) => {
-		const routeId = parseInt(req.params.routeId as string);
-		const legId = parseInt(req.params.legId as string);
-		if (isNaN(routeId) || isNaN(legId))
-			throw ResponseHandler.badRequest("Invalid routeId or legId");
+		const phasePassengerId = parseInt(req.params.phasePassengerId as string);
+		if (isNaN(phasePassengerId))
+			throw ResponseHandler.badRequest("Invalid phasePassengerId");
 		const result = await MobileDriverService.arriveAtPassenger(
 			getUserId(req),
-			routeId,
-			legId,
+			phasePassengerId,
 		);
 		ResponseHandler.success(res, result, "Arrived at passenger");
 	}),
 
-	/** POST /f1/mobile/driver/session/:routeId/legs/:legId/action */
+	/** POST /f1/mobile/driver/session/phase-passengers/:phasePassengerId/action — body { action } */
 	legAction: catchAsync(async (req: AuthRequest, res: Response) => {
-		const routeId = parseInt(req.params.routeId as string);
-		const legId = parseInt(req.params.legId as string);
+		const phasePassengerId = parseInt(req.params.phasePassengerId as string);
 		const action = (req.body as { action?: string }).action as LegAction;
+		if (isNaN(phasePassengerId))
+			throw ResponseHandler.badRequest("Invalid phasePassengerId");
 		if (!["PICKED", "STILL_WAITING", "MOVE_TO_NEXT"].includes(action)) {
 			throw ResponseHandler.badRequest(
 				"action must be PICKED, STILL_WAITING, or MOVE_TO_NEXT",
@@ -68,8 +71,7 @@ export const MobileDriverController = {
 		}
 		const result = await MobileDriverService.legAction(
 			getUserId(req),
-			routeId,
-			legId,
+			phasePassengerId,
 			action,
 		);
 		ResponseHandler.success(res, result, "Action processed");
@@ -86,11 +88,15 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Advanced to next segment");
 	}),
 
-	/** POST /f1/mobile/driver/session/:routeId/complete */
+	/** POST /f1/mobile/driver/session/:phaseDriverId/complete — `RouteDailyPlanPhaseDriver.id` from GET /session */
 	completeTrip: catchAsync(async (req: AuthRequest, res: Response) => {
-		const routeId = parseInt(req.params.routeId as string);
-		if (isNaN(routeId)) throw ResponseHandler.badRequest("Invalid routeId");
-		const result = await MobileDriverService.completeTrip(getUserId(req), routeId);
-		ResponseHandler.success(res, result, "Ride completed");
+		const phaseDriverId = parseInt(req.params.phaseDriverId as string);
+		if (isNaN(phaseDriverId))
+			throw ResponseHandler.badRequest("Invalid phaseDriverId");
+		const result = await MobileDriverService.completeTrip(
+			getUserId(req),
+			phaseDriverId,
+		);
+		ResponseHandler.success(res, result, "Phase / ride completion processed");
 	}),
 };
