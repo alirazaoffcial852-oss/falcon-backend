@@ -20,7 +20,28 @@ model Role {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  is_admin_role Boolean @default(false)
+  description   String?
+  permissions   AdminPermission[]
+
   @@map("roles")
+}
+
+model AdminPermission {
+  id          Int      @id @default(autoincrement())
+  role_id     Int
+  role        Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  module      String   
+  can_view    Boolean  @default(false)
+  can_create  Boolean  @default(false)
+  can_edit    Boolean  @default(false)
+  can_delete  Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([role_id, module])
+  @@index([role_id])
+  @@map("admin_permissions")
 }
 
 model User {
@@ -35,6 +56,10 @@ model User {
   passenger     Passenger?
   deviceTokens  UserDeviceToken[]
   notifications NotificationHistory[]
+  
+  // Admin management tracking
+  created_by    Int?                  // ID of the admin who created this user
+  is_super_admin Boolean              @default(false) // Only true for the initial super admin
 
   @@map("users")
 }

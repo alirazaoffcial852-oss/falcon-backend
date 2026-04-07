@@ -3,15 +3,11 @@ import jwt from "jsonwebtoken";
 import { DatabaseService } from "../config/database";
 import { ResponseHandler } from "../utils/responses/ResponseHandler";
 import { sendForgotPasswordOtpEmail } from "../utils/email";
+import type { ForgotPasswordOtpRecord } from "../types/admin/auth";
 
 const ROLES = ["admin", "driver", "passenger"] as const;
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
 
-type ForgotPasswordOtpRecord = {
-	otp: string;
-	expiresAt: number;
-	verified: boolean;
-};
 const forgotPasswordOtpStore = new Map<string, ForgotPasswordOtpRecord>();
 
 export class AuthService {
@@ -27,12 +23,23 @@ export class AuthService {
 		if (!valid) throw ResponseHandler.unauthorized("Invalid password");
 		const secret = process.env.JWT_SECRET;
 		if (!secret) throw ResponseHandler.internal("Server misconfiguration");
-		const token = jwt.sign({ id: user.id, role: user.role.name }, secret, {
+		const token = jwt.sign({ 
+			id: user.id, 
+			role: user.role.name,
+			is_admin_role: user.role.is_admin_role,
+			is_super_admin: user.is_super_admin 
+		}, secret, {
 			expiresIn: "7d",
 		});
 		return {
 			token,
-			user: { id: user.id, email: user.email, role: user.role.name },
+			user: { 
+				id: user.id, 
+				email: user.email, 
+				role: user.role.name,
+				is_admin_role: user.role.is_admin_role,
+				is_super_admin: user.is_super_admin
+			},
 		};
 	}
 
