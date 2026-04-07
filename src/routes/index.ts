@@ -13,32 +13,37 @@ import mobileNotificationRoutes from "./mobile/mobileNotificationRoutes";
 import scheduleRoutes from "./admin/scheduleRoutes";
 import adminRoutes from "./admin/adminRoutes";
 
-import { authMiddleware, roleMiddleware, permissionMiddleware } from "../middleware/authMiddleware";
+import {
+	authMiddleware,
+	roleMiddleware,
+	permissionMiddleware,
+} from "../middleware/authMiddleware";
 
 export default function Routes(app: Express) {
 	const router = Router();
 
 	router.use("/auth", authRoutes);
 
-	const admin = [authMiddleware, roleMiddleware("admin", "super_admin")];
-	
+	// Admin routes (require admin role)
+	const admin = [authMiddleware, roleMiddleware("admin")];
+	const authOnly = [authMiddleware];
 	router.use("/companies", ...admin, companyRoutes);
-	
-	router.use("/drivers", ...admin, driverRoutes);
-	
+	router.use("/drivers", ...authOnly, driverRoutes);
 	router.use("/passengers", ...admin, passengerRoutes);
-	
+
 	router.use("/cars", ...admin, carRoutes);
-	
+
 	router.use("/driver-configurations", ...admin, driverConfigurationRoutes);
-	
+
 	router.use("/routes", ...admin, routeRoutes);
-	
+
 	router.use("/schedule", ...admin, scheduleRoutes);
-	
+
 	router.use("/uploads", ...admin, uploadRoutes);
-	
+
 	router.use("/admins", ...admin, adminRoutes);
+	// Public for pre-login flows (e.g. driver self-registration image upload)
+	router.use("/uploads", uploadRoutes);
 
 	const mobile = [authMiddleware];
 	router.use("/mobile/driver", ...mobile, mobileDriverRoutes);
