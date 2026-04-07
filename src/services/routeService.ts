@@ -14,7 +14,6 @@ import {
 	computeInclusivePlanEnd,
 	getLocalDateOnly,
 	getTomorrowLocalDateOnly,
-	isDateInPlanWindow,
 	parseLocalYmd,
 } from "../utils/recurringPlan";
 import {
@@ -33,7 +32,10 @@ export class RouteService {
 	 * Sets `trip_start_time` on PICKUP/DROP phase rows: PICKUP = first leg's `pickup_time`,
 	 * DROP = same leg's `office_pick_up_time` (batch_order asc, then sequence asc).
 	 */
-	async setTripStartTimesForDailyPlan(routeId: number, planId: number): Promise<void> {
+	async setTripStartTimesForDailyPlan(
+		routeId: number,
+		planId: number,
+	): Promise<void> {
 		const firstLeg = await getFirstRouteLegInPickupOrder(this.db, routeId);
 		if (!firstLeg) return;
 		const pickupTime = firstLeg.pickup_time?.trim() ?? null;
@@ -129,7 +131,8 @@ export class RouteService {
 			.slice()
 			.sort(
 				(a, b) =>
-					this.distanceKm(sortPoint, a.point) - this.distanceKm(sortPoint, b.point),
+					this.distanceKm(sortPoint, a.point) -
+					this.distanceKm(sortPoint, b.point),
 			);
 		const waypointOrder = orderedWaypoints.map((w) => w.idx);
 		const pickupPoints: LatLng[] = orderedWaypoints.map((w) => w.point);
@@ -187,7 +190,10 @@ export class RouteService {
 	}
 
 	/** Drop path: office → homes in reverse pickup order (last picked = first dropped). */
-	private async optimizeBatchDrop(batchId: number, office: LatLng): Promise<void> {
+	private async optimizeBatchDrop(
+		batchId: number,
+		office: LatLng,
+	): Promise<void> {
 		const batch = await this.db.routeBatch.findUnique({
 			where: { id: batchId },
 			include: {
@@ -286,14 +292,19 @@ export class RouteService {
 	 * (office deadline) and Google pickup leg durations: arrive at office
 	 * `ROUTE_OFFICE_ARRIVAL_BUFFER_MINUTES` (default 7) before the earliest deadline.
 	 */
-	private async applyComputedPickupTimesForRoute(routeId: number): Promise<void> {
+	private async applyComputedPickupTimesForRoute(
+		routeId: number,
+	): Promise<void> {
 		const route = await this.db.route.findUnique({
 			where: { id: routeId },
 			include: {
 				batches: {
 					orderBy: { batch_order: "asc" },
 					include: {
-						legs: { orderBy: { sequence: "asc" }, include: { passenger: true } },
+						legs: {
+							orderBy: { sequence: "asc" },
+							include: { passenger: true },
+						},
 					},
 				},
 			},
@@ -425,7 +436,10 @@ export class RouteService {
 		if (where.OR !== undefined) {
 			const searchOr = where.OR;
 			delete where.OR;
-			where.AND = [{ OR: searchOr as Prisma.Enumerable<Prisma.RouteWhereInput> }, legacyListable];
+			where.AND = [
+				{ OR: searchOr as Prisma.Enumerable<Prisma.RouteWhereInput> },
+				legacyListable,
+			];
 		} else {
 			Object.assign(where, legacyListable);
 		}
@@ -503,6 +517,7 @@ export class RouteService {
 					office_address: data.officeAddress.trim(),
 					office_lat: data.officeLat,
 					office_long: data.officeLong,
+					route_price: data.routePrice ?? null,
 					...(recurringPlan && {
 						recurring_plan_start: recurringPlan.start,
 						recurring_plan_end: recurringPlan.end,
@@ -626,6 +641,9 @@ export class RouteService {
 						...(data.officeLong !== undefined && {
 							office_long: data.officeLong,
 						}),
+						...(data.routePrice !== undefined && {
+							route_price: data.routePrice,
+						}),
 					},
 				});
 			});
@@ -643,6 +661,9 @@ export class RouteService {
 					...(data.officeLat !== undefined && { office_lat: data.officeLat }),
 					...(data.officeLong !== undefined && {
 						office_long: data.officeLong,
+					}),
+					...(data.routePrice !== undefined && {
+						route_price: data.routePrice,
 					}),
 				},
 			});
@@ -666,7 +687,7 @@ export class RouteService {
 			} else {
 				const start = data.recurringPlanStartDate
 					? parseLocalYmd(data.recurringPlanStartDate)
-					: r.recurring_plan_start ?? getTomorrowLocalDateOnly();
+					: (r.recurring_plan_start ?? getTomorrowLocalDateOnly());
 				const end = computeInclusivePlanEnd(start, months);
 				await this.db.route.update({
 					where: { id },
@@ -693,7 +714,7 @@ export class RouteService {
 	 */
 	async createDailyPlanWithExecution(definitionRouteId: number, day: Date) {
 		const dayStart = new Date(day);
-		dayStart.setHours(0, 0, 0, 0);
+		// dayStart.setHours(0, 0, 0, 0);
 		const dayEnd = new Date(dayStart);
 		dayEnd.setDate(dayEnd.getDate() + 1);
 
@@ -709,18 +730,16 @@ export class RouteService {
 		if (!definition)
 			throw ResponseHandler.notFound("Route definition", definitionRouteId);
 
-		if (
-			definition.recurring_plan_start &&
-			definition.recurring_plan_end &&
-			!isDateInPlanWindow(
-				dayStart,
+		if (definition.recurring_plan_start) {
+			const dayT = getLocalDateOnly(dayStart).getTime();
+			const startT = getLocalDateOnly(
 				definition.recurring_plan_start,
-				definition.recurring_plan_end,
-			)
-		) {
-			throw ResponseHandler.badRequest(
-				"Date is outside this route's recurring plan window",
-			);
+			).getTime();
+			if (dayT < startT) {
+				throw ResponseHandler.badRequest(
+					"Date is before this route's recurring_plan_start",
+				);
+			}
 		}
 
 		const dup = await this.db.routeDailyPlan.findFirst({
@@ -765,103 +784,106 @@ export class RouteService {
 
 		const { routeId: templateRouteId, planId } = await this.db.$transaction(
 			async (tx) => {
-			const plan = await tx.routeDailyPlan.create({
-				data: {
-					definition_route_id: definitionRouteId,
-					scheduled_date: dayStart,
-					status: "PENDING",
-				},
-			});
-
-			await tx.route.update({
-				where: { id: definitionRouteId },
-				data: { route_daily_plan_id: plan.id },
-			});
-
-			// Freeze who was assigned for this daily plan (pickup + drop),
-			// so later admin updates to `routes.driver_id` won't rewrite reports.
-			await tx.routeDailyPlanPhaseDriver.createMany({
-				data: [
-					{
-						route_daily_plan_id: plan.id,
-						phase: "PICKUP",
-						driver_id: definition.driver_id,
+				const plan = await tx.routeDailyPlan.create({
+					data: {
+						definition_route_id: definitionRouteId,
 						scheduled_date: dayStart,
 						status: "PENDING",
 					},
-					{
-						route_daily_plan_id: plan.id,
-						phase: "DROP",
-						driver_id: definition.driver_id,
-						scheduled_date: dayStart,
-						status: "PENDING",
-					},
-				],
-			});
-
-			const phaseDrivers = await tx.routeDailyPlanPhaseDriver.findMany({
-				where: { route_daily_plan_id: plan.id },
-			});
-			const pickupPhaseDriver = phaseDrivers.find((x) => x.phase === "PICKUP");
-			const dropPhaseDriver = phaseDrivers.find((x) => x.phase === "DROP");
-			if (!pickupPhaseDriver || !dropPhaseDriver) {
-				throw ResponseHandler.internal(
-					"Missing PICKUP/DROP phase driver rows after create",
-				);
-			}
-
-			const passengerIds = [
-				...new Set(
-					definition.batches.flatMap((b) =>
-						b.legs.map((leg) => leg.passenger_id),
-					),
-				),
-			];
-			if (passengerIds.length > 0) {
-				await tx.routeDailyPlanPhasePassenger.createMany({
-					data: passengerIds.flatMap((passenger_id) => [
-						{
-							route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
-							passenger_id,
-							status: "PENDING" as const,
-						},
-						{
-							route_daily_plan_phase_driver_id: dropPhaseDriver.id,
-							passenger_id,
-							status: "PENDING" as const,
-						},
-					]),
 				});
-			}
 
-			await tx.routeDailyPlanPhasePassenger.updateMany({
-				where: {
-					OR: [
+				await tx.route.update({
+					where: { id: definitionRouteId },
+					data: { route_daily_plan_id: plan.id },
+				});
+
+				// Freeze who was assigned for this daily plan (pickup + drop),
+				// so later admin updates to `routes.driver_id` won't rewrite reports.
+				await tx.routeDailyPlanPhaseDriver.createMany({
+					data: [
 						{
-							route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
+							route_daily_plan_id: plan.id,
+							phase: "PICKUP",
+							driver_id: definition.driver_id,
+							scheduled_date: dayStart,
+							status: "PENDING",
 						},
 						{
-							route_daily_plan_phase_driver_id: dropPhaseDriver.id,
+							route_daily_plan_id: plan.id,
+							phase: "DROP",
+							driver_id: definition.driver_id,
+							scheduled_date: dayStart,
+							status: "PENDING",
 						},
 					],
-				},
-				data: {
-					status: "PENDING",
-					driver_arrived_at: null,
-					passenger_ack: null,
-					picked_at: null,
-					dropoff_arrived_at: null,
-					dropped_at: null,
-				},
-			});
+				});
 
-			await tx.routeSegment.updateMany({
-				where: { route_id: definitionRouteId },
-				data: { status: "PENDING" },
-			});
+				const phaseDrivers = await tx.routeDailyPlanPhaseDriver.findMany({
+					where: { route_daily_plan_id: plan.id },
+				});
+				const pickupPhaseDriver = phaseDrivers.find(
+					(x) => x.phase === "PICKUP",
+				);
+				const dropPhaseDriver = phaseDrivers.find((x) => x.phase === "DROP");
+				if (!pickupPhaseDriver || !dropPhaseDriver) {
+					throw ResponseHandler.internal(
+						"Missing PICKUP/DROP phase driver rows after create",
+					);
+				}
 
-			return { routeId: definitionRouteId, planId: plan.id };
-		});
+				const passengerIds = [
+					...new Set(
+						definition.batches.flatMap((b) =>
+							b.legs.map((leg) => leg.passenger_id),
+						),
+					),
+				];
+				if (passengerIds.length > 0) {
+					await tx.routeDailyPlanPhasePassenger.createMany({
+						data: passengerIds.flatMap((passenger_id) => [
+							{
+								route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
+								passenger_id,
+								status: "PENDING" as const,
+							},
+							{
+								route_daily_plan_phase_driver_id: dropPhaseDriver.id,
+								passenger_id,
+								status: "PENDING" as const,
+							},
+						]),
+					});
+				}
+
+				await tx.routeDailyPlanPhasePassenger.updateMany({
+					where: {
+						OR: [
+							{
+								route_daily_plan_phase_driver_id: pickupPhaseDriver.id,
+							},
+							{
+								route_daily_plan_phase_driver_id: dropPhaseDriver.id,
+							},
+						],
+					},
+					data: {
+						status: "PENDING",
+						driver_arrived_at: null,
+						passenger_ack: null,
+						picked_at: null,
+						dropoff_arrived_at: null,
+						dropped_at: null,
+					},
+				});
+
+				await tx.routeSegment.updateMany({
+					where: { route_id: definitionRouteId },
+					data: { status: "PENDING" },
+				});
+
+				return { routeId: definitionRouteId, planId: plan.id };
+			},
+		);
 
 		await this.optimizeAllBatches(templateRouteId);
 		// Ensure pickup_time / office_pick_up_time are computed before phase trip times.
@@ -877,20 +899,21 @@ export class RouteService {
 
 	/**
 	 * For each eligible template route, create daily plan + link `route_daily_plan_id` unless duplicate / holiday / leave.
-	 * @param plannedOnly - cron: only routes with recurring window covering `forDay`.
+	 * @param plannedOnly - cron: routes with `recurring_plan_start` on or before `forDay` (recurring has begun).
+	 *   Creates a `RouteDailyPlan` with `scheduled_date = forDay` (e.g. today). `recurring_plan_end` is not used for eligibility.
 	 */
 	async generateDailyInstancesForDate(
 		forDay: Date = new Date(),
 		options?: { plannedOnly?: boolean },
 	) {
 		const dayStart = new Date(forDay);
-		dayStart.setHours(0, 0, 0, 0);
+		// dayStart.setHours(0, 0, 0, 0);
 
 		const where: Prisma.RouteWhereInput = {};
 
 		if (options?.plannedOnly) {
+			// Every calendar day from start onward gets a plan for `forDay` — not only the start day.
 			where.recurring_plan_start = { lte: dayStart };
-			where.recurring_plan_end = { gte: dayStart };
 		} else {
 			where.OR = [
 				{ recurring_plan_start: { not: null } },
@@ -924,7 +947,8 @@ export class RouteService {
 		const def = await this.db.route.findUnique({
 			where: { id: definitionRouteId },
 		});
-		if (!def) throw ResponseHandler.notFound("Route definition", definitionRouteId);
+		if (!def)
+			throw ResponseHandler.notFound("Route definition", definitionRouteId);
 
 		const fromDay = getLocalDateOnly(from);
 		const toDay = getLocalDateOnly(to);
@@ -957,7 +981,6 @@ export class RouteService {
 			})),
 		};
 	}
-
 
 	async delete(id: number) {
 		await this.getById(id);

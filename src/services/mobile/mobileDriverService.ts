@@ -494,18 +494,10 @@ async function buildStartTripResponse(params: {
 		.filter((l) => {
 			if (isPickup) {
 				const st = pickupStatusMap.get(l.passenger_id);
-				return (
-					st === "PENDING" ||
-					st === "ARRIVED" ||
-					st === "STILL_WAITING"
-				);
+				return st === "PENDING" || st === "ARRIVED" || st === "STILL_WAITING";
 			}
 			const st = dropStatusMap.get(l.passenger_id);
-			return (
-				st === "PENDING" ||
-				st === "ARRIVED" ||
-				st === "STILL_WAITING"
-			);
+			return st === "PENDING" || st === "ARRIVED" || st === "STILL_WAITING";
 		})
 		.map((leg, idx) =>
 			buildQueueItem(
@@ -713,10 +705,41 @@ export const MobileDriverService = {
 			return 0;
 		});
 
+		const executionRouteIds = [
+			...new Set(
+				sorted
+					.map((pd) => pd.route_daily_plan.execution_route?.id)
+					.filter((id): id is number => id != null),
+			),
+		];
+		const routeLegs =
+			executionRouteIds.length === 0
+				? []
+				: await db.routeLeg.findMany({
+						where: { route_id: { in: executionRouteIds } },
+						select: {
+							route_id: true,
+							passenger_id: true,
+							pickup_lat: true,
+							pickup_long: true,
+							pickup_address: true,
+							pickup_time: true,
+							dropoff_lat: true,
+							dropoff_long: true,
+							dropoff_address: true,
+							dropoff_time: true,
+						},
+					});
+		const legByRoutePassenger = new Map<string, (typeof routeLegs)[number]>();
+		for (const l of routeLegs) {
+			legByRoutePassenger.set(`${l.route_id}:${l.passenger_id}`, l);
+		}
+
 		return {
 			trips: sorted.map((pd) => {
 				const plan = pd.route_daily_plan;
 				const exec = plan.execution_route;
+				const routeIdForLegs = exec?.id ?? null;
 				return {
 					phase_driver_id: pd.id,
 					phase: pd.phase,
@@ -757,25 +780,48 @@ export const MobileDriverService = {
 								drop_duration_seconds: b.drop_duration_seconds,
 							};
 						}) ?? [],
-					phase_passengers: pd.route_daily_plan_phase_passengers.map((pp) => ({
-						id: pp.id,
-						route_daily_plan_phase_driver_id:
-							pp.route_daily_plan_phase_driver_id,
-						passenger_id: pp.passenger_id,
-						status: pp.status,
-						driver_arrived_at: pp.driver_arrived_at,
-						passenger_ack: pp.passenger_ack,
-						picked_at: pp.picked_at,
-						dropoff_arrived_at: pp.dropoff_arrived_at,
-						dropped_at: pp.dropped_at,
-						created_at: pp.created_at,
-						updated_at: pp.updated_at,
-						passenger: {
-							id: pp.passenger.id,
-							name: pp.passenger.name,
-							phone_no: pp.passenger.phone_no,
-						},
-					})),
+					phase_passengers: pd.route_daily_plan_phase_passengers.map((pp) => {
+						const leg =
+							routeIdForLegs != null
+								? legByRoutePassenger.get(
+										`${routeIdForLegs}:${pp.passenger_id}`,
+									)
+								: undefined;
+						const stop =
+							pd.phase === "PICKUP"
+								? {
+										lat: leg?.pickup_lat ?? null,
+										long: leg?.pickup_long ?? null,
+										pickup_address: leg?.pickup_address ?? null,
+										pickup_time: leg?.pickup_time ?? null,
+									}
+								: {
+										lat: leg?.dropoff_lat ?? null,
+										long: leg?.dropoff_long ?? null,
+										dropoff_address: leg?.dropoff_address ?? null,
+										dropoff_time: leg?.dropoff_time ?? null,
+									};
+						return {
+							id: pp.id,
+							route_daily_plan_phase_driver_id:
+								pp.route_daily_plan_phase_driver_id,
+							passenger_id: pp.passenger_id,
+							status: pp.status,
+							driver_arrived_at: pp.driver_arrived_at,
+							passenger_ack: pp.passenger_ack,
+							picked_at: pp.picked_at,
+							dropoff_arrived_at: pp.dropoff_arrived_at,
+							dropped_at: pp.dropped_at,
+							created_at: pp.created_at,
+							updated_at: pp.updated_at,
+							...stop,
+							passenger: {
+								id: pp.passenger.id,
+								name: pp.passenger.name,
+								phone_no: pp.passenger.phone_no,
+							},
+						};
+					}),
 				};
 			}),
 			driver: {
@@ -1157,11 +1203,7 @@ export const MobileDriverService = {
 		};
 	},
 
-	async legAction(
-		userId: number,
-		phasePassengerId: number,
-		action: LegAction,
-	) {
+	async legAction(userId: number, phasePassengerId: number, action: LegAction) {
 		const driver = await resolveDriver(userId);
 
 		const ppRow = await db.routeDailyPlanPhasePassenger.findFirst({
@@ -1201,7 +1243,9 @@ export const MobileDriverService = {
 			select: { id: true },
 		});
 		if (!execRoute) {
-			throw ResponseHandler.badRequest("No execution route for this daily plan");
+			throw ResponseHandler.badRequest(
+				"No execution route for this daily plan",
+			);
 		}
 		const routeId = execRoute.id;
 
@@ -1212,7 +1256,8 @@ export const MobileDriverService = {
 			},
 			include: { passenger: true },
 		});
-		if (!leg) throw ResponseHandler.notFound("Route leg not found for passenger");
+		if (!leg)
+			throw ResponseHandler.notFound("Route leg not found for passenger");
 
 		const seg = await db.routeSegment.findFirst({
 			where: {
@@ -1243,32 +1288,18 @@ export const MobileDriverService = {
 
 		if (isPickup) {
 			if (action === "PICKED") {
-				await updatePhasePassengerRow(
-					db,
-					routePlanId,
-					"PICKUP",
-					passengerId,
-					{
-						status: "PICKED",
-						picked_at: new Date(),
-					},
-				);
+				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
+					status: "PICKED",
+					picked_at: new Date(),
+				});
 			} else if (action === "STILL_WAITING") {
-				await updatePhasePassengerRow(
-					db,
-					routePlanId,
-					"PICKUP",
-					passengerId,
-					{ status: "STILL_WAITING" },
-				);
+				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
+					status: "STILL_WAITING",
+				});
 			} else if (action === "MOVE_TO_NEXT") {
-				await updatePhasePassengerRow(
-					db,
-					routePlanId,
-					"PICKUP",
-					passengerId,
-					{ status: "MOVE_TO_NEXT" },
-				);
+				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
+					status: "MOVE_TO_NEXT",
+				});
 			}
 
 			emitToPassenger(passengerId, "driver:action", {
@@ -1694,12 +1725,6 @@ export const MobileDriverService = {
 		};
 	},
 
-	/**
-	 * Completes one phase (`RouteDailyPlanPhaseDriver.id` from GET /session). PICKUP: syncs pickup
-	 * segments only and marks that phase COMPLETED; plan stays ONGOING. DROP: syncs full route, marks
-	 * DROP COMPLETED; when PICKUP was already COMPLETED, sets `RouteDailyPlan` COMPLETED and driver
-	 * unavailable (PICKUP can be auto-completed first if segments/actions allow).
-	 */
 	async completeTrip(userId: number, phaseDriverId: number) {
 		const driver = await resolveDriver(userId);
 
@@ -1718,189 +1743,46 @@ export const MobileDriverService = {
 			throw ResponseHandler.badRequest("Daily plan missing for this phase");
 		}
 
-		const routePlanId = pd.route_daily_plan_id;
-		const execRoute = await db.route.findFirst({
-			where: { route_daily_plan_id: routePlanId },
+		const route = await db.route.findFirst({
+			where: { id: plan.definition_route_id },
 		});
-		if (!execRoute) {
-			throw ResponseHandler.badRequest("No execution route for this daily plan");
-		}
-		const routeId = execRoute.id;
 
-		if (plan.status === "COMPLETED") {
-			return {
-				route_id: routeId,
-				route_daily_plan_id: routePlanId,
-				phase_driver_id: pd.id,
-				phase: pd.phase,
-				phase_status: pd.status,
-				plan_status: "COMPLETED" as const,
-				message: "This daily route is already completed.",
-			};
-		}
-		if (plan.status !== "ONGOING") {
-			throw ResponseHandler.badRequest(
-				"Daily plan must be ONGOING to complete a phase",
-			);
-		}
-
-		if (pd.status === "COMPLETED") {
-			return {
-				route_id: routeId,
-				route_daily_plan_id: routePlanId,
-				phase_driver_id: pd.id,
-				phase: pd.phase,
-				phase_status: "COMPLETED" as const,
-				plan_status: "ONGOING" as const,
-				message: "This phase was already marked complete.",
-			};
-		}
-
-		if (pd.phase === "PICKUP") {
-			await syncPickupSegmentsOnly(routeId, routePlanId);
-
-			const pickupBlocking = await countBlockingPhasePassengersOnRoute(
-				db,
-				routeId,
-				routePlanId,
-				"PICKUP",
-			);
-			if (pickupBlocking > 0) {
-				throw ResponseHandler.badRequest(
-					"Complete all pickup passenger actions (for passengers on this route) before completing the pickup phase.",
-				);
-			}
-
-			const incompletePickupSegs = await db.routeSegment.count({
-				where: {
-					route_id: routeId,
-					kind: "PICKUP_TO_OFFICE",
-					status: { not: "COMPLETED" },
-				},
-			});
-			if (incompletePickupSegs > 0) {
-				throw ResponseHandler.badRequest(
-					"Pickup segments are not fully completed yet.",
-				);
-			}
-
-			await db.routeDailyPlanPhaseDriver.update({
-				where: { id: pd.id },
-				data: { status: "COMPLETED" },
-			});
-
-			return {
-				route_id: routeId,
-				route_daily_plan_id: routePlanId,
-				phase_driver_id: pd.id,
-				phase_completed: "PICKUP" as const,
-				plan_status: "ONGOING" as const,
-				message:
-					"Pickup phase completed. When drop-offs are done, call complete with the DROP phase_driver id.",
-			};
-		}
-
-		// DROP phase — ensure pickup phase row is COMPLETED (or auto-close it).
-		const pickupPd = await db.routeDailyPlanPhaseDriver.findFirst({
-			where: { route_daily_plan_id: routePlanId, phase: "PICKUP" },
-		});
-		if (pickupPd && pickupPd.status !== "COMPLETED") {
-			await syncPickupSegmentsOnly(routeId, routePlanId);
-			const pickupBlocking = await countBlockingPhasePassengersOnRoute(
-				db,
-				routeId,
-				routePlanId,
-				"PICKUP",
-			);
-			if (pickupBlocking > 0) {
-				throw ResponseHandler.badRequest(
-					"Complete the pickup phase (passenger actions on this route) before completing the drop phase.",
-				);
-			}
-			const incompletePickupSegs = await db.routeSegment.count({
-				where: {
-					route_id: routeId,
-					kind: "PICKUP_TO_OFFICE",
-					status: { not: "COMPLETED" },
-				},
-			});
-			if (incompletePickupSegs > 0) {
-				throw ResponseHandler.badRequest(
-					"Complete the pickup phase (segments) before completing the drop phase.",
-				);
-			}
-			await db.routeDailyPlanPhaseDriver.update({
-				where: { id: pickupPd.id },
-				data: { status: "COMPLETED" },
-			});
-		}
-
-		await syncRouteSegmentsForTripCompletion(routeId, routePlanId);
-
-		const dropBlocking = await countBlockingPhasePassengersOnRoute(
-			db,
-			routeId,
-			routePlanId,
-			"DROP",
-		);
-		if (dropBlocking > 0) {
-			throw ResponseHandler.badRequest(
-				"Complete all drop passenger actions (for passengers on this route) before completing the drop phase.",
-			);
-		}
+		//add trip price to the route daily plan phase driver
 
 		await db.routeDailyPlanPhaseDriver.update({
 			where: { id: pd.id },
-			data: { status: "COMPLETED" },
+			data: {
+				status: "COMPLETED",
+				trip_price: route?.route_price ? route.route_price / 2 : 0,
+			},
 		});
-
-		await db.routeDailyPlan.update({
-			where: { id: plan.id },
-			data: { status: "COMPLETED", completed_at: new Date() },
-		});
-
-		const updatedDriver = await db.driver.update({
-			where: { id: driver.id },
-			data: { is_available: false, available_at: null },
-		});
-
-		const r = await db.route.findUnique({
-			where: { id: routeId },
-			include: { legs: { select: { passenger_id: true } } },
-		});
-		if (r) {
-			emitToPassengers(
-				r.legs.map((l) => l.passenger_id),
-				"ride:completed",
-				{
-					routeId,
-					driverId: driver.id,
-					completed_at: new Date(),
-				},
-			);
-			void notificationService.sendToPassengerIds(
-				r.legs.map((l) => l.passenger_id),
-				{
-					title: "Ride Completed",
-					body: "Your ride has been completed",
-					data: { routeId: String(routeId), type: "ride_completed" },
-				},
-			);
+		//if drop phase is completed, update the route daily plan status to completed
+		if (pd.phase === "DROP") {
+			await db.routeDailyPlan.update({
+				where: { id: plan.id },
+				data: { status: "COMPLETED", completed_at: new Date() },
+			});
 		}
+		//driver is now unavailable
+		await db.driver.update({
+			where: { id: driver.id },
+			data: { is_available: false, available_at: new Date() },
+		});
+		const routePlanId = pd.route_daily_plan_id;
+		const routeDailyPlan = await db.routeDailyPlan.findFirst({
+			where: { id: routePlanId },
+		});
 
 		return {
-			route_id: routeId,
 			route_daily_plan_id: routePlanId,
 			phase_driver_id: pd.id,
-			phase_completed: "DROP" as const,
-			plan_status: "COMPLETED" as const,
+			phase_completed: pd.phase,
+			plan_status: routeDailyPlan?.status,
 			driver: {
-				id: updatedDriver.id,
-				is_available: updatedDriver.is_available,
-				available_at: updatedDriver.available_at,
+				id: driver.id,
+				name: driver.name,
 			},
-			message:
-				"Trip completed. You are now unavailable — use Go Available when ready for the next trip.",
+			message: "Trip completed",
 		};
 	},
 };
