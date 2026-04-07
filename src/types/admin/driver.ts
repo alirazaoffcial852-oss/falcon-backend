@@ -5,6 +5,7 @@ export interface DriverListQuery {
 }
 
 export interface Driver {
+	id?: number;
 	email?: string;
 	/** Optional fixed home coordinates for route pickup ordering; geocoded from address on first route if omitted */
 	home_lat?: number | null;
@@ -20,6 +21,7 @@ export interface Driver {
 	salary: string;
 	driver_license_front_url: string;
 	driver_license_back_url: string;
+	status?: "PENDING" | "APPROVED";
 	car_id?: number | null;
 	car_name?: string | null;
 	car_number?: string | null;

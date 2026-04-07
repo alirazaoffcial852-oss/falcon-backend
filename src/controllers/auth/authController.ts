@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import { AuthService } from "../../services/authService";
+import { DriverService } from "../../services/driverService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 
 const authService = new AuthService();
+const driverService = new DriverService();
 
 export const AuthController = {
 	register: catchAsync(async (req: Request, res: Response) => {
@@ -25,6 +27,18 @@ export const AuthController = {
 			adminSecret,
 		);
 		ResponseHandler.success(res, result, "Registration successful");
+	}),
+
+	driverRegister: catchAsync(async (req: Request, res: Response) => {
+		const result = await driverService.create(
+			{ ...req.body },
+			{ requesterRole: "driver" },
+		);
+		ResponseHandler.success(
+			res,
+			result,
+			"Driver registration request submitted for admin approval",
+		);
 	}),
 
 	login: catchAsync(async (req: Request, res: Response) => {

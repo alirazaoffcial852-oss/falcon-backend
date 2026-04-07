@@ -6,23 +6,43 @@ import {
 	updateDriverSchema,
 	driverIdParamSchema,
 } from "../../schemas/driver/driverSchema";
+import { roleMiddleware } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.get("/", DriverController.list);
+router.get(
+	"/create-requests",
+	roleMiddleware("admin"),
+	DriverController.listCreateRequests,
+);
+router.get("/", roleMiddleware("admin"), DriverController.list);
 router.get(
 	"/:id",
+	roleMiddleware("admin"),
 	validate.params(driverIdParamSchema),
 	DriverController.getById,
 );
-router.post("/", validate.body(createDriverSchema), DriverController.create);
+router.post(
+	"/",
+	roleMiddleware("admin", "driver"),
+	validate.body(createDriverSchema),
+	DriverController.create,
+);
+router.post(
+	"/create-requests/:id/approve",
+	roleMiddleware("admin"),
+	validate.params(driverIdParamSchema),
+	DriverController.approveCreateRequest,
+);
 router.put(
 	"/:id",
+	roleMiddleware("admin"),
 	validate.combined(updateDriverSchema, driverIdParamSchema),
 	DriverController.update,
 );
 router.delete(
 	"/:id",
+	roleMiddleware("admin"),
 	validate.params(driverIdParamSchema),
 	DriverController.delete,
 );

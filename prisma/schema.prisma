@@ -54,6 +54,8 @@ model User {
   updated_at    DateTime              @updatedAt
   driver        Driver?
   passenger     Passenger?
+  driver_create_requests         DriverCreateRequest[]
+  reviewed_driver_create_requests DriverCreateRequest[] @relation("DriverCreateRequestReviewer")
   deviceTokens  UserDeviceToken[]
   notifications NotificationHistory[]
   
@@ -145,6 +147,7 @@ model Driver {
   salary                   String
   driver_license_front_url String
   driver_license_back_url  String
+  status                   DriverApprovalStatus        @default(APPROVED)
   is_available             Boolean                     @default(false)
   available_at             DateTime?
   home_lat                 Float?
@@ -155,8 +158,28 @@ model Driver {
   routes                   Route[]
   leaves                   DriverLeave[]
   daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
+  create_requests          DriverCreateRequest[]
 
   @@map("drivers")
+}
+
+model DriverCreateRequest {
+  id                 Int      @id @default(autoincrement())
+  requested_by_user_id Int?
+  requested_by_user  User?    @relation(fields: [requested_by_user_id], references: [id], onDelete: SetNull)
+  payload            Json
+  status             String   @default("PENDING")
+  reviewed_by_user_id Int?
+  reviewed_by_user   User?    @relation("DriverCreateRequestReviewer", fields: [reviewed_by_user_id], references: [id], onDelete: SetNull)
+  reviewed_at        DateTime?
+  review_note        String?
+  created_driver_id  Int?
+  created_driver     Driver?  @relation(fields: [created_driver_id], references: [id], onDelete: SetNull)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([status, created_at])
+  @@map("driver_create_requests")
 }
 
 model DriverAssignCar {
@@ -419,4 +442,9 @@ enum RouteStatus {
 enum RouteDailyPlanPhase {
   PICKUP
   DROP
+}
+
+enum DriverApprovalStatus {
+  PENDING
+  APPROVED
 }
