@@ -63,12 +63,18 @@ export const createRouteSchema = Joi.object({
 		"any.required": "Office longitude is required",
 		"number.base": "Office longitude must be a number",
 	}),
+	routePrice: Joi.number().required().messages({
+		"any.required": "Route price is required",
+		"number.base": "Route price must be a number",
+	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),
 	recurringPlanStartDate: Joi.string()
 		.pattern(/^\d{4}-\d{2}-\d{2}$/)
 		.optional()
-		.messages({ "string.pattern.base": "recurringPlanStartDate must be YYYY-MM-DD" }),
+		.messages({
+			"string.pattern.base": "recurringPlanStartDate must be YYYY-MM-DD",
+		}),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
 })
 	.or("batches", "legs")
@@ -92,6 +98,9 @@ export const updateRouteSchema = Joi.object({
 	}),
 	officeLong: Joi.number().messages({
 		"number.base": "Office longitude must be a number",
+	}),
+	routePrice: Joi.number().messages({
+		"number.base": "Route price must be a number",
 	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),

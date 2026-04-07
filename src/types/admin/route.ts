@@ -26,6 +26,7 @@ export interface CreateRouteInput {
 	officeAddress: string;
 	officeLat: number;
 	officeLong: number;
+	routePrice?: number | null;
 	/** Inclusive recurring window on this definition route (default 1 month). Use `0` to disable cron. */
 	recurringPlanStartDate?: string;
 	recurringPlanMonths?: number;
@@ -41,6 +42,7 @@ export interface UpdateRouteInput {
 	officeAddress?: string;
 	officeLat?: number;
 	officeLong?: number;
+	routePrice?: number | null;
 	batches?: RouteBatchInput[];
 	recurringPlanStartDate?: string;
 	recurringPlanMonths?: number;

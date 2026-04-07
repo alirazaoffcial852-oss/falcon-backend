@@ -4,7 +4,9 @@ import { RouteService } from "../services/routeService";
 const routeService = new RouteService();
 
 /**
- * Creates today's `RouteDailyPlan` and sets `routes.route_daily_plan_id` for routes inside their recurring window (no route clone).
+ * Creates today's `RouteDailyPlan` (`scheduled_date` = today) for each definition route where
+ * `recurring_plan_start <= today` (recurring has started). `recurring_plan_end` is not used for this job.
+ * Skips if a plan already exists for that definition + date (duplicate), holiday, or leave.
  * Disabled on Vercel (no long-running process) or when `DAILY_ROUTE_CRON_ENABLED=false`.
  *
  * `DAILY_ROUTE_CRON` — cron expression (default `5 0 * * *` = 00:05 daily, server local time).
@@ -32,6 +34,7 @@ export function initDailyRouteCron(): void {
 					plannedOnly: true,
 				},
 			);
+			console.log("result", result);
 			console.log(
 				`[cron] daily routes: created_ids=${result.created.length} skipped=${result.skipped.length}`,
 			);
@@ -41,6 +44,6 @@ export function initDailyRouteCron(): void {
 	});
 
 	console.log(
-		`[cron] daily routes scheduled: ${schedule} (definitions with recurring plan only)`,
+		`[cron] daily routes scheduled: ${schedule} (recurring_plan_start <= today; no recurring_plan_end filter)`,
 	);
 }
