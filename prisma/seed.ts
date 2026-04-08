@@ -7,8 +7,55 @@ const prisma = new PrismaClient();
 const generatePhone = () => `+92${Math.floor(3000000000 + Math.random() * 999999999)}`;
 const generateEmergencyPhone = () => `+92${Math.floor(3000000000 + Math.random() * 999999999)}`;
 const generateCarNo = () => `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}-${Math.floor(100 + Math.random() * 900)}`;
-const generateName = (prefix: string, index: number) => `${prefix} ${index + 1}`;
 const generateEmail = (prefix: string, index: number) => `${prefix}${index + 1}@example.com`;
+
+const companyNames = [
+  "Nestle Pakistan", "Unilever Pakistan", "Engro Corporation", "Pakistan State Oil",
+  "UBL Bank", "HBL Bank", "MCB Bank", "Allied Bank", "Bank Alfalah", "Meezan Bank",
+  "Jazz (Mobilink)", "Telenor Pakistan", "Zong CMPak", "Ufone",
+  "Pak Suzuki Motors", "Toyota Indus", "Honda Atlas", "Lucky Cement",
+  "DG Khan Cement", "Maple Leaf Cement", "Bestway Cement", "Fauji Cement",
+  "Packages Limited", "K-Electric", "SNGPL", "SSGC", "PTCL", "Nayatel",
+  "Shaukat Khanum Hospital", "Aga Khan University Hospital", "Indus Hospital",
+  "Systems Limited", "NETSOL Technologies", "TRG Pakistan", "Sofizar",
+  "Lahore University of Management Sciences", "FAST National University",
+  "University of Punjab", "Government College University", "Beaconhouse School System",
+  "Packages Mall", "Emporium Mall", "Fortress Stadium", "Giga Mall",
+  "Punjab Food Authority", "Punjab Police", "WAPDA", "PIA", "Pakistan Railways",
+  "Sapphire Textiles", "Khaadi", "Gul Ahmed", "Alkaram Studio", "Junaid Jamshed",
+  "Service Industries", "Interloop", "Sarena Textiles", "Rajby Industries",
+  "Adamjee Insurance", "EFU Life", "Jubilee Life Insurance", "Askari Bank",
+  "Fauji Fertilizer", "Fatima Fertilizer", "Engro Fertilizers",
+  "Colgate-Palmolive Pakistan", "Procter & Gamble Pakistan", "GSK Pakistan",
+  "Shell Pakistan", "Total PARCO", "Attock Petroleum", "Hascol Petroleum",
+];
+
+const driverNames = [
+  "Muhammad Ahmed", "Ali Hassan", "Muhammad Usman", "Fahad Khan", "Bilal Ahmad",
+  "Imran Ali", "Asif Mahmood", "Tariq Hussain", "Kamran Javed", "Nadeem Akhtar",
+  "Rizwanullah", "Saeed Anwar", "Waqas Riaz", "Junaid Iqbal", "Shahid Masood",
+  "Rashid Minhas", "Yasir Arafat", "Sohail Tanvir", "Amir Sohail", "Wasim Akram",
+  "Inzamam-ul-Haq", "Misbah-ul-Haq", "Younis Khan", "Shahid Afridi",
+  "Muhammad Hafeez", "Shoaib Malik", "Umar Akmal", "Kamran Akmal",
+  "Azhar Ali", "Asad Shafiq", "Sarfaraz Ahmed", "Babar Azam",
+  "Fakhar Zaman", "Hassan Ali", "Shaheen Afridi", "Haris Rauf",
+  "Mohammad Rizwan", "Abdullah Shafique", "Imam-ul-Haq", "Salman Ali Agha",
+];
+
+const passengerNames = [
+  "Fatima Zahra", "Ayesha Siddiqua", "Maryam Nawaz", "Hina Rabbani",
+  "Bakhtawar Bhutto", "Asma Jahangir", "Malala Yousafzai", "Sanam Saeed",
+  "Mahira Khan", "Mehwish Hayat", "Sajal Aly", "Mawra Hocane",
+  "Urwa Hocane", "Ayeza Khan", "Sana Javed", "Maya Ali", "Sonya Hussain",
+  "Iman Aly", "Zara Noor Abbas", "Hania Amir", "Iqra Aziz", "Yumna Zaidi",
+  "Saba Qamar", "Nadia Khan", "Nida Yasir", "Juggan Kazim", "Fiza Ali",
+  "Resham", "Reema Khan", "Meera", "Veena Malik", "Mathira", "Qandeel Baloch",
+  "Muhammad Ali", "Imran Khan", "Nawaz Sharif", "Asif Zardari",
+  "Shehbaz Sharif", "Bilawal Bhutto", "Pervez Musharraf", "Shahbaz Gill",
+  "Fawad Chaudhry", "Sheikh Rasheed", "Chaudhry Nisar", "Jahangir Tareen",
+  "Aleem Khan", "Yasmin Rashid", "Firdous Ashiq Awan", "Shireen Mazari",
+  "Maryam Aurangzeb", "Marriyum Aurangzeb", "Hina Pervaiz Butt",
+];
 
 const lahoreLocations = [
   { name: "Johar Town", lat: 31.4697, long: 74.2726 },
@@ -81,8 +128,8 @@ const addresses = [
   "113 Block T, Ferozepur",
 ];
 
-const carModels = ["Toyota Corolla", "Honda Civic", "Suzuki Alto", "Toyota Hilux", "Honda City", "Toyota Camry", "Suzuki Cultus", "Kia Sportage", "Hyundai Tucson", "MG HS"];
-const carColors = ["White", "Black", "Silver", "Gray", "Red", "Blue", "Green", "Gold", "Maroon", "Beige"];
+const carModels = ["Toyota Corolla", "Honda Civic", "Suzuki Alto", "Toyota Hilux", "Honda City", "Toyota Camry", "Suzuki Cultus", "Kia Sportage", "Hyundai Tucson", "MG HS", "Suzuki Swift", "Toyota Yaris", "Honda BR-V", "Toyota Fortuner", "Changan Alsvin", "Proton Saga", "Kia Picanto", "Hyundai Elantra", "Honda Accord", "Toyota Land Cruiser"];
+const carColors = ["White", "Black", "Silver", "Gray", "Red", "Blue", "Green", "Gold", "Maroon", "Beige", "Pearl White", "Midnight Black", "Gunmetal Gray", "Navy Blue", "Burgundy"];
 
 async function main() {
   console.log("🌱 Starting database seeding...");
@@ -126,10 +173,11 @@ async function main() {
   const companies = [];
   for (let i = 0; i < 40; i++) {
     const city = lahoreLocations[i % lahoreLocations.length];
+    const companyName = companyNames[i % companyNames.length];
     const company = await prisma.company.create({
       data: {
-        name: generateName("Company", i),
-        email: generateEmail("company", i),
+        name: companyName,
+        email: `${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`,
         phone_no: generatePhone(),
         address: `${addresses[i % addresses.length]}, ${city.name}`,
         lat: city.lat + (Math.random() - 0.5) * 0.1,
@@ -142,11 +190,12 @@ async function main() {
   console.log("🚗 Creating 40 cars...");
   const cars = [];
   for (let i = 0; i < 40; i++) {
+    const carModel = carModels[i % carModels.length];
     const car = await prisma.car.create({
       data: {
-        name: generateName("Car", i),
+        name: carModel,
         engine_capacity: `${1000 + Math.floor(Math.random() * 2000)}cc`,
-        model: carModels[i % carModels.length],
+        model: carModel,
         car_no: generateCarNo(),
         car_color: carColors[i % carColors.length],
         fuel_per_km: `${(5 + Math.random() * 10).toFixed(1)}L`,
@@ -163,9 +212,10 @@ async function main() {
   const drivers = [];
   for (let i = 0; i < 40; i++) {
     const city = lahoreLocations[i % lahoreLocations.length];
+    const driverName = driverNames[i % driverNames.length];
     const driver = await prisma.driver.create({
       data: {
-        name: generateName("Driver", i),
+        name: driverName,
         phone_no: generatePhone(),
         address: `${addresses[i % addresses.length]}, ${city.name}`,
         emergency_phone_no: generateEmergencyPhone(),
@@ -199,14 +249,15 @@ async function main() {
   const passengers = [];
   for (let i = 0; i < 40; i++) {
     const city = lahoreLocations[i % lahoreLocations.length];
+    const passengerName = passengerNames[i % passengerNames.length];
     const passenger = await prisma.passenger.create({
       data: {
-        name: generateName("Passenger", i),
+        name: passengerName,
         phone_no: generatePhone(),
         home_address: `${addresses[i % addresses.length]}, ${city.name}`,
         home_lat: city.lat + (Math.random() - 0.5) * 0.05,
         home_long: city.long + (Math.random() - 0.5) * 0.05,
-        office_address: `Office ${i + 1}, Business District, ${city.name}`,
+        office_address: `${companies[i % companies.length].name} Office, ${city.name}`,
         office_lat: city.lat + (Math.random() - 0.5) * 0.08,
         office_long: city.long + (Math.random() - 0.5) * 0.08,
         company_id: companies[i % companies.length].id,
