@@ -34,7 +34,6 @@ export function initDailyRouteCron(): void {
 					plannedOnly: true,
 				},
 			);
-			console.log("result", result);
 			console.log(
 				`[cron] daily routes: created_ids=${result.created.length} skipped=${result.skipped.length}`,
 			);

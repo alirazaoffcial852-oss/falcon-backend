@@ -870,7 +870,7 @@ export const MobileDriverService = {
 				},
 			},
 		});
-
+		console.log("phaseDriver", phaseDriver);
 		if (!phaseDriver) {
 			throw ResponseHandler.notFound(
 				"Trip not found, not assigned to you, or not scheduled for today",
@@ -1722,6 +1722,83 @@ export const MobileDriverService = {
 				result.kind === "PICKUP_TO_OFFICE"
 					? "Continue with next pickup batch."
 					: "Start drop-offs. Route updated.",
+		};
+	},
+
+	/**
+	 * Driver reports an active route issue (e.g. protest/road blockage) with image + optional note.
+	 */
+	async reportRouteIssue(
+		userId: number,
+		routeId: number,
+		imageUrl: string,
+		note?: string | null,
+	) {
+		const driver = await resolveDriver(userId);
+		console.log("driver", driver);
+
+		const route = await db.route.findFirst({
+			where: {
+				id: routeId,
+				driver_id: driver.id,
+				route_daily_plan_id: { not: null },
+				daily_plan: { status: "ONGOING" },
+			},
+			select: {
+				id: true,
+				route_daily_plan_id: true,
+			},
+		});
+		if (!route) {
+			throw ResponseHandler.notFound(
+				"Active ONGOING route not found for this driver",
+			);
+		}
+
+		const activePhase = await db.routeDailyPlanPhaseDriver.findFirst({
+			where: {
+				route_daily_plan_id: route.route_daily_plan_id ?? undefined,
+				driver_id: driver.id,
+				status: "ONGOING",
+			},
+			select: { id: true, phase: true },
+		});
+		if (!activePhase) {
+			throw ResponseHandler.badRequest(
+				"You can report issues only while actively driving this route",
+			);
+		}
+
+		const report = await db.routeIssueReport.create({
+			data: {
+				route_id: route.id,
+				driver_id: driver.id,
+				image_url: imageUrl,
+				note: note?.trim() ? note.trim() : null,
+			},
+			select: {
+				id: true,
+				route_id: true,
+				driver_id: true,
+				image_url: true,
+				note: true,
+				created_at: true,
+			},
+		});
+
+		emitToAdmins("route:issue_reported", {
+			reportId: report.id,
+			routeId: report.route_id,
+			driverId: report.driver_id,
+			image_url: report.image_url,
+			note: report.note,
+			created_at: report.created_at,
+		});
+
+		return {
+			...report,
+			phase_driver_id: activePhase.id,
+			phase: activePhase.phase,
 		};
 	},
 

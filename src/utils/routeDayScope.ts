@@ -1,14 +1,14 @@
 import type { Prisma } from "../generated/prisma/client";
 
-/** Local midnight range for "today" (matches existing mobile route queries). */
+/** UTC midnight range for the calendar day represented by `forDay`. */
 export function getLocalDayRange(forDay: Date = new Date()): {
 	start: Date;
 	end: Date;
 } {
 	const start = new Date(forDay);
-	start.setHours(0, 0, 0, 0);
+	start.setUTCHours(0, 0, 0, 0);
 	const end = new Date(start);
-	end.setDate(end.getDate() + 1);
+	end.setUTCDate(end.getUTCDate() + 1);
 	return { start, end };
 }
 
