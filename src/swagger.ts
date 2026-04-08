@@ -1232,6 +1232,306 @@ const swaggerDocument = {
 				},
 			},
 		},
+		"/f1/routes/generate-daily/preview": {
+			get: {
+				tags: ["Routes"],
+				summary: "Preview daily generation decisions",
+				description:
+					"Dry-run for daily route generation. Returns CAN_CREATE / SKIP reasons (duplicate, holiday, leave, etc.).",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "date",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-10" },
+						description: "Calendar date in YYYY-MM-DD (defaults to today)",
+					},
+					{
+						name: "plannedOnly",
+						in: "query",
+						required: false,
+						schema: { type: "boolean", example: true },
+						description:
+							"true = recurring_plan_start <= date templates only (cron mode)",
+					},
+				],
+				responses: {
+					"200": { description: "Preview generated successfully" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/schedule/drivers/{driverId}/leaves": {
+			get: {
+				tags: ["Schedule"],
+				summary: "List driver leaves (optional date range)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "driverId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+					{
+						name: "from",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-10" },
+						description: "From date (YYYY-MM-DD)",
+					},
+					{
+						name: "to",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-15" },
+						description: "To date (YYYY-MM-DD)",
+					},
+				],
+				responses: {
+					"200": { description: "Driver leave days" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+			post: {
+				tags: ["Schedule"],
+				summary: "Add driver leave range (inclusive)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "driverId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["from", "to"],
+								properties: {
+									from: { type: "string", example: "2026-04-10" },
+									to: { type: "string", example: "2026-04-15" },
+									note: { type: "string", nullable: true, example: "Personal leave" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Driver leave range added" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/schedule/companies/{companyId}/holidays": {
+			get: {
+				tags: ["Schedule"],
+				summary: "List company holidays",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "companyId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Company holidays" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+			post: {
+				tags: ["Schedule"],
+				summary: "Add company holiday",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "companyId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["date"],
+								properties: {
+									date: { type: "string", example: "2026-04-10" },
+									name: { type: "string", nullable: true, example: "Public Holiday" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Holiday added" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/schedule/company-holidays/{id}": {
+			get: {
+				tags: ["Schedule"],
+				summary: "Get company holiday by id",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Company holiday" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Not found" },
+				},
+			},
+			put: {
+				tags: ["Schedule"],
+				summary: "Update company holiday",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								properties: {
+									date: { type: "string", example: "2026-04-11" },
+									name: { type: "string", nullable: true, example: "Shifted Holiday" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Holiday updated" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Not found" },
+				},
+			},
+			delete: {
+				tags: ["Schedule"],
+				summary: "Remove company holiday by id",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Holiday removed" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Not found" },
+				},
+			},
+		},
+		"/f1/schedule/driver-leaves/{id}": {
+			delete: {
+				tags: ["Schedule"],
+				summary: "Remove driver leave by id",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Leave removed" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/mobile/notifications/history": {
+			get: {
+				tags: ["Mobile notifications"],
+				summary: "Get notification history",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Notification history" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/notifications/history/{id}/read": {
+			post: {
+				tags: ["Mobile notifications"],
+				summary: "Mark notification as read",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Notification marked as read" },
+					"400": { description: "Invalid notification id" },
+					"401": { description: "Unauthorized" },
+					"404": { description: "Notification not found" },
+				},
+			},
+		},
 	},
 };
 

@@ -7,6 +7,7 @@ import {
 	routeIdParamSchema,
 	optionalDayBodySchema,
 	generateDailyBodySchema,
+	generateDailyPreviewQuerySchema,
 	planStatsQuerySchema,
 } from "../../schemas/route/routeSchema";
 
@@ -17,6 +18,11 @@ router.post(
 	"/generate-daily",
 	validate.body(generateDailyBodySchema),
 	RouteController.generateDaily,
+);
+router.get(
+	"/generate-daily/preview",
+	validate.query(generateDailyPreviewQuerySchema),
+	RouteController.generateDailyPreview,
 );
 router.post(
 	"/:id/spawn",

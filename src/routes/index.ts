@@ -37,7 +37,7 @@ export default function Routes(app: Express) {
 
 	router.use("/routes", ...admin, routeRoutes);
 
-	router.use("/schedule", ...admin, scheduleRoutes);
+	router.use("/schedule", ...authOnly, scheduleRoutes);
 
 	// router.use("/uploads", ...admin, uploadRoutes);
 
