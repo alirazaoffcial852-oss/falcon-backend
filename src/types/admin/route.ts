@@ -54,4 +54,5 @@ export interface RouteListQuery {
 	search?: string;
 	companyId?: number;
 	driverId?: number;
+	status?: 'PENDING' | 'ONGOING' | 'COMPLETED';
 }

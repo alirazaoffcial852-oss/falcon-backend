@@ -426,6 +426,13 @@ export class RouteService {
 		);
 		if (params.companyId !== undefined) where.company_id = params.companyId;
 		if (params.driverId !== undefined) where.driver_id = params.driverId;
+		if (params.status !== undefined) {
+			where.segments = {
+				some: {
+					status: params.status,
+				},
+			};
+		}
 		// Hide legacy execution-only rows (old clones: recurring null + plan set).
 		const legacyListable: Prisma.RouteWhereInput = {
 			OR: [

@@ -17,6 +17,7 @@ export const RouteController = {
 			driverId: req.query.driverId
 				? parseInt(req.query.driverId as string)
 				: undefined,
+			status: req.query.status as 'PENDING' | 'ONGOING' | 'COMPLETED' | undefined,
 		};
 		const result = await routeService.list(query);
 		ResponseHandler.success(res, result, "Routes list");
