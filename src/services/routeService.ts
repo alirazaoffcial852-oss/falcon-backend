@@ -949,6 +949,165 @@ export class RouteService {
 		return { created, skipped };
 	}
 
+	/**
+	 * Dry-run for cron/manual daily generation. Reports eligibility and exact skip reasons
+	 * without creating any RouteDailyPlan rows.
+	 */
+	async previewDailyGeneration(
+		forDay: Date = new Date(),
+		options?: { plannedOnly?: boolean },
+	) {
+		const dayStart = new Date(forDay);
+		dayStart.setHours(0, 0, 0, 0);
+		const dayEnd = new Date(dayStart);
+		dayEnd.setDate(dayEnd.getDate() + 1);
+
+		const where: Prisma.RouteWhereInput = {};
+		if (options?.plannedOnly) {
+			where.recurring_plan_start = { lte: dayStart };
+		} else {
+			where.OR = [
+				{ recurring_plan_start: { not: null } },
+				{ route_daily_plan_id: null },
+			];
+		}
+
+		const definitions = await this.db.route.findMany({
+			where,
+			select: {
+				id: true,
+				company_id: true,
+				driver_id: true,
+				recurring_plan_start: true,
+				recurring_plan_end: true,
+			},
+		});
+
+		const preview: Array<{
+			definition_route_id: number;
+			company_id: number;
+			driver_id: number;
+			recurring_plan_start: Date | null;
+			recurring_plan_end: Date | null;
+			decision:
+				| "CAN_CREATE"
+				| "SKIP_BEFORE_START"
+				| "SKIP_DUPLICATE"
+				| "SKIP_HOLIDAY"
+				| "SKIP_DRIVER_LEAVE";
+			reason: string;
+		}> = [];
+
+		for (const d of definitions) {
+			if (
+				d.recurring_plan_start &&
+				new Date(dayStart).getTime() < new Date(d.recurring_plan_start).setHours(0, 0, 0, 0)
+			) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_BEFORE_START",
+					reason: "Date is before recurring_plan_start",
+				});
+				continue;
+			}
+
+			const dup = await this.db.routeDailyPlan.findFirst({
+				where: {
+					definition_route_id: d.id,
+					scheduled_date: { gte: dayStart, lt: dayEnd },
+				},
+				select: { id: true },
+			});
+			if (dup) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_DUPLICATE",
+					reason: "A daily plan already exists for this date",
+				});
+				continue;
+			}
+
+			const hol = await this.db.companyHoliday.findUnique({
+				where: {
+					company_id_date: {
+						company_id: d.company_id,
+						date: dayStart,
+					},
+				},
+				select: { id: true },
+			});
+			if (hol) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_HOLIDAY",
+					reason: "Company holiday on this date",
+				});
+				continue;
+			}
+
+			const leave = await this.db.driverLeave.findUnique({
+				where: {
+					driver_id_date: {
+						driver_id: d.driver_id,
+						date: dayStart,
+					},
+				},
+				select: { id: true },
+			});
+			if (leave) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_DRIVER_LEAVE",
+					reason: "Driver is on leave on this date",
+				});
+				continue;
+			}
+
+			preview.push({
+				definition_route_id: d.id,
+				company_id: d.company_id,
+				driver_id: d.driver_id,
+				recurring_plan_start: d.recurring_plan_start,
+				recurring_plan_end: d.recurring_plan_end,
+				decision: "CAN_CREATE",
+				reason: "Eligible for daily plan creation",
+			});
+		}
+
+		return {
+			date: dayStart,
+			plannedOnly: options?.plannedOnly === true,
+			total_definitions: definitions.length,
+			summary: {
+				can_create: preview.filter((x) => x.decision === "CAN_CREATE").length,
+				skip_before_start: preview.filter((x) => x.decision === "SKIP_BEFORE_START")
+					.length,
+				skip_duplicate: preview.filter((x) => x.decision === "SKIP_DUPLICATE").length,
+				skip_holiday: preview.filter((x) => x.decision === "SKIP_HOLIDAY").length,
+				skip_driver_leave: preview.filter(
+					(x) => x.decision === "SKIP_DRIVER_LEAVE",
+				).length,
+			},
+			items: preview,
+		};
+	}
+
 	/** Per-day passenger counts from RouteDailyPlan + route legs (same template row as `execution_route`). */
 	async getTemplatePlanStats(definitionRouteId: number, from: Date, to: Date) {
 		const def = await this.db.route.findUnique({

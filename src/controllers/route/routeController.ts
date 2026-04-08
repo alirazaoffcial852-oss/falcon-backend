@@ -80,6 +80,24 @@ export const RouteController = {
 		ResponseHandler.success(res, result, "Daily route generation finished");
 	}),
 
+	/** Preview which routes can be generated and why others will be skipped. */
+	generateDailyPreview: catchAsync(async (req: Request, res: Response) => {
+		const raw = req.query.date as string | undefined;
+		const day = raw
+			? new Date(
+					Number(raw.slice(0, 4)),
+					Number(raw.slice(5, 7)) - 1,
+					Number(raw.slice(8, 10)),
+				)
+			: new Date();
+		const plannedOnlyRaw = req.query.plannedOnly as string | undefined;
+		const plannedOnly = plannedOnlyRaw === "true" || plannedOnlyRaw === "1";
+		const result = await routeService.previewDailyGeneration(day, {
+			plannedOnly,
+		});
+		ResponseHandler.success(res, result, "Daily route generation preview");
+	}),
+
 	/** Per-day passenger counts for spawned instances (template id = master route). */
 	getTemplatePlanStats: catchAsync(async (req: Request, res: Response) => {
 		const id = parseIdParam(req.params.id);
