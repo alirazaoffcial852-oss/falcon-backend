@@ -200,6 +200,7 @@ model Passenger {
   user_id                           Int?                           @unique
   user                              User?                          @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                              String
+  email                             String?
   phone_no                          String
   home_address                      String?
   home_lat                          Float?

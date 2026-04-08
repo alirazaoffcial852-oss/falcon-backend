@@ -378,7 +378,7 @@ export class AdminService {
       where: { id: adminId },
     });
 
-    return { message: "Admin deleted successfully" };
+    return { message: "Admin deleted successfully" }; 
   }
 
   async getUserPermissions(userId: number): Promise<PermissionInput[]> {
@@ -393,10 +393,11 @@ export class AdminService {
       },
     });
 
-    if (!user || !user.role.is_admin_role) {
+    if (!user) {
       return [];
     }
 
+    // Super admin bypass - check before is_admin_role
     if (user.is_super_admin) {
       return ADMIN_MODULES.map((module) => ({
         module,
@@ -405,6 +406,10 @@ export class AdminService {
         can_edit: true,
         can_delete: true,
       }));
+    }
+
+    if (!user.role.is_admin_role) {
+      return [];
     }
 
     return user.role.permissions.map((p) => ({
@@ -432,12 +437,17 @@ export class AdminService {
       },
     });
 
-    if (!user || !user.role.is_admin_role) {
+    if (!user) {
       return false;
     }
 
+    // Super admin bypass - check before is_admin_role
     if (user.is_super_admin) {
       return true;
+    }
+
+    if (!user.role.is_admin_role) {
+      return false;
     }
 
     const permission = user.role.permissions.find((p) => p.module === module);

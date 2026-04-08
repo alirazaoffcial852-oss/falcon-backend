@@ -134,6 +134,8 @@ export class DriverService {
 			"address",
 			"phone_no",
 			"emergency_phone_no",
+			"salary",
+			"rate_per_km",
 		]);
 		const total = await this.db.driver.count({ where });
 		const drivers = await this.db.driver.findMany({

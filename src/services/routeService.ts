@@ -421,7 +421,7 @@ export class RouteService {
 				limit: params.limit,
 				search: params.search,
 			} as RouteListQuery,
-			["office_address"],
+			["office_address", "company.name", "driver.name"],
 			[],
 		);
 		if (params.companyId !== undefined) where.company_id = params.companyId;

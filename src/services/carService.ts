@@ -9,6 +9,8 @@ export class CarService {
 	async list(params: CarListQuery) {
 		const where = buildWhereCondition(params, [
 			"name",
+			"engine_capacity",
+			"fuel_per_km",
 			"model",
 			"car_no",
 			"car_color",

@@ -8,7 +8,7 @@ export class CompanyService {
 
 	async list(params: CompanyListQuery) {
 		let total = 0;
-		const where = buildWhereCondition(params, ["name"]);
+		const where = buildWhereCondition(params, ["name", "email", "address", "phone_no"]);
 		total = await this.db.company.count({ where });
 
 		const companies = await this.db.company.findMany({

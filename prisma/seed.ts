@@ -147,7 +147,13 @@ async function main() {
   await prisma.user.deleteMany({ where: { email: { not: "admin@falcon.com" } } });
 
   console.log("👤 Creating roles...");
-  const roles = [{ name: "admin" }, { name: "driver" }, { name: "passenger" }, { name: "company" }];
+  const roles = [
+    { name: "super_admin", is_admin_role: true },
+    { name: "admin", is_admin_role: true },
+    { name: "driver" },
+    { name: "passenger" },
+    { name: "company" },
+  ];
   for (const r of roles) {
     await prisma.role.upsert({
       where: { name: r.name },
@@ -156,17 +162,23 @@ async function main() {
     });
   }
 
-  const adminRole = await prisma.role.findUnique({ where: { name: "admin" } });
-  if (!adminRole) throw new Error("Admin role not found");
+  const superAdminRole = await prisma.role.findUnique({ where: { name: "super_admin" } });
+  if (!superAdminRole) throw new Error("Super admin role not found");
+
   const hashedPassword = await bcrypt.hash("admin@123", 10);
   await prisma.user.upsert({
     where: { email: "admin@falcon.com" },
     create: {
       email: "admin@falcon.com",
       password: hashedPassword,
-      role_id: adminRole.id,
+      role_id: superAdminRole.id,
+      is_super_admin: true,
     },
-    update: { password: hashedPassword },
+    update: {
+      password: hashedPassword,
+      role_id: superAdminRole.id,
+      is_super_admin: true,
+    },
   });
 
   console.log("🏢 Creating 40 companies...");
@@ -253,6 +265,7 @@ async function main() {
     const passenger = await prisma.passenger.create({
       data: {
         name: passengerName,
+        email: generateEmail("passenger", i),
         phone_no: generatePhone(),
         home_address: `${addresses[i % addresses.length]}, ${city.name}`,
         home_lat: city.lat + (Math.random() - 0.5) * 0.05,
@@ -263,6 +276,7 @@ async function main() {
         company_id: companies[i % companies.length].id,
         pick_up_time: `${7 + Math.floor(Math.random() * 3)}:${Math.floor(Math.random() * 60).toString().padStart(2, "0")} AM`,
         drop_off_time: `${5 + Math.floor(Math.random() * 4)}:${Math.floor(Math.random() * 60).toString().padStart(2, "0")} PM`,
+        office_pick_up_time: `${(5 + Math.floor(Math.random() * 3)).toString().padStart(2, "0")}:${Math.floor(Math.random() * 60).toString().padStart(2, "0")} PM`,
       },
     });
     passengers.push(passenger);
