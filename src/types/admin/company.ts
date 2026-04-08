@@ -11,4 +11,13 @@ export interface Company {
 	address: string;
 	lat?: number;
 	long?: number;
+	weekly_off_days?: (
+		| "SUNDAY"
+		| "MONDAY"
+		| "TUESDAY"
+		| "WEDNESDAY"
+		| "THURSDAY"
+		| "FRIDAY"
+		| "SATURDAY"
+	)[];
 }

@@ -28,6 +28,26 @@ type SortOriginMode = "driver_home" | "office";
 export class RouteService {
 	private db = DatabaseService.getInstance().getPrisma();
 
+	private getWeekdayEnum(day: Date):
+		| "SUNDAY"
+		| "MONDAY"
+		| "TUESDAY"
+		| "WEDNESDAY"
+		| "THURSDAY"
+		| "FRIDAY"
+		| "SATURDAY" {
+		const days = [
+			"SUNDAY",
+			"MONDAY",
+			"TUESDAY",
+			"WEDNESDAY",
+			"THURSDAY",
+			"FRIDAY",
+			"SATURDAY",
+		] as const;
+		return days[day.getDay()];
+	}
+
 	/**
 	 * Sets `trip_start_time` on PICKUP/DROP phase rows: PICKUP = first leg's `pickup_time`,
 	 * DROP = same leg's `office_pick_up_time` (batch_order asc, then sequence asc).
@@ -303,7 +323,15 @@ export class RouteService {
 					include: {
 						legs: {
 							orderBy: { sequence: "asc" },
-							include: { passenger: true },
+							include: {
+								passenger: {
+									select: {
+										id: true,
+										drop_off_time: true,
+										office_pick_up_time: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -383,6 +411,7 @@ export class RouteService {
 				await this.db.passenger.update({
 					where: { id: legs[i].passenger_id },
 					data: { pick_up_time: pickupHHMM },
+					select: { id: true },
 				});
 
 				cumBefore += legDurations[i] ?? 0;
@@ -497,13 +526,19 @@ export class RouteService {
 				driver: true,
 				batches: {
 					orderBy: { batch_order: "asc" },
-					include: { legs: { include: { passenger: true } } },
+					include: {
+						legs: {
+							include: {
+								passenger: { select: { id: true, name: true } },
+							},
+						},
+					},
 				},
 				segments: {
 					orderBy: { segment_order: "asc" },
 					include: { batch: true },
 				},
-				legs: { include: { passenger: true } },
+				legs: { include: { passenger: { select: { id: true, name: true } } } },
 			},
 		});
 		if (!route)
@@ -728,6 +763,7 @@ export class RouteService {
 		const definition = await this.db.route.findUnique({
 			where: { id: definitionRouteId },
 			include: {
+				company: { select: { weekly_off_days: true } },
 				batches: {
 					orderBy: { batch_order: "asc" },
 					include: { legs: { orderBy: { sequence: "asc" } } },
@@ -772,6 +808,13 @@ export class RouteService {
 		if (hol) {
 			throw ResponseHandler.badRequest(
 				"Company holiday on this date — plan not created",
+			);
+		}
+
+		const weekday = this.getWeekdayEnum(dayStart);
+		if (definition.company.weekly_off_days.includes(weekday)) {
+			throw ResponseHandler.badRequest(
+				`Company weekly off (${weekday}) — plan not created`,
 			);
 		}
 
@@ -980,6 +1023,7 @@ export class RouteService {
 				driver_id: true,
 				recurring_plan_start: true,
 				recurring_plan_end: true,
+				company: { select: { weekly_off_days: true } },
 			},
 		});
 
@@ -994,6 +1038,7 @@ export class RouteService {
 				| "SKIP_BEFORE_START"
 				| "SKIP_DUPLICATE"
 				| "SKIP_HOLIDAY"
+				| "SKIP_WEEKLY_OFF"
 				| "SKIP_DRIVER_LEAVE";
 			reason: string;
 		}> = [];
@@ -1057,6 +1102,20 @@ export class RouteService {
 				continue;
 			}
 
+			const weekday = this.getWeekdayEnum(dayStart);
+			if (d.company.weekly_off_days.includes(weekday)) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_WEEKLY_OFF",
+					reason: `Company weekly off (${weekday})`,
+				});
+				continue;
+			}
+
 			const leave = await this.db.driverLeave.findUnique({
 				where: {
 					driver_id_date: {
@@ -1100,6 +1159,9 @@ export class RouteService {
 					.length,
 				skip_duplicate: preview.filter((x) => x.decision === "SKIP_DUPLICATE").length,
 				skip_holiday: preview.filter((x) => x.decision === "SKIP_HOLIDAY").length,
+				skip_weekly_off: preview.filter(
+					(x) => x.decision === "SKIP_WEEKLY_OFF",
+				).length,
 				skip_driver_leave: preview.filter(
 					(x) => x.decision === "SKIP_DRIVER_LEAVE",
 				).length,
