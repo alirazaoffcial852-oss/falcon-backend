@@ -425,8 +425,9 @@ export class RouteService {
 	): { start: Date; end: Date } | null {
 		const months = data.recurringPlanMonths ?? 1;
 		if (months <= 0) return null;
-		const start = data.recurringPlanStartDate
-			? parseLocalYmd(data.recurringPlanStartDate)
+		const startInput = data.recurring_plan_start ?? data.recurringPlanStartDate;
+		const start = startInput
+			? parseLocalYmd(startInput)
 			: getTomorrowLocalDateOnly();
 		const end = computeInclusivePlanEnd(start, months);
 		return { start, end };
@@ -619,6 +620,25 @@ export class RouteService {
 
 	async update(id: number, data: UpdateRouteInput) {
 		await this.getById(id);
+		const routeForUpdateGuard = await this.db.route.findUnique({
+			where: { id },
+			select: {
+				route_daily_plan_id: true,
+				daily_plan: { select: { status: true } },
+			},
+		});
+		if (!routeForUpdateGuard) {
+			throw ResponseHandler.notFound("Route not found");
+		}
+		if (
+			routeForUpdateGuard.route_daily_plan_id !== null &&
+			routeForUpdateGuard.daily_plan &&
+			routeForUpdateGuard.daily_plan.status !== "PENDING"
+		) {
+			throw ResponseHandler.badRequest(
+				"Route can only be updated when route_daily_plan status is PENDING",
+			);
+		}
 
 		if (data.batches !== undefined && data.batches.length > 0) {
 			const batchInputs = data.batches;
@@ -712,6 +732,7 @@ export class RouteService {
 		}
 
 		if (
+			data.recurring_plan_start !== undefined ||
 			data.recurringPlanStartDate !== undefined ||
 			data.recurringPlanMonths !== undefined
 		) {
@@ -727,8 +748,9 @@ export class RouteService {
 					},
 				});
 			} else {
-				const start = data.recurringPlanStartDate
-					? parseLocalYmd(data.recurringPlanStartDate)
+				const startInput = data.recurring_plan_start ?? data.recurringPlanStartDate;
+				const start = startInput
+					? parseLocalYmd(startInput)
 					: (r.recurring_plan_start ?? getTomorrowLocalDateOnly());
 				const end = computeInclusivePlanEnd(start, months);
 				await this.db.route.update({

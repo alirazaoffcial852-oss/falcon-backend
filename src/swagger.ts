@@ -383,6 +383,24 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					recurring_plan_start: {
+						type: "string",
+						example: "2026-04-08",
+						description:
+							"Optional start date (YYYY-MM-DD) for recurring daily plan creation.",
+					},
+					recurringPlanStartDate: {
+						type: "string",
+						example: "2026-04-08",
+						description:
+							"Backward compatible alias of recurring_plan_start (YYYY-MM-DD).",
+					},
+					recurringPlanMonths: {
+						type: "integer",
+						minimum: 0,
+						maximum: 36,
+						description: "Recurring window in months. 0 disables recurring.",
+					},
 					batches: {
 						type: "array",
 						minItems: 1,
@@ -404,6 +422,24 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					recurring_plan_start: {
+						type: "string",
+						example: "2026-04-08",
+						description:
+							"Optional start date (YYYY-MM-DD) for recurring daily plan creation.",
+					},
+					recurringPlanStartDate: {
+						type: "string",
+						example: "2026-04-08",
+						description:
+							"Backward compatible alias of recurring_plan_start (YYYY-MM-DD).",
+					},
+					recurringPlanMonths: {
+						type: "integer",
+						minimum: 0,
+						maximum: 36,
+						description: "Recurring window in months. 0 disables recurring.",
+					},
 					batches: {
 						type: "array",
 						minItems: 1,

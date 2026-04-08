@@ -1,13 +1,13 @@
-/** Local calendar date (no time). */
+/** UTC calendar date (no time). */
 export function getLocalDateOnly(d: Date = new Date()): Date {
 	const x = new Date(d);
-	return new Date(x.getFullYear(), x.getMonth(), x.getDate());
+	return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate()));
 }
 
-/** Add N calendar days (local midnight) to a date-only value. */
+/** Add N calendar days (UTC midnight) to a date-only value. */
 export function addLocalDays(dateOnly: Date, days: number): Date {
 	const x = getLocalDateOnly(dateOnly);
-	x.setDate(x.getDate() + days);
+	x.setUTCDate(x.getUTCDate() + days);
 	return x;
 }
 
@@ -16,11 +16,11 @@ export function getTomorrowLocalDateOnly(d: Date = new Date()): Date {
 	return addLocalDays(d, 1);
 }
 
-/** Parse YYYY-MM-DD as local date. */
+/** Parse YYYY-MM-DD as UTC date-only value. */
 export function parseLocalYmd(ymd: string): Date {
 	const [y, m, d] = ymd.split("-").map(Number);
 	if (!y || !m || !d) throw new Error("Invalid YYYY-MM-DD");
-	return new Date(y, m - 1, d);
+	return new Date(Date.UTC(y, m - 1, d));
 }
 
 /**
@@ -29,9 +29,9 @@ export function parseLocalYmd(ymd: string): Date {
  */
 export function computeInclusivePlanEnd(start: Date, months: number): Date {
 	const end = new Date(start);
-	end.setHours(0, 0, 0, 0);
-	end.setMonth(end.getMonth() + months);
-	end.setDate(end.getDate() - 1);
+	end.setUTCHours(0, 0, 0, 0);
+	end.setUTCMonth(end.getUTCMonth() + months);
+	end.setUTCDate(end.getUTCDate() - 1);
 	return end;
 }
 

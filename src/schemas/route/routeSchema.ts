@@ -75,6 +75,12 @@ export const createRouteSchema = Joi.object({
 		.messages({
 			"string.pattern.base": "recurringPlanStartDate must be YYYY-MM-DD",
 		}),
+	recurring_plan_start: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional()
+		.messages({
+			"string.pattern.base": "recurring_plan_start must be YYYY-MM-DD",
+		}),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
 })
 	.or("batches", "legs")
@@ -105,6 +111,9 @@ export const updateRouteSchema = Joi.object({
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),
 	recurringPlanStartDate: Joi.string()
+		.pattern(/^\d{4}-\d{2}-\d{2}$/)
+		.optional(),
+	recurring_plan_start: Joi.string()
 		.pattern(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),

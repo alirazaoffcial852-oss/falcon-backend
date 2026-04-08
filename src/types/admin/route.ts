@@ -29,6 +29,8 @@ export interface CreateRouteInput {
 	routePrice?: number | null;
 	/** Inclusive recurring window on this definition route (default 1 month). Use `0` to disable cron. */
 	recurringPlanStartDate?: string;
+	/** Alias for create API compatibility (YYYY-MM-DD). */
+	recurring_plan_start?: string;
 	recurringPlanMonths?: number;
 	/** One or more batches. Omit if using legacy `legs` (single batch). */
 	batches?: RouteBatchInput[];
@@ -45,6 +47,7 @@ export interface UpdateRouteInput {
 	routePrice?: number | null;
 	batches?: RouteBatchInput[];
 	recurringPlanStartDate?: string;
+	recurring_plan_start?: string;
 	recurringPlanMonths?: number;
 }
 
