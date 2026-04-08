@@ -566,6 +566,85 @@ async function buildStartTripResponse(params: {
 // ---------- service ----------
 
 export const MobileDriverService = {
+	async getStats(userId: number, from?: Date, to?: Date) {
+		const driver = await resolveDriver(userId);
+		const whereDate: { gte?: Date; lte?: Date } = {};
+		if (from) whereDate.gte = from;
+		if (to) whereDate.lte = to;
+
+		const dropPhases = await db.routeDailyPlanPhaseDriver.findMany({
+			where: {
+				driver_id: driver.id,
+				phase: "DROP",
+				status: "COMPLETED",
+				...(from || to ? { scheduled_date: whereDate } : {}),
+				route_daily_plan: { status: "COMPLETED" },
+			},
+			include: {
+				route_daily_plan: {
+					include: {
+						definition_route: {
+							select: {
+								id: true,
+								batches: {
+									select: {
+										pickup_distance_meters: true,
+										drop_distance_meters: true,
+										pickup_duration_seconds: true,
+										drop_duration_seconds: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			orderBy: { scheduled_date: "asc" },
+		});
+
+		const byDate = new Map<
+			string,
+			{ total_distance_meters: number; total_duration_seconds: number }
+		>();
+
+		for (const phase of dropPhases) {
+			const key = phase.scheduled_date.toISOString().slice(0, 10);
+			const current = byDate.get(key) ?? {
+				total_distance_meters: 0,
+				total_duration_seconds: 0,
+			};
+			const batches = phase.route_daily_plan.definition_route.batches;
+			for (const b of batches) {
+				current.total_distance_meters +=
+					(b.pickup_distance_meters ?? 0) + (b.drop_distance_meters ?? 0);
+				current.total_duration_seconds +=
+					(b.pickup_duration_seconds ?? 0) + (b.drop_duration_seconds ?? 0);
+			}
+			byDate.set(key, current);
+		}
+
+		const rows = [...byDate.entries()]
+			.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+			.map(([date, v]) => {
+				const km = v.total_distance_meters / 1000;
+				const mins = Math.round(v.total_duration_seconds / 60);
+				return {
+					date,
+					total_driven_km: Number(km.toFixed(2)),
+					total_driven_label: `${Number(km.toFixed(2))} km`,
+					total_time_minutes: mins,
+					total_time_label: `${mins} min`,
+				};
+			});
+
+		return {
+			driver: { id: driver.id, name: driver.name },
+			from: from ?? null,
+			to: to ?? null,
+			rows,
+		};
+	},
+
 	async goAvailable(userId: number) {
 		const driver = await resolveDriver(userId);
 		const driverLive = getDriverLocationSnapshot(driver.id);

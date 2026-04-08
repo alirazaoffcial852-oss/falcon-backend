@@ -265,7 +265,6 @@ async function main() {
     const passenger = await prisma.passenger.create({
       data: {
         name: passengerName,
-        email: generateEmail("passenger", i),
         phone_no: generatePhone(),
         home_address: `${addresses[i % addresses.length]}, ${city.name}`,
         home_lat: city.lat + (Math.random() - 0.5) * 0.05,

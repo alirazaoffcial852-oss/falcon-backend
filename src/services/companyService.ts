@@ -45,6 +45,7 @@ export class CompanyService {
 				address: data.address,
 				lat: data.lat ?? null,
 				long: data.long ?? null,
+				weekly_off_days: data.weekly_off_days ?? [],
 			},
 		});
 		return {
@@ -54,6 +55,7 @@ export class CompanyService {
 			address: company.address,
 			lat: company.lat ?? undefined,
 			long: company.long ?? undefined,
+			weekly_off_days: company.weekly_off_days,
 		};
 	}
 
@@ -66,12 +68,24 @@ export class CompanyService {
 			address?: string;
 			lat?: number | null;
 			long?: number | null;
+			weekly_off_days?: (
+				| "SUNDAY"
+				| "MONDAY"
+				| "TUESDAY"
+				| "WEDNESDAY"
+				| "THURSDAY"
+				| "FRIDAY"
+				| "SATURDAY"
+			)[];
 		} = {};
 		if (data.name !== undefined) updateData.name = data.name.trim();
 		if (data.email !== undefined) updateData.email = data.email?.trim() ?? null;
 		if (data.phone_no !== undefined)
 			updateData.phone_no = data.phone_no === null ? null : data.phone_no.trim();
 		if (data.address !== undefined) updateData.address = data.address.trim();
+		if (data.weekly_off_days !== undefined) {
+			updateData.weekly_off_days = data.weekly_off_days;
+		}
 		const company = await this.db.company.update({
 			where: { id },
 			data: updateData,
@@ -83,6 +97,7 @@ export class CompanyService {
 			address: company.address,
 			lat: company.lat ?? undefined,
 			long: company.long ?? undefined,
+			weekly_off_days: company.weekly_off_days,
 		};
 	}
 

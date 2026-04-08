@@ -57,6 +57,24 @@ const swaggerDocument = {
 					address: { type: "string" },
 					lat: { type: "number" },
 					long: { type: "number" },
+					weekly_off_days: {
+						type: "array",
+						description:
+							"Company weekly off days. Cron skips daily plan generation on these weekdays.",
+						items: {
+							type: "string",
+							enum: [
+								"SUNDAY",
+								"MONDAY",
+								"TUESDAY",
+								"WEDNESDAY",
+								"THURSDAY",
+								"FRIDAY",
+								"SATURDAY",
+							],
+						},
+						example: ["SATURDAY", "SUNDAY"],
+					},
 				},
 			},
 			UpdateCompanyBody: {
@@ -69,6 +87,24 @@ const swaggerDocument = {
 					address: { type: "string" },
 					lat: { type: "number" },
 					long: { type: "number" },
+					weekly_off_days: {
+						type: "array",
+						description:
+							"Replace weekly off days. Send [] to clear all weekly offs.",
+						items: {
+							type: "string",
+							enum: [
+								"SUNDAY",
+								"MONDAY",
+								"TUESDAY",
+								"WEDNESDAY",
+								"THURSDAY",
+								"FRIDAY",
+								"SATURDAY",
+							],
+						},
+						example: ["FRIDAY"],
+					},
 				},
 			},
 			// Driver (image fields can be URLs or multipart in real usage)

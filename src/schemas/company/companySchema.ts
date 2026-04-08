@@ -1,5 +1,15 @@
 import Joi from "joi";
 
+const weekdaySchema = Joi.string().valid(
+	"SUNDAY",
+	"MONDAY",
+	"TUESDAY",
+	"WEDNESDAY",
+	"THURSDAY",
+	"FRIDAY",
+	"SATURDAY",
+);
+
 export const createCompanySchema = Joi.object({
 	name: Joi.string().trim().required().messages({
 		"any.required": "Name is required",
@@ -21,6 +31,7 @@ export const createCompanySchema = Joi.object({
 		"any.required": "Longitude is required",
 		"number.base": "Longitude must be a number",
 	}),
+	weekly_off_days: Joi.array().items(weekdaySchema).unique().optional(),
 }).required();
 
 export const updateCompanySchema = Joi.object({
@@ -40,6 +51,7 @@ export const updateCompanySchema = Joi.object({
 	long: Joi.number().messages({
 		"number.base": "Longitude must be a number",
 	}),
+	weekly_off_days: Joi.array().items(weekdaySchema).unique(),
 }).min(1);
 
 export const listCompaniesQuerySchema = Joi.object({

@@ -20,7 +20,7 @@ model Role {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  is_admin_role Boolean @default(false)
+  is_admin_role Boolean           @default(false)
   description   String?
   permissions   AdminPermission[]
 
@@ -28,16 +28,16 @@ model Role {
 }
 
 model AdminPermission {
-  id          Int      @id @default(autoincrement())
-  role_id     Int
-  role        Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  module      String   
-  can_view    Boolean  @default(false)
-  can_create  Boolean  @default(false)
-  can_edit    Boolean  @default(false)
-  can_delete  Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  role_id    Int
+  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  module     String
+  can_view   Boolean  @default(false)
+  can_create Boolean  @default(false)
+  can_edit   Boolean  @default(false)
+  can_delete Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@unique([role_id, module])
   @@index([role_id])
@@ -45,23 +45,23 @@ model AdminPermission {
 }
 
 model User {
-  id            Int                   @id @default(autoincrement())
-  email         String                @unique
-  password      String
-  role_id       Int
-  role          Role                  @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  created_at    DateTime              @default(now())
-  updated_at    DateTime              @updatedAt
-  driver        Driver?
-  passenger     Passenger?
-  driver_create_requests         DriverCreateRequest[]
+  id                              Int                   @id @default(autoincrement())
+  email                           String                @unique
+  password                        String
+  role_id                         Int
+  role                            Role                  @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  created_at                      DateTime              @default(now())
+  updated_at                      DateTime              @updatedAt
+  driver                          Driver?
+  passenger                       Passenger?
+  driver_create_requests          DriverCreateRequest[]
   reviewed_driver_create_requests DriverCreateRequest[] @relation("DriverCreateRequestReviewer")
-  deviceTokens  UserDeviceToken[]
-  notifications NotificationHistory[]
-  
+  deviceTokens                    UserDeviceToken[]
+  notifications                   NotificationHistory[]
+
   // Admin management tracking
-  created_by    Int?                  // ID of the admin who created this user
-  is_super_admin Boolean              @default(false) // Only true for the initial super admin
+  created_by     Int? // ID of the admin who created this user
+  is_super_admin Boolean @default(false) // Only true for the initial super admin
 
   @@map("users")
 }
@@ -97,18 +97,19 @@ model UserDeviceToken {
 }
 
 model Company {
-  id         Int              @id @default(autoincrement())
-  name       String
-  email      String?
-  phone_no   String?
-  address    String
-  lat        Float?
-  long       Float?
-  created_at DateTime         @default(now())
-  updated_at DateTime         @updatedAt
-  passengers Passenger[]
-  routes     Route[]
-  holidays   CompanyHoliday[]
+  id              Int              @id @default(autoincrement())
+  name            String
+  email           String?
+  phone_no        String?
+  address         String
+  lat             Float?
+  long            Float?
+  weekly_off_days Weekday[]        @default([])
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  passengers      Passenger[]
+  routes          Route[]
+  holidays        CompanyHoliday[]
 
   @@map("companies")
 }
@@ -165,19 +166,19 @@ model Driver {
 }
 
 model DriverCreateRequest {
-  id                 Int      @id @default(autoincrement())
+  id                   Int       @id @default(autoincrement())
   requested_by_user_id Int?
-  requested_by_user  User?    @relation(fields: [requested_by_user_id], references: [id], onDelete: SetNull)
-  payload            Json
-  status             String   @default("PENDING")
-  reviewed_by_user_id Int?
-  reviewed_by_user   User?    @relation("DriverCreateRequestReviewer", fields: [reviewed_by_user_id], references: [id], onDelete: SetNull)
-  reviewed_at        DateTime?
-  review_note        String?
-  created_driver_id  Int?
-  created_driver     Driver?  @relation(fields: [created_driver_id], references: [id], onDelete: SetNull)
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  requested_by_user    User?     @relation(fields: [requested_by_user_id], references: [id], onDelete: SetNull)
+  payload              Json
+  status               String    @default("PENDING")
+  reviewed_by_user_id  Int?
+  reviewed_by_user     User?     @relation("DriverCreateRequestReviewer", fields: [reviewed_by_user_id], references: [id], onDelete: SetNull)
+  reviewed_at          DateTime?
+  review_note          String?
+  created_driver_id    Int?
+  created_driver       Driver?   @relation(fields: [created_driver_id], references: [id], onDelete: SetNull)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
 
   @@index([status, created_at])
   @@map("driver_create_requests")
@@ -235,22 +236,22 @@ model DriverConfiguration {
 }
 
 model Route {
-  id                   Int              @id @default(autoincrement())
+  id                   Int                @id @default(autoincrement())
   company_id           Int
-  company              Company          @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  company              Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
   driver_id            Int
-  driver               Driver           @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  driver               Driver             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   office_address       String
   office_lat           Float
   office_long          Float
-  recurring_plan_start DateTime?        @db.Date
-  recurring_plan_end   DateTime?        @db.Date
-  route_daily_plan_id  Int?             @unique
+  recurring_plan_start DateTime?          @db.Date
+  recurring_plan_end   DateTime?          @db.Date
+  route_daily_plan_id  Int?               @unique
   route_price          Float?
-  daily_plan           RouteDailyPlan?  @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
-  defined_plans        RouteDailyPlan[] @relation("RouteDefinitionPlans")
-  created_at           DateTime         @default(now())
-  updated_at           DateTime         @updatedAt
+  daily_plan           RouteDailyPlan?    @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  defined_plans        RouteDailyPlan[]   @relation("RouteDefinitionPlans")
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
   legs                 RouteLeg[]
   batches              RouteBatch[]
   segments             RouteSegment[]
@@ -466,4 +467,14 @@ enum RouteDailyPlanPhase {
 enum DriverApprovalStatus {
   PENDING
   APPROVED
+}
+
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
 }

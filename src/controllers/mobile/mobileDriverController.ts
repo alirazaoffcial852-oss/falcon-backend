@@ -12,6 +12,37 @@ function getUserId(req: AuthRequest): number {
 }
 
 export const MobileDriverController = {
+	/** GET /f1/mobile/driver/stats?from=YYYY-MM-DD&to=YYYY-MM-DD */
+	getStats: catchAsync(async (req: AuthRequest, res: Response) => {
+		const fromStr = req.query.from as string | undefined;
+		const toStr = req.query.to as string | undefined;
+		const from = fromStr
+			? new Date(
+					Number(fromStr.slice(0, 4)),
+					Number(fromStr.slice(5, 7)) - 1,
+					Number(fromStr.slice(8, 10)),
+				)
+			: undefined;
+		const to = toStr
+			? new Date(
+					Number(toStr.slice(0, 4)),
+					Number(toStr.slice(5, 7)) - 1,
+					Number(toStr.slice(8, 10)),
+				)
+			: undefined;
+		if (fromStr && Number.isNaN(from?.getTime())) {
+			throw ResponseHandler.badRequest("Invalid from date (YYYY-MM-DD)");
+		}
+		if (toStr && Number.isNaN(to?.getTime())) {
+			throw ResponseHandler.badRequest("Invalid to date (YYYY-MM-DD)");
+		}
+		if (from && to && from.getTime() > to.getTime()) {
+			throw ResponseHandler.badRequest("from must be before or equal to to");
+		}
+		const result = await MobileDriverService.getStats(getUserId(req), from, to);
+		ResponseHandler.success(res, result, "Driver stats");
+	}),
+
 	/** POST /f1/mobile/driver/available */
 	goAvailable: catchAsync(async (req: AuthRequest, res: Response) => {
 		const result = await MobileDriverService.goAvailable(getUserId(req));

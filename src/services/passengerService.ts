@@ -26,7 +26,7 @@ export class PassengerService {
 		const data = passengers.map((passenger) => {
 			return {
 				...passenger,
-				email: passenger.email ?? passenger.user?.email ?? null,
+				email: passenger.user?.email ?? null,
 			};
 		});
 		return {
@@ -51,7 +51,7 @@ export class PassengerService {
 			);
 		return {
 			...passenger,
-			email: passenger.email ?? passenger.user?.email ?? null,
+			email: passenger.user?.email ?? null,
 		};
 	}
 
