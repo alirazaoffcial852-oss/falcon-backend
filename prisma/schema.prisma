@@ -157,6 +157,7 @@ model Driver {
   driver_assign_cars       DriverAssignCar[]
   routes                   Route[]
   leaves                   DriverLeave[]
+  issue_reports            RouteIssueReport[]
   daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
   create_requests          DriverCreateRequest[]
 
@@ -252,9 +253,26 @@ model Route {
   legs                 RouteLeg[]
   batches              RouteBatch[]
   segments             RouteSegment[]
+  issue_reports        RouteIssueReport[]
 
   @@index([driver_id])
   @@map("routes")
+}
+
+model RouteIssueReport {
+  id         Int      @id @default(autoincrement())
+  route_id   Int
+  route      Route    @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  driver_id  Int
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  image_url  String
+  note       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([route_id, created_at])
+  @@index([driver_id, created_at])
+  @@map("route_issue_reports")
 }
 
 model RouteDailyPlan {

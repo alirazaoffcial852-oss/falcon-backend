@@ -99,4 +99,24 @@ export const MobileDriverController = {
 		);
 		ResponseHandler.success(res, result, "Phase / ride completion processed");
 	}),
+
+	/** POST /f1/mobile/driver/session/:routeId/issue-report */
+	reportRouteIssue: catchAsync(async (req: AuthRequest, res: Response) => {
+		const routeId = parseInt(req.params.routeId as string);
+		if (isNaN(routeId)) throw ResponseHandler.badRequest("Invalid routeId");
+		const { image_url, note } = req.body as {
+			image_url?: string;
+			note?: string | null;
+		};
+		if (!image_url || !String(image_url).trim()) {
+			throw ResponseHandler.badRequest("image_url is required");
+		}
+		const result = await MobileDriverService.reportRouteIssue(
+			getUserId(req),
+			routeId,
+			String(image_url).trim(),
+			note == null ? null : String(note),
+		);
+		ResponseHandler.success(res, result, "Route issue reported");
+	}),
 };

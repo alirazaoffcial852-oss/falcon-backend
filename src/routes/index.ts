@@ -39,7 +39,7 @@ export default function Routes(app: Express) {
 
 	router.use("/schedule", ...admin, scheduleRoutes);
 
-	router.use("/uploads", ...admin, uploadRoutes);
+	// router.use("/uploads", ...admin, uploadRoutes);
 
 	router.use("/admins", ...admin, adminRoutes);
 	// Public for pre-login flows (e.g. driver self-registration image upload)
