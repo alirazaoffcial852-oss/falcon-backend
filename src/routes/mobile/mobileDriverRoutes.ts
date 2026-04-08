@@ -39,4 +39,10 @@ router.post(
 	MobileDriverController.completeTrip,
 );
 
+// Driver can report protest/blockage/etc while actively driving on this route
+router.post(
+	"/session/:routeId/issue-report",
+	MobileDriverController.reportRouteIssue,
+);
+
 export default router;
