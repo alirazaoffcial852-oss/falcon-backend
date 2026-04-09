@@ -441,11 +441,22 @@ async function buildStartTripResponse(params: {
 		where: { id: routeId },
 		include: {
 			daily_plan: true,
-			legs: { include: { passenger: true }, orderBy: { sequence: "asc" } },
+			legs: {
+				include: {
+					passenger: { select: { id: true, name: true, phone_no: true } },
+				},
+				orderBy: { sequence: "asc" },
+			},
 			segments: { orderBy: { segment_order: "asc" } },
 			batches: {
 				orderBy: { batch_order: "asc" },
-				include: { legs: { include: { passenger: true } } },
+				include: {
+					legs: {
+						include: {
+							passenger: { select: { id: true, name: true, phone_no: true } },
+						},
+					},
+				},
 			},
 		},
 	});
@@ -930,13 +941,25 @@ export const MobileDriverService = {
 						execution_route: {
 							include: {
 								legs: {
-									include: { passenger: true },
+									include: {
+										passenger: {
+											select: { id: true, name: true, phone_no: true },
+										},
+									},
 									orderBy: { sequence: "asc" },
 								},
 								segments: { orderBy: { segment_order: "asc" } },
 								batches: {
 									orderBy: { batch_order: "asc" },
-									include: { legs: { include: { passenger: true } } },
+									include: {
+										legs: {
+											include: {
+												passenger: {
+													select: { id: true, name: true, phone_no: true },
+												},
+											},
+										},
+									},
 								},
 								driver: {
 									include: {
@@ -1187,7 +1210,7 @@ export const MobileDriverService = {
 				route_daily_plan_phase_driver: { driver_id: driver.id },
 			},
 			include: {
-				passenger: true,
+				passenger: { select: { id: true, name: true, phone_no: true } },
 				route_daily_plan_phase_driver: {
 					include: {
 						route_daily_plan: { select: { id: true, status: true } },
@@ -1291,7 +1314,7 @@ export const MobileDriverService = {
 				route_daily_plan_phase_driver: { driver_id: driver.id },
 			},
 			include: {
-				passenger: true,
+				passenger: { select: { id: true, name: true, phone_no: true } },
 				route_daily_plan_phase_driver: {
 					include: {
 						route_daily_plan: { select: { id: true, status: true } },
@@ -1333,7 +1356,9 @@ export const MobileDriverService = {
 				route_id: routeId,
 				passenger_id: ppRow.passenger_id,
 			},
-			include: { passenger: true },
+			include: {
+				passenger: { select: { id: true, name: true, phone_no: true } },
+			},
 		});
 		if (!leg)
 			throw ResponseHandler.notFound("Route leg not found for passenger");

@@ -11,14 +11,40 @@ export class PassengerService {
 
 	async list(params: PassengerListQuery) {
 		let total = 0;
-		const where = buildWhereCondition(params, ["name"]);
+		const where = buildWhereCondition(
+			{
+				page: params.page,
+				limit: params.limit,
+				search: params.search,
+			},
+			["name"],
+		);
+		if (params.companyId !== undefined) {
+			where.company_id = params.companyId;
+		}
 		total = await this.db.passenger.count({ where });
 		const passengers = await this.db.passenger.findMany({
 			where,
 			take: params.limit,
 			skip: (params.page - 1) * params.limit,
 			orderBy: { created_at: "desc" },
-			include: {
+			select: {
+				id: true,
+				user_id: true,
+				name: true,
+				phone_no: true,
+				home_address: true,
+				home_lat: true,
+				home_long: true,
+				office_address: true,
+				office_lat: true,
+				office_long: true,
+				company_id: true,
+				pick_up_time: true,
+				drop_off_time: true,
+				office_pick_up_time: true,
+				created_at: true,
+				updated_at: true,
 				company: { select: { id: true, name: true } },
 				user: { select: { email: true } },
 			},
@@ -43,7 +69,26 @@ export class PassengerService {
 	async getById(id: number) {
 		const passenger = await this.db.passenger.findUnique({
 			where: { id },
-			include: { company: true, user: { select: { email: true } } },
+			select: {
+				id: true,
+				user_id: true,
+				name: true,
+				phone_no: true,
+				home_address: true,
+				home_lat: true,
+				home_long: true,
+				office_address: true,
+				office_lat: true,
+				office_long: true,
+				company_id: true,
+				pick_up_time: true,
+				drop_off_time: true,
+				office_pick_up_time: true,
+				created_at: true,
+				updated_at: true,
+				company: true,
+				user: { select: { email: true } },
+			},
 		});
 		if (!passenger)
 			throw ResponseHandler.notFound(
@@ -127,7 +172,20 @@ export class PassengerService {
 				drop_off_time: data.dropOffTime?.trim(),
 				office_pick_up_time: data.officePickUpTime?.trim() || null,
 			},
-			include: { company: { select: { id: true, name: true } } },
+			select: {
+				name: true,
+				phone_no: true,
+				home_address: true,
+				home_lat: true,
+				home_long: true,
+				office_address: true,
+				office_lat: true,
+				office_long: true,
+				company_id: true,
+				pick_up_time: true,
+				drop_off_time: true,
+				office_pick_up_time: true,
+			},
 		});
 
 		return {
@@ -179,6 +237,20 @@ export class PassengerService {
 				...(data.officePickUpTime !== undefined && {
 					office_pick_up_time: data.officePickUpTime.trim() || null,
 				}),
+			},
+			select: {
+				name: true,
+				phone_no: true,
+				home_address: true,
+				home_lat: true,
+				home_long: true,
+				office_address: true,
+				office_lat: true,
+				office_long: true,
+				company_id: true,
+				pick_up_time: true,
+				drop_off_time: true,
+				office_pick_up_time: true,
 			},
 		});
 		return {
