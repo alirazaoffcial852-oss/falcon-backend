@@ -63,9 +63,9 @@ export const createRouteSchema = Joi.object({
 		"any.required": "Office longitude is required",
 		"number.base": "Office longitude must be a number",
 	}),
-	routePrice: Joi.number().required().messages({
-		"any.required": "Route price is required",
-		"number.base": "Route price must be a number",
+	route_price: Joi.number().required().messages({
+		"any.required": "route_price is required",
+		"number.base": "route_price must be a number",
 	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),
@@ -105,8 +105,8 @@ export const updateRouteSchema = Joi.object({
 	officeLong: Joi.number().messages({
 		"number.base": "Office longitude must be a number",
 	}),
-	routePrice: Joi.number().messages({
-		"number.base": "Route price must be a number",
+	route_price: Joi.number().messages({
+		"number.base": "route_price must be a number",
 	}),
 	batches: Joi.array().items(batchSchema).min(1),
 	legs: Joi.array().items(routeLegSchema).min(1),

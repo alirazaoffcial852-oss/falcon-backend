@@ -53,7 +53,9 @@ export class ScheduleService {
 	async getCompanyHolidayById(id: number) {
 		const row = await db.companyHoliday.findUnique({ where: { id } });
 		if (!row)
-			throw ResponseHandler.notFound("no company holiday found against this id: " + id);
+			throw ResponseHandler.notFound(
+				"no company holiday found against this id: " + id,
+			);
 		return row;
 	}
 
@@ -124,6 +126,14 @@ export class ScheduleService {
 		toYmd: string,
 		note?: string | null,
 	) {
+		const driver = await db.driver.findUnique({ where: { id: driverId } });
+		if (!driver)
+			throw ResponseHandler.notFound(
+				"No driver found against this id: " + driverId,
+			);
+		if (driver.status !== "APPROVED")
+			throw ResponseHandler.forbidden("Driver is not approved");
+		console.log("driver", driver);
 		const from = parseYmdToLocalDate(fromYmd);
 		const to = parseYmdToLocalDate(toYmd);
 		from.setHours(0, 0, 0, 0);
@@ -140,7 +150,7 @@ export class ScheduleService {
 			try {
 				await db.driverLeave.create({
 					data: {
-						driver_id: driverId,
+						driver_id: driver.id,
 						date,
 						note: note?.trim() || null,
 					},

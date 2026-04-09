@@ -127,7 +127,7 @@ export async function findNextPickupLegInBatch(
 	const legs = await db.routeLeg.findMany({
 		where: { route_id: routeId, batch_id: batchId },
 		orderBy: { sequence: "asc" },
-		include: { passenger: true },
+		include: { passenger: { select: { id: true, name: true, phone_no: true } } },
 	});
 	for (const l of legs) {
 		if (l.id === excludeLegId) continue;
@@ -178,7 +178,7 @@ export async function findNextDropLegInBatch(
 	const legs = await db.routeLeg.findMany({
 		where: { route_id: routeId, batch_id: batchId },
 		orderBy: { drop_sequence: "asc" },
-		include: { passenger: true },
+		include: { passenger: { select: { id: true, name: true, phone_no: true } } },
 	});
 	for (const l of legs) {
 		if (l.id === excludeLegId) continue;

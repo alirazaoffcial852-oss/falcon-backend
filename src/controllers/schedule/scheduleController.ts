@@ -8,14 +8,16 @@ import type { AuthRequest } from "../../middleware/authMiddleware";
 export const ScheduleController = {
 	listCompanyHolidays: catchAsync(async (req: Request, res: Response) => {
 		const companyId = parseIdParam(req.params.companyId);
-		if (companyId === null) throw ResponseHandler.badRequest("Invalid company id");
+		if (companyId === null)
+			throw ResponseHandler.badRequest("Invalid company id");
 		const data = await scheduleService.listCompanyHolidays(companyId);
 		ResponseHandler.success(res, data, "Company holidays");
 	}),
 
 	addCompanyHoliday: catchAsync(async (req: Request, res: Response) => {
 		const companyId = parseIdParam(req.params.companyId);
-		if (companyId === null) throw ResponseHandler.badRequest("Invalid company id");
+		if (companyId === null)
+			throw ResponseHandler.badRequest("Invalid company id");
 		const { date, name } = req.body as { date: string; name?: string };
 		const row = await scheduleService.addCompanyHoliday(companyId, date, name);
 		ResponseHandler.created(res, row, "Holiday added");
@@ -45,7 +47,8 @@ export const ScheduleController = {
 
 	listDriverLeaves: catchAsync(async (req: AuthRequest, res: Response) => {
 		const driverId = parseIdParam(req.params.driverId);
-		if (driverId === null) throw ResponseHandler.badRequest("Invalid driver id");
+		if (driverId === null)
+			throw ResponseHandler.badRequest("Invalid driver id");
 		const from = req.query.from as string | undefined;
 		const to = req.query.to as string | undefined;
 		const role = String(req.user?.role ?? "");
@@ -65,17 +68,12 @@ export const ScheduleController = {
 
 	addDriverLeave: catchAsync(async (req: AuthRequest, res: Response) => {
 		const driverId = parseIdParam(req.params.driverId);
-		if (driverId === null) throw ResponseHandler.badRequest("Invalid driver id");
+		if (driverId === null)
+			throw ResponseHandler.badRequest("Invalid driver id");
 		const role = String(req.user?.role ?? "");
 		if (role === "driver") {
 			const userId = req.user?.id ? Number(req.user.id) : 0;
 			if (!userId) throw ResponseHandler.unauthorized("Not authenticated");
-			const ownDriverId = await scheduleService.getDriverIdByUserId(userId);
-			if (!ownDriverId || ownDriverId !== driverId) {
-				throw ResponseHandler.forbidden(
-					"Drivers can only add leave for themselves",
-				);
-			}
 		}
 		const { from, to, note } = req.body as {
 			from: string;

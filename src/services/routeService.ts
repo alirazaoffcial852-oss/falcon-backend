@@ -28,7 +28,9 @@ type SortOriginMode = "driver_home" | "office";
 export class RouteService {
 	private db = DatabaseService.getInstance().getPrisma();
 
-	private getWeekdayEnum(day: Date):
+	private getWeekdayEnum(
+		day: Date,
+	):
 		| "SUNDAY"
 		| "MONDAY"
 		| "TUESDAY"
@@ -560,7 +562,7 @@ export class RouteService {
 					office_address: data.officeAddress.trim(),
 					office_lat: data.officeLat,
 					office_long: data.officeLong,
-					route_price: data.routePrice ?? null,
+					route_price: data.route_price ?? null,
 					...(recurringPlan && {
 						recurring_plan_start: recurringPlan.start,
 						recurring_plan_end: recurringPlan.end,
@@ -703,8 +705,8 @@ export class RouteService {
 						...(data.officeLong !== undefined && {
 							office_long: data.officeLong,
 						}),
-						...(data.routePrice !== undefined && {
-							route_price: data.routePrice,
+						...(data.route_price !== undefined && {
+							route_price: data.route_price,
 						}),
 					},
 				});
@@ -724,8 +726,8 @@ export class RouteService {
 					...(data.officeLong !== undefined && {
 						office_long: data.officeLong,
 					}),
-					...(data.routePrice !== undefined && {
-						route_price: data.routePrice,
+					...(data.route_price !== undefined && {
+						route_price: data.route_price,
 					}),
 				},
 			});
@@ -748,7 +750,8 @@ export class RouteService {
 					},
 				});
 			} else {
-				const startInput = data.recurring_plan_start ?? data.recurringPlanStartDate;
+				const startInput =
+					data.recurring_plan_start ?? data.recurringPlanStartDate;
 				const start = startInput
 					? parseLocalYmd(startInput)
 					: (r.recurring_plan_start ?? getTomorrowLocalDateOnly());
@@ -1068,7 +1071,8 @@ export class RouteService {
 		for (const d of definitions) {
 			if (
 				d.recurring_plan_start &&
-				new Date(dayStart).getTime() < new Date(d.recurring_plan_start).setHours(0, 0, 0, 0)
+				new Date(dayStart).getTime() <
+					new Date(d.recurring_plan_start).setHours(0, 0, 0, 0)
 			) {
 				preview.push({
 					definition_route_id: d.id,
@@ -1177,13 +1181,15 @@ export class RouteService {
 			total_definitions: definitions.length,
 			summary: {
 				can_create: preview.filter((x) => x.decision === "CAN_CREATE").length,
-				skip_before_start: preview.filter((x) => x.decision === "SKIP_BEFORE_START")
-					.length,
-				skip_duplicate: preview.filter((x) => x.decision === "SKIP_DUPLICATE").length,
-				skip_holiday: preview.filter((x) => x.decision === "SKIP_HOLIDAY").length,
-				skip_weekly_off: preview.filter(
-					(x) => x.decision === "SKIP_WEEKLY_OFF",
+				skip_before_start: preview.filter(
+					(x) => x.decision === "SKIP_BEFORE_START",
 				).length,
+				skip_duplicate: preview.filter((x) => x.decision === "SKIP_DUPLICATE")
+					.length,
+				skip_holiday: preview.filter((x) => x.decision === "SKIP_HOLIDAY")
+					.length,
+				skip_weekly_off: preview.filter((x) => x.decision === "SKIP_WEEKLY_OFF")
+					.length,
 				skip_driver_leave: preview.filter(
 					(x) => x.decision === "SKIP_DRIVER_LEAVE",
 				).length,

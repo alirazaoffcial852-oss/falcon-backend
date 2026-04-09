@@ -26,7 +26,7 @@ export interface CreateRouteInput {
 	officeAddress: string;
 	officeLat: number;
 	officeLong: number;
-	routePrice?: number | null;
+	route_price?: number | null;
 	/** Inclusive recurring window on this definition route (default 1 month). Use `0` to disable cron. */
 	recurringPlanStartDate?: string;
 	/** Alias for create API compatibility (YYYY-MM-DD). */
@@ -44,7 +44,7 @@ export interface UpdateRouteInput {
 	officeAddress?: string;
 	officeLat?: number;
 	officeLong?: number;
-	routePrice?: number | null;
+	route_price?: number | null;
 	batches?: RouteBatchInput[];
 	recurringPlanStartDate?: string;
 	recurring_plan_start?: string;
@@ -57,5 +57,5 @@ export interface RouteListQuery {
 	search?: string;
 	companyId?: number;
 	driverId?: number;
-	status?: 'PENDING' | 'ONGOING' | 'COMPLETED';
+	status?: "PENDING" | "ONGOING" | "COMPLETED";
 }
