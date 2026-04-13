@@ -24,6 +24,7 @@ const allowedOrigins = [
 	"http://localhost:5173",
 	"http://192.168.1.22",
 	"http://192.168.1.22:5001",
+	"http://localhost:5001",
 	"https://falcon-backend-github.vercel.app",
 ];
 const isAllowedOrigin = (origin: string) =>
