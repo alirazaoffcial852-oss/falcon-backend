@@ -11,10 +11,8 @@ async function main() {
   console.log("Creating basic roles...");
   const roles = [
     { name: "super_admin", is_admin_role: true },
-    { name: "admin", is_admin_role: true },
     { name: "driver" },
     { name: "passenger" },
-    { name: "company" },
   ];
 
   for (const role of roles) {
