@@ -442,7 +442,6 @@ async function main() {
         rate_per_km: 10 + Math.random() * 20,
         driver_cnic_front_url: `https://example.com/cnic/driver_${i + 1}_cnic_front.jpg`,
         driver_cnic_back_url: `https://example.com/cnic/driver_${i + 1}_cnic_back.jpg`,
-        salary: `${30000 + Math.floor(Math.random() * 70000)} PKR`,
         driver_license_front_url: `https://example.com/license/driver_${i + 1}_license_front.jpg`,
         driver_license_back_url: `https://example.com/license/driver_${i + 1}_license_back.jpg`,
         is_available: Math.random() > 0.3,

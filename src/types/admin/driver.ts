@@ -11,14 +11,13 @@ export interface Driver {
 	home_lat?: number | null;
 	home_long?: number | null;
 	name: string;
-	phone_no: string;
+	phone_no?: string | null;
 	address: string;
 	emergency_phone_no: string;
 	driver_image_url: string;
 	rate_per_km?: number;
 	driver_cnic_front_url: string;
 	driver_cnic_back_url: string;
-	salary: string;
 	driver_license_front_url: string;
 	driver_license_back_url: string;
 	status?: "PENDING" | "APPROVED";

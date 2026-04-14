@@ -142,7 +142,7 @@ export class DriverService {
         data: {
           user_id: createdUser.id,
           name: data.name,
-          phone_no: data.phone_no,
+          phone_no: data.phone_no?.trim() ? data.phone_no.trim() : null,
           address: data.address,
           ...(data.home_lat !== undefined &&
             data.home_lat !== null && { home_lat: Number(data.home_lat) }),
@@ -156,7 +156,6 @@ export class DriverService {
               : 0,
           driver_cnic_front_url: data.driver_cnic_front_url ?? "",
           driver_cnic_back_url: data.driver_cnic_back_url ?? "",
-          salary: data.salary ?? "",
           driver_license_front_url: data.driver_license_front_url ?? "",
           driver_license_back_url: data.driver_license_back_url ?? "",
           status: "APPROVED",
@@ -186,7 +185,7 @@ export class DriverService {
     const driver = await this.db.driver.create({
       data: {
         name: data.name,
-        phone_no: data.phone_no,
+        phone_no: data.phone_no?.trim() ? data.phone_no.trim() : null,
         address: data.address,
         ...(data.home_lat !== undefined &&
           data.home_lat !== null && { home_lat: Number(data.home_lat) }),
@@ -200,7 +199,6 @@ export class DriverService {
             : 0,
         driver_cnic_front_url: data.driver_cnic_front_url ?? "",
         driver_cnic_back_url: data.driver_cnic_back_url ?? "",
-        salary: data.salary ?? "",
         driver_license_front_url: data.driver_license_front_url ?? "",
         driver_license_back_url: data.driver_license_back_url ?? "",
         status: "PENDING",
@@ -218,7 +216,6 @@ export class DriverService {
       "address",
       "phone_no",
       "emergency_phone_no",
-      "salary",
     ]);
     const total = await this.db.driver.count({ where });
     const drivers = await this.db.driver.findMany({
@@ -393,7 +390,7 @@ export class DriverService {
       where: { id },
       data: {
         name: data.name,
-        phone_no: data.phone_no,
+        phone_no: data.phone_no?.trim() ? data.phone_no.trim() : null,
         address: data.address,
         ...(data.home_lat !== undefined && {
           home_lat: data.home_lat === null ? null : Number(data.home_lat),
@@ -409,7 +406,6 @@ export class DriverService {
             : 0,
         driver_cnic_front_url: data.driver_cnic_front_url ?? "",
         driver_cnic_back_url: data.driver_cnic_back_url ?? "",
-        salary: data.salary ?? "",
         driver_license_front_url: data.driver_license_front_url ?? "",
         driver_license_back_url: data.driver_license_back_url ?? "",
       },
