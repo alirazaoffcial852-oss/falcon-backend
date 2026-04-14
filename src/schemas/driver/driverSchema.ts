@@ -11,9 +11,7 @@ export const createDriverSchema = Joi.object({
 		"string.empty": "Name is required",
 		"string.trim": "Name must be a string",
 	}),
-	phone_no: Joi.string().trim().required().messages({
-		"any.required": "Phone number is required",
-		"string.empty": "Phone number is required",
+	phone_no: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Phone number must be a string",
 	}),
 	address: Joi.string().trim().required().messages({
@@ -53,11 +51,18 @@ export const createDriverSchema = Joi.object({
 	salary: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Salary must be a string",
 	}),
-	car_id: Joi.number().integer().min(1).required().messages({
-		"any.required": "Car id is required",
-		"number.min": "Car id must be greater than 0",
-	}),
-}).required();
+	car_ids: Joi.array()
+		.items(Joi.number().integer().min(1))
+		.min(1)
+		.optional()
+		.messages({
+			"array.min": "At least one car id is required",
+		}),
+	default_car_id: Joi.number().integer().min(1).optional(),
+	car_id: Joi.number().integer().min(1).optional(),
+})
+	.or("car_ids", "car_id")
+	.required();
 
 export const updateDriverSchema = Joi.object({
 	name: Joi.string().trim().required().messages({
@@ -69,12 +74,10 @@ export const updateDriverSchema = Joi.object({
 		"string.email": "Email must be valid",
 		"string.empty": "Email is required",
 	}),
-	phone_no: Joi.string().trim().required().messages({
-		"any.required": "Phone number is required",
+	phone_no: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Phone number must be a string",
 	}),
-	address: Joi.string().trim().required().messages({
-		"any.required": "Address is required",
+	address: Joi.string().trim().optional().messages({
 		"string.trim": "Address must be a string",
 	}),
 	home_lat: Joi.number().allow(null).messages({
@@ -109,9 +112,9 @@ export const updateDriverSchema = Joi.object({
 	salary: Joi.string().trim().required().messages({
 		"string.trim": "Salary must be a string",
 	}),
-	car_id: Joi.number().integer().min(1).required().messages({
-		"any.required": "Car id is required",
-	}),
+	car_ids: Joi.array().items(Joi.number().integer().min(1)).min(1).optional(),
+	default_car_id: Joi.number().integer().min(1).optional(),
+	car_id: Joi.number().integer().min(1).optional(),
 }).min(1);
 
 export const listDriversQuerySchema = Joi.object({

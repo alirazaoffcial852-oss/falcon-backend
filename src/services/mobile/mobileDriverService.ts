@@ -924,7 +924,7 @@ export const MobileDriverService = {
 		};
 	},
 
-	async startTrip(userId: number, phaseDriverId: number) {
+	async startTrip(userId: number, phaseDriverId: number, selectedCarId?: number) {
 		const driver = await resolveDriver(userId);
 		const driverLive = getDriverLocationSnapshot(driver.id);
 
@@ -963,7 +963,10 @@ export const MobileDriverService = {
 								},
 								driver: {
 									include: {
-										driver_assign_cars: { include: { car: true }, take: 1 },
+										driver_assign_cars: {
+											orderBy: [{ is_default: "desc" }, { created_at: "asc" }],
+											include: { car: true },
+										},
 									},
 								},
 							},
@@ -993,7 +996,23 @@ export const MobileDriverService = {
 
 		const routeId = route.id;
 		const isPickup = phaseDriver.phase === "PICKUP";
-		const car = route.driver.driver_assign_cars[0]?.car ?? null;
+		const assignedCars = [...route.driver.driver_assign_cars].sort((a, b) => {
+			if (a.is_default === b.is_default) return 0;
+			return a.is_default ? -1 : 1;
+		});
+		const selectedAssignment =
+			selectedCarId != null
+				? assignedCars.find((x) => x.car_id === selectedCarId)
+				: (assignedCars.find((x) => x.is_default) ?? assignedCars[0]);
+		if (!selectedAssignment) {
+			if (selectedCarId != null) {
+				throw ResponseHandler.badRequest(
+					"Selected car is not assigned to this driver",
+				);
+			}
+			throw ResponseHandler.badRequest("No car assigned to this driver");
+		}
+		const car = selectedAssignment.car ?? null;
 
 		if (phaseDriver.status === "ONGOING") {
 			return buildStartTripResponse({
@@ -1037,6 +1056,8 @@ export const MobileDriverService = {
 					data: {
 						trip_started_at: startedAt,
 						status: "ONGOING",
+						selected_car_id: selectedAssignment.car_id,
+						trip_km: 0,
 					},
 				});
 				await tx.routeSegment.update({
@@ -1094,6 +1115,8 @@ export const MobileDriverService = {
 					data: {
 						trip_started_at: startedAt,
 						status: "ONGOING",
+						selected_car_id: selectedAssignment.car_id,
+						trip_km: 0,
 					},
 				});
 
@@ -1927,6 +1950,22 @@ export const MobileDriverService = {
 		const route = await db.route.findFirst({
 			where: { id: plan.definition_route_id },
 		});
+		const executionRoute = await db.route.findFirst({
+			where: { route_daily_plan_id: plan.id },
+			select: {
+				batches: {
+					select: { pickup_distance_meters: true, drop_distance_meters: true },
+				},
+			},
+		});
+		const tripMeters = (executionRoute?.batches ?? []).reduce((sum, b) => {
+			const meters =
+				pd.phase === "PICKUP"
+					? (b.pickup_distance_meters ?? 0)
+					: (b.drop_distance_meters ?? 0);
+			return sum + meters;
+		}, 0);
+		const tripKm = Math.round((tripMeters / 1000) * 100) / 100;
 
 		//add trip price to the route daily plan phase driver
 
@@ -1935,6 +1974,7 @@ export const MobileDriverService = {
 			data: {
 				status: "COMPLETED",
 				trip_price: route?.route_price ? route.route_price / 2 : 0,
+				trip_km: tripKm,
 			},
 		});
 		//if drop phase is completed, update the route daily plan status to completed
