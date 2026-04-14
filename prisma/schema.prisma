@@ -129,6 +129,7 @@ model Car {
   created_at          DateTime          @default(now())
   updated_at          DateTime          @updatedAt
   driver_assign_cars  DriverAssignCar[]
+  selected_phase_drivers RouteDailyPlanPhaseDriver[] @relation("SelectedTripCar")
 
   @@map("cars")
 }
@@ -190,9 +191,11 @@ model DriverAssignCar {
   driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   car_id     Int
   car        Car      @relation(fields: [car_id], references: [id], onDelete: Cascade)
+  is_default Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([driver_id, car_id])
   @@map("driver_assign_cars")
 }
 
@@ -398,6 +401,9 @@ model RouteDailyPlanPhaseDriver {
   trip_started_at                   DateTime?
   status                            RouteStatus                    @default(PENDING)
   trip_price                        Float?
+  selected_car_id                   Int?
+  selected_car                      Car?                           @relation("SelectedTripCar", fields: [selected_car_id], references: [id], onDelete: SetNull)
+  trip_km                           Float?
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]

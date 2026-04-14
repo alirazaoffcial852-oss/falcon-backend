@@ -60,9 +60,17 @@ export const MobileDriverController = {
 		const phaseDriverId = parseInt(req.params.phaseDriverId as string);
 		if (isNaN(phaseDriverId))
 			throw ResponseHandler.badRequest("Invalid phaseDriverId");
+		const body = req.body as { car_id?: number; carId?: number };
+		const chosenCarRaw = body?.car_id ?? body?.carId;
+		const chosenCarId =
+			chosenCarRaw == null ? undefined : Number(chosenCarRaw);
+		if (chosenCarRaw != null && !Number.isInteger(chosenCarId)) {
+			throw ResponseHandler.badRequest("car_id must be an integer");
+		}
 		const result = await MobileDriverService.startTrip(
 			getUserId(req),
 			phaseDriverId,
+			chosenCarId,
 		);
 		ResponseHandler.success(res, result, "Trip started");
 	}),

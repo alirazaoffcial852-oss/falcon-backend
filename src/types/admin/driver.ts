@@ -22,6 +22,8 @@ export interface Driver {
 	driver_license_front_url: string;
 	driver_license_back_url: string;
 	status?: "PENDING" | "APPROVED";
+	car_ids?: number[];
+	default_car_id?: number | null;
 	car_id?: number | null;
 	car_name?: string | null;
 	car_number?: string | null;

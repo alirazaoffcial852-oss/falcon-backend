@@ -28,6 +28,21 @@ type SortOriginMode = "driver_home" | "office";
 export class RouteService {
 	private db = DatabaseService.getInstance().getPrisma();
 
+	private async assertDriverApproved(driverId: number): Promise<void> {
+		const driver = await this.db.driver.findUnique({
+			where: { id: driverId },
+			select: { id: true, status: true },
+		});
+		if (!driver) {
+			throw ResponseHandler.badRequest("No driver found against this id");
+		}
+		if (driver.status !== "APPROVED") {
+			throw ResponseHandler.badRequest(
+				"Cannot create or assign route to a pending driver",
+			);
+		}
+	}
+
 	private getWeekdayEnum(
 		day: Date,
 	):
@@ -551,6 +566,7 @@ export class RouteService {
 
 	async create(data: CreateRouteInput & { legs?: RouteBatchInput["legs"] }) {
 		const batchInputs = this.normalizeCreateBatches(data);
+		await this.assertDriverApproved(data.driverId);
 
 		const recurringPlan = this.computeRecurringPlanForCreate(data);
 
@@ -622,6 +638,9 @@ export class RouteService {
 
 	async update(id: number, data: UpdateRouteInput) {
 		await this.getById(id);
+		if (data.driverId !== undefined) {
+			await this.assertDriverApproved(data.driverId);
+		}
 		const routeForUpdateGuard = await this.db.route.findUnique({
 			where: { id },
 			select: {
@@ -789,6 +808,7 @@ export class RouteService {
 			where: { id: definitionRouteId },
 			include: {
 				company: { select: { weekly_off_days: true } },
+				driver: { select: { status: true } },
 				batches: {
 					orderBy: { batch_order: "asc" },
 					include: { legs: { orderBy: { sequence: "asc" } } },
@@ -797,6 +817,11 @@ export class RouteService {
 		});
 		if (!definition)
 			throw ResponseHandler.notFound("Route definition", definitionRouteId);
+		if (definition.driver.status !== "APPROVED") {
+			throw ResponseHandler.badRequest(
+				"Driver is pending — daily plan not created",
+			);
+		}
 
 		if (definition.recurring_plan_start) {
 			const dayT = getLocalDateOnly(dayStart).getTime();

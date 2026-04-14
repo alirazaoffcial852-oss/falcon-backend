@@ -22,12 +22,93 @@ export class DriverService {
     return driverRole.id;
   }
 
-  private async ensureCarExists(carId: number | null): Promise<void> {
-    if (!carId) return;
-    const carExists = await this.db.car.findUnique({ where: { id: carId } });
-    if (!carExists) {
-      throw ResponseHandler.badRequest(`Car with ID ${carId} does not exist`);
+  private async ensureCarsExist(carIds: number[]): Promise<void> {
+    if (!carIds.length) return;
+    const rows = await this.db.car.findMany({
+      where: { id: { in: carIds } },
+      select: { id: true },
+    });
+    const found = new Set(rows.map((x) => x.id));
+    const missing = carIds.filter((id) => !found.has(id));
+    if (missing.length) {
+      throw ResponseHandler.badRequest(
+        `Car with ID ${missing[0]} does not exist`,
+      );
     }
+  }
+
+  private normalizeCars(data: Driver): { carIds: number[]; defaultCarId: number } {
+    const fromList = Array.isArray(data.car_ids)
+      ? data.car_ids
+          .map((x) => Number(x))
+          .filter((x) => Number.isInteger(x) && x > 0)
+      : [];
+    const fromSingle =
+      data.car_id !== undefined && data.car_id !== null ? [Number(data.car_id)] : [];
+    const carIds = [...new Set([...fromList, ...fromSingle])];
+    if (!carIds.length) {
+      throw ResponseHandler.badRequest("At least one car id is required");
+    }
+    const requestedDefault =
+      data.default_car_id !== undefined && data.default_car_id !== null
+        ? Number(data.default_car_id)
+        : null;
+    const defaultCarId = requestedDefault ?? carIds[0];
+    if (!carIds.includes(defaultCarId)) {
+      throw ResponseHandler.badRequest("default_car_id must exist in car_ids");
+    }
+    return { carIds, defaultCarId };
+  }
+
+  private async setDriverCars(
+    tx: {
+      driverAssignCar: {
+        deleteMany(args: { where: { driver_id: number } }): Promise<unknown>;
+        createMany(args: {
+          data: { driver_id: number; car_id: number; is_default: boolean }[];
+        }): Promise<unknown>;
+      };
+    },
+    driverId: number,
+    carIds: number[],
+    defaultCarId: number,
+  ): Promise<void> {
+    await tx.driverAssignCar.deleteMany({ where: { driver_id: driverId } });
+    await tx.driverAssignCar.createMany({
+      data: carIds.map((carId) => ({
+        driver_id: driverId,
+        car_id: carId,
+        is_default: carId === defaultCarId,
+      })),
+    });
+  }
+
+  private mapDriverWithCars<T extends {
+    driver_assign_cars: Array<{
+      car_id: number;
+      is_default: boolean;
+      car: { id: number; name: string; car_no: string } | null;
+    }>;
+    user?: { email: string } | null;
+  }>(driver: T) {
+    const defaultAssigned =
+      driver.driver_assign_cars.find((x) => x.is_default) ?? driver.driver_assign_cars[0];
+    return {
+      ...driver,
+      car_id: defaultAssigned?.car_id ?? null,
+      car_name: defaultAssigned?.car?.name ?? null,
+      car_number: defaultAssigned?.car?.car_no ?? null,
+      car_ids: driver.driver_assign_cars.map((x) => x.car_id),
+      default_car_id: defaultAssigned?.car_id ?? null,
+      cars: driver.driver_assign_cars.map((x) => ({
+        id: x.car_id,
+        is_default: x.is_default,
+        name: x.car?.name ?? null,
+        car_no: x.car?.car_no ?? null,
+      })),
+      driver_assign_cars: undefined,
+      email: driver.user?.email ?? null,
+    };
   }
 
   private async createApprovedDriver(data: Driver): Promise<Driver> {
@@ -43,8 +124,8 @@ export class DriverService {
     const plainPassword = generateRandomNumericPassword(6, 8);
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    const carId = data.car_id ? Number(data.car_id) : null;
-    await this.ensureCarExists(carId);
+    const { carIds, defaultCarId } = this.normalizeCars(data);
+    await this.ensureCarsExist(carIds);
 
     const driver = await this.db.$transaction(async (tx) => {
       const driverRoleId = await this.getDriverRoleId();
@@ -82,14 +163,7 @@ export class DriverService {
         },
       });
 
-      if (carId) {
-        await tx.driverAssignCar.create({
-          data: {
-            driver_id: createdDriver.id,
-            car_id: carId,
-          },
-        });
-      }
+      await this.setDriverCars(tx, createdDriver.id, carIds, defaultCarId);
 
       return createdDriver;
     });
@@ -99,13 +173,15 @@ export class DriverService {
     return {
       email,
       ...driver,
-      car_id: carId,
+      car_id: defaultCarId,
+      car_ids: carIds,
+      default_car_id: defaultCarId,
     };
   }
 
   private async createPendingDriver(data: Driver): Promise<{ id: number }> {
-    const carId = data.car_id ? Number(data.car_id) : null;
-    await this.ensureCarExists(carId);
+    const { carIds, defaultCarId } = this.normalizeCars(data);
+    await this.ensureCarsExist(carIds);
 
     const driver = await this.db.driver.create({
       data: {
@@ -132,14 +208,7 @@ export class DriverService {
       select: { id: true },
     });
 
-    if (carId) {
-      await this.db.driverAssignCar.create({
-        data: {
-          driver_id: driver.id,
-          car_id: carId,
-        },
-      });
-    }
+    await this.setDriverCars(this.db, driver.id, carIds, defaultCarId);
     return driver;
   }
 
@@ -150,7 +219,6 @@ export class DriverService {
       "phone_no",
       "emergency_phone_no",
       "salary",
-      "rate_per_km",
     ]);
     const total = await this.db.driver.count({ where });
     const drivers = await this.db.driver.findMany({
@@ -160,23 +228,14 @@ export class DriverService {
       orderBy: { created_at: "desc" },
       include: {
         driver_assign_cars: {
-          orderBy: { created_at: "desc" },
-          take: 1,
+          orderBy: [{ is_default: "desc" }, { created_at: "desc" }],
           include: { car: true },
         },
         user: { select: { email: true } },
       },
     });
     const data = drivers.map((driver) => {
-      const assignedCar = driver.driver_assign_cars[0];
-      return {
-        ...driver,
-        car_id: assignedCar?.car_id ?? null,
-        car_name: assignedCar?.car?.name ?? null,
-        car_number: assignedCar?.car?.car_no ?? null,
-        driver_assign_cars: undefined,
-        email: driver.user?.email ?? null,
-      };
+      return this.mapDriverWithCars(driver);
     });
     return {
       data,
@@ -194,8 +253,7 @@ export class DriverService {
       where: { id },
       include: {
         driver_assign_cars: {
-          orderBy: { created_at: "desc" },
-          take: 1,
+          orderBy: [{ is_default: "desc" }, { created_at: "desc" }],
           include: { car: true },
         },
         user: { select: { email: true } },
@@ -203,15 +261,7 @@ export class DriverService {
     });
     if (!driver)
       throw ResponseHandler.notFound("No driver found against this id: " + id);
-    const assignedCar = driver.driver_assign_cars[0];
-    return {
-      ...driver,
-      car_id: assignedCar?.car_id ?? null,
-      car_name: assignedCar?.car?.name ?? null,
-      car_number: assignedCar?.car?.car_no ?? null,
-      driver_assign_cars: undefined,
-      email: driver.user?.email ?? null,
-    };
+    return this.mapDriverWithCars(driver);
   }
 
   async create(
@@ -365,21 +415,27 @@ export class DriverService {
       },
     });
 
-    if (data.car_id !== undefined && data.car_id !== null) {
-      const existingForDriver = await this.db.driverAssignCar.findFirst({
+    const shouldUpdateCars =
+      data.car_ids !== undefined ||
+      data.default_car_id !== undefined ||
+      data.car_id !== undefined;
+    if (shouldUpdateCars) {
+      const existing = await this.db.driverAssignCar.findMany({
         where: { driver_id: id },
-        orderBy: { created_at: "desc" },
+        select: { car_id: true, is_default: true },
       });
-      if (existingForDriver) {
-        await this.db.driverAssignCar.update({
-          where: { id: existingForDriver.id },
-          data: { car_id: Number(data.car_id) },
-        });
-      } else {
-        await this.db.driverAssignCar.create({
-          data: { driver_id: id, car_id: Number(data.car_id) },
-        });
-      }
+      const fallbackIds = existing.map((x) => x.car_id);
+      const fallbackDefault =
+        existing.find((x) => x.is_default)?.car_id ?? fallbackIds[0] ?? null;
+      const merged: Driver = {
+        ...data,
+        car_ids: data.car_ids ?? fallbackIds,
+        default_car_id:
+          data.default_car_id !== undefined ? data.default_car_id : fallbackDefault,
+      };
+      const { carIds, defaultCarId } = this.normalizeCars(merged);
+      await this.ensureCarsExist(carIds);
+      await this.setDriverCars(this.db, id, carIds, defaultCarId);
     }
     return this.getById(id);
   }
