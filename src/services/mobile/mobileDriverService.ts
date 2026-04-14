@@ -100,6 +100,21 @@ function getDriverLocationSnapshot(driverId: number): {
 	};
 }
 
+async function getCurrentFuelPricePerLiter(): Promise<number> {
+	const now = new Date();
+	const fuelPrice = await db.fuelPrice.findFirst({
+		where: { effective_from: { lte: now } },
+		orderBy: [{ effective_from: "desc" }, { id: "desc" }],
+		select: { price_per_liter: true },
+	});
+	if (!fuelPrice) {
+		throw ResponseHandler.badRequest(
+			"Fuel price is not configured. Ask admin to add current fuel price.",
+		);
+	}
+	return Number(fuelPrice.price_per_liter);
+}
+
 const MAX_SEGMENT_SYNC_STEPS = 64;
 
 /** Same DB updates as `officeCheckpoint` after pickups in batch are cleared. */
@@ -924,7 +939,11 @@ export const MobileDriverService = {
 		};
 	},
 
-	async startTrip(userId: number, phaseDriverId: number, selectedCarId?: number) {
+	async startTrip(
+		userId: number,
+		phaseDriverId: number,
+		selectedCarId?: number,
+	) {
 		const driver = await resolveDriver(userId);
 		const driverLive = getDriverLocationSnapshot(driver.id);
 
@@ -1013,6 +1032,13 @@ export const MobileDriverService = {
 			throw ResponseHandler.badRequest("No car assigned to this driver");
 		}
 		const car = selectedAssignment.car ?? null;
+		const kmPerLiter = Number(car?.fuel_per_km ?? "");
+		if (!Number.isFinite(kmPerLiter) || kmPerLiter <= 0) {
+			throw ResponseHandler.badRequest(
+				"Selected car has invalid km_per_liter (fuel_per_km).",
+			);
+		}
+		const fuelPricePerLiterSnapshot = await getCurrentFuelPricePerLiter();
 
 		if (phaseDriver.status === "ONGOING") {
 			return buildStartTripResponse({
@@ -1058,6 +1084,8 @@ export const MobileDriverService = {
 						status: "ONGOING",
 						selected_car_id: selectedAssignment.car_id,
 						trip_km: 0,
+						km_per_liter_snapshot: kmPerLiter,
+						fuel_price_per_liter_snapshot: fuelPricePerLiterSnapshot,
 					},
 				});
 				await tx.routeSegment.update({
@@ -1117,6 +1145,8 @@ export const MobileDriverService = {
 						status: "ONGOING",
 						selected_car_id: selectedAssignment.car_id,
 						trip_km: 0,
+						km_per_liter_snapshot: kmPerLiter,
+						fuel_price_per_liter_snapshot: fuelPricePerLiterSnapshot,
 					},
 				});
 
@@ -1966,6 +1996,12 @@ export const MobileDriverService = {
 			return sum + meters;
 		}, 0);
 		const tripKm = Math.round((tripMeters / 1000) * 100) / 100;
+		const kmPerLiter = pd.km_per_liter_snapshot ?? 0;
+		const fuelPricePerLiter = pd.fuel_price_per_liter_snapshot ?? 0;
+		const fuelCost =
+			kmPerLiter > 0 && fuelPricePerLiter > 0
+				? Math.round((tripKm / kmPerLiter) * fuelPricePerLiter * 100) / 100
+				: 0;
 
 		//add trip price to the route daily plan phase driver
 
@@ -1975,6 +2011,7 @@ export const MobileDriverService = {
 				status: "COMPLETED",
 				trip_price: route?.route_price ? route.route_price / 2 : 0,
 				trip_km: tripKm,
+				fuel_cost: fuelCost,
 			},
 		});
 		//if drop phase is completed, update the route daily plan status to completed

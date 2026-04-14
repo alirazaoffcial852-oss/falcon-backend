@@ -139,14 +139,13 @@ model Driver {
   user_id                  Int?                        @unique
   user                     User?                       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                     String
-  phone_no                 String
+  phone_no                 String?
   address                  String
   emergency_phone_no       String
   driver_image_url         String
   rate_per_km              Float
   driver_cnic_front_url    String
   driver_cnic_back_url     String
-  salary                   String
   driver_license_front_url String
   driver_license_back_url  String
   status                   DriverApprovalStatus        @default(APPROVED)
@@ -404,6 +403,13 @@ model RouteDailyPlanPhaseDriver {
   selected_car_id                   Int?
   selected_car                      Car?                           @relation("SelectedTripCar", fields: [selected_car_id], references: [id], onDelete: SetNull)
   trip_km                           Float?
+  fuel_price_per_liter_snapshot     Float?
+  km_per_liter_snapshot             Float?
+  fuel_cost                         Float?
+  salary_payment_status             PaymentStatus                  @default(UNPAID)
+  fuel_payment_status               PaymentStatus                  @default(UNPAID)
+  salary_paid_at                    DateTime?
+  fuel_paid_at                      DateTime?
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
@@ -412,6 +418,17 @@ model RouteDailyPlanPhaseDriver {
   @@index([driver_id])
   @@index([driver_id, scheduled_date])
   @@map("route_daily_plan_phase_drivers")
+}
+
+model FuelPrice {
+  id              Int      @id @default(autoincrement())
+  price_per_liter Float
+  effective_from  DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([effective_from])
+  @@map("fuel_prices")
 }
 
 model RouteDailyPlanPhasePassenger {
@@ -473,6 +490,11 @@ enum RouteDailyPlanPhase {
 enum DriverApprovalStatus {
   PENDING
   APPROVED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
 }
 
 enum Weekday {

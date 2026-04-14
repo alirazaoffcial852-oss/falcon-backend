@@ -48,9 +48,6 @@ export const createDriverSchema = Joi.object({
 	driver_license_back_url: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Driver license back url must be a string",
 	}),
-	salary: Joi.string().trim().allow("", null).messages({
-		"string.trim": "Salary must be a string",
-	}),
 	car_ids: Joi.array()
 		.items(Joi.number().integer().min(1))
 		.min(1)
@@ -108,9 +105,6 @@ export const updateDriverSchema = Joi.object({
 	}),
 	driver_license_back_url: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Driver license back url must be a string",
-	}),
-	salary: Joi.string().trim().required().messages({
-		"string.trim": "Salary must be a string",
 	}),
 	car_ids: Joi.array().items(Joi.number().integer().min(1)).min(1).optional(),
 	default_car_id: Joi.number().integer().min(1).optional(),
