@@ -137,7 +137,6 @@ export class AdminService {
         role: {
           is_admin_role: true,
         },
-        is_super_admin: false,
       },
       include: {
         role: {
@@ -260,7 +259,7 @@ export class AdminService {
       throw ResponseHandler.notFound("Admin not found");
     }
 
-    if (admin.is_super_admin && !requestingUser?.is_super_admin) {
+    if (admin.is_super_admin) {
       throw ResponseHandler.forbidden("Cannot modify super admin");
     }
 
@@ -370,7 +369,7 @@ export class AdminService {
       throw ResponseHandler.badRequest("Cannot delete yourself");
     }
 
-    if (admin.is_super_admin && !requestingUser?.is_super_admin) {
+    if (admin.is_super_admin) {
       throw ResponseHandler.forbidden("Cannot delete super admin");
     }
 
