@@ -592,6 +592,42 @@ async function buildStartTripResponse(params: {
 // ---------- service ----------
 
 export const MobileDriverService = {
+	async getMyCars(userId: number) {
+		const driver = await resolveDriver(userId);
+		const rows = await db.driverAssignCar.findMany({
+			where: { driver_id: driver.id },
+			orderBy: [{ is_default: "desc" }, { created_at: "asc" }],
+			select: {
+				id: true,
+				car_id: true,
+				is_default: true,
+				car: {
+					select: {
+						id: true,
+						name: true,
+						car_no: true,
+						car_color: true,
+						model: true,
+						engine_capacity: true,
+						fuel_per_km: true,
+					},
+				},
+			},
+		});
+
+		return {
+			driver: { id: driver.id, name: driver.name },
+			default_car_id:
+				rows.find((x) => x.is_default)?.car_id ?? rows[0]?.car_id ?? null,
+			cars: rows.map((x) => ({
+				driver_assign_car_id: x.id,
+				car_id: x.car_id,
+				is_default: x.is_default,
+				car: x.car,
+			})),
+		};
+	},
+
 	async getStats(userId: number, from?: Date, to?: Date) {
 		const driver = await resolveDriver(userId);
 		const whereDate: { gte?: Date; lte?: Date } = {};
@@ -738,7 +774,7 @@ export const MobileDriverService = {
 		};
 	},
 
-	async getSession(userId: number) {
+	async getSession(userId: number, phaseDriverId?: number) {
 		const driver = await resolveDriver(userId);
 		const driverLive = getDriverLocationSnapshot(driver.id);
 		const config = await db.driverConfiguration.findFirst();
@@ -746,6 +782,7 @@ export const MobileDriverService = {
 		const phaseRows = await db.routeDailyPlanPhaseDriver.findMany({
 			where: {
 				driver_id: driver.id,
+				...(phaseDriverId != null ? { id: phaseDriverId } : {}),
 				scheduled_date: phaseDriverScheduledDateWhere(),
 				status: { not: "COMPLETED" },
 			},
@@ -945,7 +982,6 @@ export const MobileDriverService = {
 		selectedCarId?: number,
 	) {
 		const driver = await resolveDriver(userId);
-		const driverLive = getDriverLocationSnapshot(driver.id);
 
 		const phaseDriver = await db.routeDailyPlanPhaseDriver.findFirst({
 			where: {
@@ -1041,14 +1077,7 @@ export const MobileDriverService = {
 		const fuelPricePerLiterSnapshot = await getCurrentFuelPricePerLiter();
 
 		if (phaseDriver.status === "ONGOING") {
-			return buildStartTripResponse({
-				routeId,
-				planId: plan.id,
-				phaseDriverId: phaseDriver.id,
-				phase: phaseDriver.phase,
-				driver,
-				driverLive,
-			});
+			return this.getSession(userId, phaseDriver.id);
 		}
 
 		if (isPickup) {
@@ -1198,14 +1227,7 @@ export const MobileDriverService = {
 			});
 		}
 
-		return buildStartTripResponse({
-			routeId,
-			planId: plan.id,
-			phaseDriverId: phaseDriver.id,
-			phase: phaseDriver.phase,
-			driver,
-			driverLive,
-		});
+		return this.getSession(userId, phaseDriver.id);
 	},
 
 	async updateLocation(userId: number, lat: number, long: number) {

@@ -3,6 +3,7 @@ import { AuthService } from "../../services/authService";
 import { DriverService } from "../../services/driverService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
+import type { AuthRequest } from "../../middleware/authMiddleware";
 
 const authService = new AuthService();
 const driverService = new DriverService();
@@ -49,6 +50,17 @@ export const AuthController = {
 		}
 		const result = await authService.login(String(email).trim(), password);
 		ResponseHandler.success(res, result, "Login successful");
+	}),
+
+	logout: catchAsync(async (req: AuthRequest, res: Response) => {
+		const userId = req.user?.id ? Number(req.user.id) : null;
+		if (!userId) throw ResponseHandler.unauthorized("Not authenticated");
+		const { deviceToken } = req.body as { deviceToken?: string };
+		if (!deviceToken) {
+			throw ResponseHandler.badRequest("deviceToken is required");
+		}
+		const result = await authService.logout(userId, deviceToken);
+		ResponseHandler.success(res, result, "Logout successful");
 	}),
 
 	forgotPasswordRequestOtp: catchAsync(async (req: Request, res: Response) => {
