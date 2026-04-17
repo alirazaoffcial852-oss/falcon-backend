@@ -46,3 +46,7 @@ export const forgotPasswordResetSchema = Joi.object({
 			"any.only": "Confirm password must match new password",
 		}),
 }).required();
+
+export const logoutSchema = Joi.object({
+	deviceToken: Joi.string().trim().required(),
+}).required();

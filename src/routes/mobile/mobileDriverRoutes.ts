@@ -5,10 +5,12 @@ const router = Router();
 
 // Driver goes available (slide to go available)
 router.post("/available", MobileDriverController.goAvailable);
+router.get("/leaves", MobileDriverController.getMyLeaves);
 router.get("/stats", MobileDriverController.getStats);
 
 // Today's phase rows for this driver (PICKUP + DROP, scheduled_date = local today, sorted by trip_start_time)
 router.get("/session", MobileDriverController.getSession);
+router.get("/cars", MobileDriverController.getMyCars);
 
 // Start PICKUP trip — use `phase_driver_id` from GET /session (RouteDailyPlanPhaseDriver)
 router.post("/session/:phaseDriverId/start", MobileDriverController.startTrip);

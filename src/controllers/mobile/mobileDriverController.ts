@@ -4,6 +4,7 @@ import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { MobileDriverService } from "../../services/mobile/mobileDriverService";
 import type { AuthRequest } from "../../middleware/authMiddleware";
 import type { LegAction } from "../../types/mobile/driver";
+import { scheduleService } from "../../services/scheduleService";
 
 function getUserId(req: AuthRequest): number {
 	const id = req.user?.id;
@@ -12,6 +13,28 @@ function getUserId(req: AuthRequest): number {
 }
 
 export const MobileDriverController = {
+	/** GET /f1/mobile/driver/leaves?from=YYYY-MM-DD&to=YYYY-MM-DD */
+	getMyLeaves: catchAsync(async (req: AuthRequest, res: Response) => {
+		const userId = getUserId(req);
+		const driverId = await scheduleService.getDriverIdByUserId(userId);
+		if (!driverId) {
+			throw ResponseHandler.notFound("Driver profile not found for this user");
+		}
+		const from = req.query.from as string | undefined;
+		const to = req.query.to as string | undefined;
+		if (from && Number.isNaN(new Date(from).getTime())) {
+			throw ResponseHandler.badRequest("Invalid from date (YYYY-MM-DD)");
+		}
+		if (to && Number.isNaN(new Date(to).getTime())) {
+			throw ResponseHandler.badRequest("Invalid to date (YYYY-MM-DD)");
+		}
+		if (from && to && from > to) {
+			throw ResponseHandler.badRequest("from must be before or equal to to");
+		}
+		const result = await scheduleService.listDriverLeaves(driverId, from, to);
+		ResponseHandler.success(res, result, "Driver leave days");
+	}),
+
 	/** GET /f1/mobile/driver/stats?from=YYYY-MM-DD&to=YYYY-MM-DD */
 	getStats: catchAsync(async (req: AuthRequest, res: Response) => {
 		const fromStr = req.query.from as string | undefined;
@@ -55,6 +78,12 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Driver session");
 	}),
 
+	/** GET /f1/mobile/driver/cars */
+	getMyCars: catchAsync(async (req: AuthRequest, res: Response) => {
+		const result = await MobileDriverService.getMyCars(getUserId(req));
+		ResponseHandler.success(res, result, "Driver cars");
+	}),
+
 	/** POST /f1/mobile/driver/session/:phaseDriverId/start — `RouteDailyPlanPhaseDriver.id` (PICKUP or DROP) from GET /session */
 	startTrip: catchAsync(async (req: AuthRequest, res: Response) => {
 		const phaseDriverId = parseInt(req.params.phaseDriverId as string);
@@ -62,8 +91,7 @@ export const MobileDriverController = {
 			throw ResponseHandler.badRequest("Invalid phaseDriverId");
 		const body = req.body as { car_id?: number; carId?: number };
 		const chosenCarRaw = body?.car_id ?? body?.carId;
-		const chosenCarId =
-			chosenCarRaw == null ? undefined : Number(chosenCarRaw);
+		const chosenCarId = chosenCarRaw == null ? undefined : Number(chosenCarRaw);
 		if (chosenCarRaw != null && !Number.isInteger(chosenCarId)) {
 			throw ResponseHandler.badRequest("car_id must be an integer");
 		}
@@ -72,7 +100,11 @@ export const MobileDriverController = {
 			phaseDriverId,
 			chosenCarId,
 		);
-		ResponseHandler.success(res, result, "Trip started");
+		ResponseHandler.success(
+			res,
+			result,
+			"Trip started for phase driver " + phaseDriverId,
+		);
 	}),
 
 	/** PATCH /f1/mobile/driver/location */
@@ -81,7 +113,11 @@ export const MobileDriverController = {
 		if (typeof lat !== "number" || typeof long !== "number") {
 			throw ResponseHandler.badRequest("lat and long are required numbers");
 		}
-		const result = await MobileDriverService.updateLocation(getUserId(req), lat, long);
+		const result = await MobileDriverService.updateLocation(
+			getUserId(req),
+			lat,
+			long,
+		);
 		ResponseHandler.success(res, result, "Location updated");
 	}),
 

@@ -6,18 +6,18 @@ const db = DatabaseService.getInstance().getPrisma();
 function parseYmdToLocalDate(ymd: string): Date {
 	const [y, m, d] = ymd.split("-").map(Number);
 	if (!y || !m || !d) throw ResponseHandler.badRequest("Invalid date");
-	return new Date(y, m - 1, d);
+	return new Date(Date.UTC(y, m - 1, d));
 }
 
 function eachDateInclusive(start: Date, end: Date): Date[] {
 	const out: Date[] = [];
 	const cur = new Date(start);
-	cur.setHours(0, 0, 0, 0);
+	cur.setUTCHours(0, 0, 0, 0);
 	const endDay = new Date(end);
-	endDay.setHours(0, 0, 0, 0);
+	endDay.setUTCHours(0, 0, 0, 0);
 	while (cur.getTime() <= endDay.getTime()) {
 		out.push(new Date(cur));
-		cur.setDate(cur.getDate() + 1);
+		cur.setUTCDate(cur.getUTCDate() + 1);
 	}
 	return out;
 }
@@ -36,7 +36,7 @@ export class ScheduleService {
 		name?: string | null,
 	) {
 		const date = parseYmdToLocalDate(dateYmd);
-		date.setHours(0, 0, 0, 0);
+		date.setUTCHours(0, 0, 0, 0);
 		try {
 			return await db.companyHoliday.create({
 				data: {
@@ -67,7 +67,7 @@ export class ScheduleService {
 		const updateData: { date?: Date; name?: string | null } = {};
 		if (data.date) {
 			const date = parseYmdToLocalDate(data.date);
-			date.setHours(0, 0, 0, 0);
+			date.setUTCHours(0, 0, 0, 0);
 			updateData.date = date;
 		}
 		if (data.name !== undefined) {
@@ -97,12 +97,12 @@ export class ScheduleService {
 			where.date = {};
 			if (from) {
 				const fromDate = parseYmdToLocalDate(from);
-				fromDate.setHours(0, 0, 0, 0);
+				fromDate.setUTCHours(0, 0, 0, 0);
 				where.date.gte = fromDate;
 			}
 			if (to) {
 				const toDate = parseYmdToLocalDate(to);
-				toDate.setHours(0, 0, 0, 0);
+				toDate.setUTCHours(0, 0, 0, 0);
 				where.date.lte = toDate;
 			}
 		}
@@ -126,18 +126,17 @@ export class ScheduleService {
 		toYmd: string,
 		note?: string | null,
 	) {
-		const driver = await db.driver.findUnique({ where: { id: driverId } });
+		const driver = await db.driver.findUnique({ where: { user_id: driverId } });
 		if (!driver)
 			throw ResponseHandler.notFound(
 				"No driver found against this id: " + driverId,
 			);
 		if (driver.status !== "APPROVED")
 			throw ResponseHandler.forbidden("Driver is not approved");
-		console.log("driver", driver);
 		const from = parseYmdToLocalDate(fromYmd);
 		const to = parseYmdToLocalDate(toYmd);
-		from.setHours(0, 0, 0, 0);
-		to.setHours(0, 0, 0, 0);
+		from.setUTCHours(0, 0, 0, 0);
+		to.setUTCHours(0, 0, 0, 0);
 		if (from.getTime() > to.getTime()) {
 			throw ResponseHandler.badRequest("from must be before or equal to to");
 		}

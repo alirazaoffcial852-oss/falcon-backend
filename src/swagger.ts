@@ -32,6 +32,17 @@ const swaggerDocument = {
 					password: { type: "string" },
 				},
 			},
+			LogoutBody: {
+				type: "object",
+				required: ["deviceToken"],
+				properties: {
+					deviceToken: {
+						type: "string",
+						description:
+							"FCM/APNS device token to remove from user_device_tokens on logout",
+					},
+				},
+			},
 			RegisterBody: {
 				type: "object",
 				required: ["email", "password", "role"],
@@ -452,6 +463,112 @@ const swaggerDocument = {
 					},
 				},
 			},
+			// Public driver registration (same shape as POST /f1/drivers for drivers)
+			DriverSelfRegisterBody: {
+				type: "object",
+				required: ["email", "name", "address", "emergency_phone_no"],
+				description:
+					"Requires car_id or car_ids (min 1). phone_no may be empty. Creates PENDING driver until admin approves.",
+				properties: {
+					email: { type: "string", format: "email" },
+					name: { type: "string" },
+					phone_no: { type: "string", nullable: true },
+					address: { type: "string" },
+					home_lat: { type: "number", nullable: true },
+					home_long: { type: "number", nullable: true },
+					emergency_phone_no: { type: "string" },
+					driver_image_url: { type: "string", nullable: true },
+					rate_per_km: { type: "number", nullable: true },
+					driver_cnic_front_url: { type: "string", nullable: true },
+					driver_cnic_back_url: { type: "string", nullable: true },
+					driver_license_front_url: { type: "string", nullable: true },
+					driver_license_back_url: { type: "string", nullable: true },
+					car_id: { type: "integer", minimum: 1 },
+					car_ids: {
+						type: "array",
+						items: { type: "integer", minimum: 1 },
+						minItems: 1,
+					},
+					default_car_id: { type: "integer", minimum: 1 },
+				},
+			},
+			CreateFuelPriceBody: {
+				type: "object",
+				required: ["price_per_liter"],
+				properties: {
+					price_per_liter: {
+						type: "number",
+						minimum: 0,
+						exclusiveMinimum: true,
+						description: "Global fuel price per liter",
+					},
+					effective_from: {
+						type: "string",
+						format: "date-time",
+						description: "Optional ISO datetime when this price becomes effective",
+					},
+				},
+			},
+			PayrollSettleBody: {
+				type: "object",
+				required: ["from", "to", "components"],
+				properties: {
+					from: { type: "string", example: "2026-04-01" },
+					to: { type: "string", example: "2026-04-30" },
+					driver_id: {
+						type: "integer",
+						minimum: 1,
+						description: "Omit to settle all drivers in range",
+					},
+					components: {
+						type: "array",
+						items: { type: "string", enum: ["SALARY", "FUEL"] },
+						minItems: 1,
+					},
+				},
+			},
+			MobileDriverLocationBody: {
+				type: "object",
+				required: ["lat", "long"],
+				properties: {
+					lat: { type: "number" },
+					long: { type: "number" },
+				},
+			},
+			StartTripBody: {
+				type: "object",
+				description:
+					"Optional car for this trip; defaults to driver's default assigned car.",
+				properties: {
+					car_id: { type: "integer", minimum: 1 },
+					carId: { type: "integer", minimum: 1 },
+				},
+			},
+			LegActionBody: {
+				type: "object",
+				required: ["action"],
+				properties: {
+					action: {
+						type: "string",
+						enum: ["PICKED", "STILL_WAITING", "MOVE_TO_NEXT"],
+					},
+				},
+			},
+			RouteIssueReportBody: {
+				type: "object",
+				required: ["image_url"],
+				properties: {
+					image_url: { type: "string", format: "uri" },
+					note: { type: "string", nullable: true },
+				},
+			},
+			PassengerAckBody: {
+				type: "object",
+				required: ["ack"],
+				properties: {
+					ack: { type: "string", enum: ["COMING", "NOT_COMING"] },
+				},
+			},
 		},
 	},
 	paths: {
@@ -496,6 +613,28 @@ const swaggerDocument = {
 				responses: {
 					"200": { description: "Success, returns JWT token" },
 					"401": { description: "Invalid credentials" },
+				},
+			},
+		},
+		"/f1/auth/logout": {
+			post: {
+				tags: ["Auth"],
+				summary: "Logout and remove current device token",
+				description:
+					"Requires Bearer token. Deletes the provided device token from user_device_tokens for this user.",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/LogoutBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Logout successful and token removed" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
 				},
 			},
 		},
@@ -560,6 +699,29 @@ const swaggerDocument = {
 				responses: {
 					"200": { description: "Password reset successfully" },
 					"400": { description: "Invalid request or OTP" },
+				},
+			},
+		},
+		"/f1/auth/driver/register": {
+			post: {
+				tags: ["Auth"],
+				summary: "Driver self-registration (pre-login)",
+				description:
+					"Public endpoint. Creates a PENDING driver and a create-request; admin must approve before login works.",
+				security: [],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								$ref: "#/components/schemas/DriverSelfRegisterBody",
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Registration submitted" },
+					"400": { description: "Validation error" },
 				},
 			},
 		},
@@ -776,7 +938,7 @@ const swaggerDocument = {
 				tags: ["Drivers"],
 				summary: "Create driver",
 				description:
-					"Creates driver and linked user account. Email is required; a random 6-8 digit temporary password is sent to that email.",
+					"Admin: creates APPROVED driver + user (email gets temp password). Driver role: submits PENDING registration (use POST /f1/auth/driver/register for pre-login). Use car_ids + default_car_id or legacy car_id.",
 				security: [{ bearerAuth: [] }],
 				requestBody: {
 					required: true,
@@ -859,6 +1021,62 @@ const swaggerDocument = {
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/drivers/create-requests": {
+			get: {
+				tags: ["Drivers"],
+				summary: "List driver registration create-requests (admin)",
+				description: "Pending / approved self-registration requests.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { type: "string", enum: ["PENDING", "APPROVED"] },
+					},
+				],
+				responses: {
+					"200": { description: "Paginated create-requests" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden — admin only" },
+				},
+			},
+		},
+		"/f1/drivers/create-requests/{id}/approve": {
+			post: {
+				tags: ["Drivers"],
+				summary: "Approve a driver create-request (admin)",
+				description:
+					"Creates user account, sets driver APPROVED, links request to user.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+						description: "DriverCreateRequest id",
+					},
+				],
+				responses: {
+					"200": { description: "Request approved" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden — admin only" },
+					"404": { description: "Request not found" },
 				},
 			},
 		},
@@ -1152,6 +1370,111 @@ const swaggerDocument = {
 				responses: {
 					"200": { description: "Driver configuration updated" },
 					"400": { description: "Validation error (times in HH:mm:ss)" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		// ----- Fuel prices (global) -----
+		"/f1/fuel-prices/current": {
+			get: {
+				tags: ["Fuel prices"],
+				summary: "Current effective fuel price per liter",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "Current price or null if none configured" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/fuel-prices": {
+			get: {
+				tags: ["Fuel prices"],
+				summary: "List fuel price history",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "List of fuel price records" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+			post: {
+				tags: ["Fuel prices"],
+				summary: "Create fuel price record",
+				description:
+					"Adds a new global price per liter; used for trip fuel snapshots at start.",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/CreateFuelPriceBody" },
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Fuel price created" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		// ----- Payroll -----
+		"/f1/payroll/preview": {
+			get: {
+				tags: ["Payroll"],
+				summary: "Preview unpaid/paid salary and fuel for completed trips",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "from",
+						in: "query",
+						required: true,
+						schema: { type: "string", example: "2026-04-01" },
+						description: "YYYY-MM-DD",
+					},
+					{
+						name: "to",
+						in: "query",
+						required: true,
+						schema: { type: "string", example: "2026-04-30" },
+						description: "YYYY-MM-DD",
+					},
+					{
+						name: "driverId",
+						in: "query",
+						required: false,
+						schema: { type: "integer", minimum: 1 },
+					},
+				],
+				responses: {
+					"200": { description: "Aggregated payroll preview" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/payroll/settle": {
+			post: {
+				tags: ["Payroll"],
+				summary: "Mark salary and/or fuel as PAID for trips in range",
+				description:
+					"Idempotent per component; prevents double payment for the same phase rows.",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/PayrollSettleBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Settlement applied" },
+					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
 				},
@@ -1555,6 +1878,325 @@ const swaggerDocument = {
 					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		// ----- Mobile driver -----
+		"/f1/mobile/driver/available": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Mark driver as available for trips",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "Driver is available" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/leaves": {
+			get: {
+				tags: ["Mobile driver"],
+				summary: "Get logged-in driver's leave days",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "from",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-10" },
+						description: "From date (YYYY-MM-DD)",
+					},
+					{
+						name: "to",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-15" },
+						description: "To date (YYYY-MM-DD)",
+					},
+				],
+				responses: {
+					"200": { description: "Driver leave days" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"404": { description: "Driver profile not found" },
+				},
+			},
+		},
+		"/f1/mobile/driver/stats": {
+			get: {
+				tags: ["Mobile driver"],
+				summary: "Per-day driven km and minutes (completed DROP trips only)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "from",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-01" },
+						description: "YYYY-MM-DD",
+					},
+					{
+						name: "to",
+						in: "query",
+						required: false,
+						schema: { type: "string", example: "2026-04-30" },
+						description: "YYYY-MM-DD",
+					},
+				],
+				responses: {
+					"200": { description: "Stats by date" },
+					"400": { description: "Invalid date range" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session": {
+			get: {
+				tags: ["Mobile driver"],
+				summary: "Today's phases, segments, passengers for this driver",
+				description:
+					"Returns PICKUP/DROP phase rows for local today with route and phase_passengers.",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "Driver session payload" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/cars": {
+			get: {
+				tags: ["Mobile driver"],
+				summary: "Cars assigned to this driver",
+				description: "Includes which car is default for auto-selection on trip start.",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "cars array and default_car_id" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/{phaseDriverId}/start": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Start PICKUP or DROP trip",
+				description:
+					"phaseDriverId = RouteDailyPlanPhaseDriver.id from GET /session. Response matches GET /session.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "phaseDriverId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: false,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/StartTripBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Same shape as GET /mobile/driver/session" },
+					"400": { description: "Validation / business error" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/location": {
+			patch: {
+				tags: ["Mobile driver"],
+				summary: "Update live GPS",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/MobileDriverLocationBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Location updated" },
+					"400": { description: "Invalid lat/long" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/phase-passengers/{phasePassengerId}/arrive": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Driver arrived at passenger stop",
+				description:
+					"phasePassengerId = phase_passengers[].id from GET /session (RouteDailyPlanPhasePassenger).",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "phasePassengerId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Arrival recorded" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/phase-passengers/{phasePassengerId}/action": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Passenger leg action (picked / waiting / skip)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "phasePassengerId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/LegActionBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Action applied" },
+					"400": { description: "Invalid action" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/{routeId}/office-checkpoint": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Office checkpoint after pickup batch",
+				description: "Advances to next pickup segment or drop phase.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "routeId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Segment advanced" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/{phaseDriverId}/complete": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Complete PICKUP or DROP phase",
+				description:
+					"phaseDriverId = RouteDailyPlanPhaseDriver.id. DROP completion may complete the daily plan and set driver unavailable.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "phaseDriverId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Phase / trip completion result" },
+					"400": { description: "Passengers or segments incomplete" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/driver/session/{routeId}/issue-report": {
+			post: {
+				tags: ["Mobile driver"],
+				summary: "Report route blockage / protest (image required)",
+				description:
+					"Requires active ONGOING route and phase. Emits event to admins.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "routeId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/RouteIssueReportBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Issue recorded" },
+					"400": { description: "Missing image_url or invalid state" },
+					"401": { description: "Unauthorized" },
+					"404": { description: "No active route" },
+				},
+			},
+		},
+		// ----- Mobile passenger -----
+		"/f1/mobile/passenger/session": {
+			get: {
+				tags: ["Mobile passenger"],
+				summary: "Passenger trip session (ETA, driver, leg state)",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "Passenger session" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/passenger/driver/location": {
+			get: {
+				tags: ["Mobile passenger"],
+				summary: "Driver live location for map",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": { description: "lat/long or null" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
+		"/f1/mobile/passenger/session/{routeId}/ack": {
+			post: {
+				tags: ["Mobile passenger"],
+				summary: "Acknowledge driver arrival (coming / not coming)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "routeId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/PassengerAckBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Ack saved" },
+					"400": { description: "ack must be COMING or NOT_COMING" },
+					"401": { description: "Unauthorized" },
 				},
 			},
 		},

@@ -113,6 +113,24 @@ export class AuthService {
 		return { email: normalizedEmail, expiresInSeconds: OTP_EXPIRY_MS / 1000 };
 	}
 
+	async logout(userId: number, deviceToken: string) {
+		const token = String(deviceToken).trim();
+		if (!token) throw ResponseHandler.badRequest("deviceToken is required");
+
+		const deleted = await this.db.userDeviceToken.deleteMany({
+			where: {
+				user_id: userId,
+				device_token: token,
+			},
+		});
+
+		return {
+			loggedOut: true,
+			deviceToken: token,
+			deletedCount: deleted.count,
+		};
+	}
+
 	async verifyForgotPasswordOtp(email: string, otp: string) {
 		const normalizedEmail = String(email).trim().toLowerCase();
 		const record = forgotPasswordOtpStore.get(normalizedEmail);
