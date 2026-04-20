@@ -63,6 +63,7 @@ async function resolveDriver(userId: number) {
 			driver_image_url: true,
 			is_available: true,
 			available_at: true,
+			user: { select: { email: true } },
 		},
 	});
 	if (!driver) throw ResponseHandler.notFound("Driver profile not found");
@@ -1254,6 +1255,10 @@ export const MobileDriverService = {
 				lat,
 				long,
 				updated_at: updatedAt,
+				driver_name: driver.name ?? null,
+				driver_phone_no: driver.phone_no ?? null,
+				driver_email: driver.user?.email ?? null,
+				user_id: driver.user_id ?? null,
 			};
 			emitToPassengers(passengerIds, "driver:location", payload);
 			emitToDriver(driver.id, "driver:location", payload);
@@ -1264,6 +1269,10 @@ export const MobileDriverService = {
 				lat,
 				long,
 				updated_at: updatedAt,
+				driver_name: driver.name ?? null,
+				driver_phone_no: driver.phone_no ?? null,
+				driver_email: driver.user?.email ?? null,
+				user_id: driver.user_id ?? null,
 			};
 			emitToDriver(driver.id, "driver:location", payload);
 			emitToAdmins("driver:location", payload);
