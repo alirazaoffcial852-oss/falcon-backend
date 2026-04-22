@@ -34,8 +34,22 @@ const allowedOrigins = [
 	"http://api.crossoverdigitalagency.com",
 	"https://api.crossoverdigitalagency.com",
 ];
-const isAllowedOrigin = (origin: string) =>
-  allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+const isAllowedOrigin = (origin: string) => {
+	if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+		return true;
+	}
+	try {
+		const { hostname } = new URL(origin);
+		return (
+			hostname === "crossoverdigitalagency.com" ||
+			hostname.endsWith(".crossoverdigitalagency.com") ||
+			hostname === "localhost" ||
+			hostname === "127.0.0.1"
+		);
+	} catch {
+		return false;
+	}
+};
 
 // app.use(
 // 	cors({
