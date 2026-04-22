@@ -27,6 +27,12 @@ const allowedOrigins = [
   "http://localhost:5001",
   "http://localhost:5001/f1",
   "https://falcon-backend-github.vercel.app",
+	"https://crossoverdigitalagency.com",
+	"https://www.crossoverdigitalagency.com",
+	"http://crossoverdigitalagency.com",
+	"http://www.crossoverdigitalagency.com",
+	"http://api.crossoverdigitalagency.com",
+	"https://api.crossoverdigitalagency.com",
 ];
 const isAllowedOrigin = (origin: string) =>
   allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
