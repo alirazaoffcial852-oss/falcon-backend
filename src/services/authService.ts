@@ -23,22 +23,26 @@ export class AuthService {
 		if (!valid) throw ResponseHandler.unauthorized("Invalid password");
 		const secret = process.env.JWT_SECRET;
 		if (!secret) throw ResponseHandler.internal("Server misconfiguration");
-		const token = jwt.sign({ 
-			id: user.id, 
-			role: user.role.name,
-			is_admin_role: user.role.is_admin_role,
-			is_super_admin: user.is_super_admin 
-		}, secret, {
-			expiresIn: "7d",
-		});
-		return {
-			token,
-			user: { 
-				id: user.id, 
-				email: user.email, 
+		const token = jwt.sign(
+			{
+				id: user.id,
 				role: user.role.name,
 				is_admin_role: user.role.is_admin_role,
-				is_super_admin: user.is_super_admin
+				is_super_admin: user.is_super_admin,
+			},
+			secret,
+			{
+				expiresIn: "7d",
+			},
+		);
+		return {
+			token,
+			user: {
+				id: user.id,
+				email: user.email,
+				role: user.role.name,
+				is_admin_role: user.role.is_admin_role,
+				is_super_admin: user.is_super_admin,
 			},
 		};
 	}

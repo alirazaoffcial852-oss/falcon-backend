@@ -66,7 +66,19 @@ export const DriverController = {
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
 		const adminUserId = req.user?.id ? Number(req.user.id) : 0;
 		if (!adminUserId) throw ResponseHandler.unauthorized("Not authenticated");
-		const driver = await driverService.approveCreateRequest(id, adminUserId);
+		const { password, confirmPassword } = req.body as {
+			password?: string;
+			confirmPassword?: string;
+		};
+		if (!password || !confirmPassword) {
+			throw ResponseHandler.badRequest("password and confirmPassword are required");
+		}
+		const driver = await driverService.approveCreateRequest(
+			id,
+			adminUserId,
+			password,
+			confirmPassword,
+		);
 		ResponseHandler.success(
 			res,
 			driver,
