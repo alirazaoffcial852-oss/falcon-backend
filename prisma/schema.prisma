@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client"
   output        = "../src/generated/prisma"
@@ -14,15 +11,14 @@ datasource db {
 }
 
 model Role {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  users      User[]
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  id            Int               @id @default(autoincrement())
+  name          String            @unique
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
   is_admin_role Boolean           @default(false)
   description   String?
   permissions   AdminPermission[]
+  users         User[]
 
   @@map("roles")
 }
@@ -30,7 +26,6 @@ model Role {
 model AdminPermission {
   id         Int      @id @default(autoincrement())
   role_id    Int
-  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
   module     String
   can_view   Boolean  @default(false)
   can_create Boolean  @default(false)
@@ -38,6 +33,7 @@ model AdminPermission {
   can_delete Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@unique([role_id, module])
   @@index([role_id])
@@ -49,19 +45,17 @@ model User {
   email                           String                @unique
   password                        String
   role_id                         Int
-  role                            Role                  @relation(fields: [role_id], references: [id], onDelete: Cascade)
   created_at                      DateTime              @default(now())
   updated_at                      DateTime              @updatedAt
-  driver                          Driver?
-  passenger                       Passenger?
+  created_by                      Int?
+  is_super_admin                  Boolean               @default(false)
   driver_create_requests          DriverCreateRequest[]
   reviewed_driver_create_requests DriverCreateRequest[] @relation("DriverCreateRequestReviewer")
-  deviceTokens                    UserDeviceToken[]
+  driver                          Driver?
   notifications                   NotificationHistory[]
-
-  // Admin management tracking
-  created_by     Int? // ID of the admin who created this user
-  is_super_admin Boolean @default(false) // Only true for the initial super admin
+  passenger                       Passenger?
+  deviceTokens                    UserDeviceToken[]
+  role                            Role                  @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@map("users")
 }
@@ -69,7 +63,6 @@ model User {
 model NotificationHistory {
   id         Int       @id @default(autoincrement())
   user_id    Int
-  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   title      String
   body       String
   data       Json?
@@ -77,6 +70,7 @@ model NotificationHistory {
   read_at    DateTime?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, created_at])
   @@map("notification_histories")
@@ -85,12 +79,12 @@ model NotificationHistory {
 model UserDeviceToken {
   id           Int      @id @default(autoincrement())
   user_id      Int
-  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   device_token String   @unique
   platform     String?
   is_active    Boolean  @default(true)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, is_active])
   @@map("user_device_tokens")
@@ -107,28 +101,28 @@ model Company {
   weekly_off_days Weekday[]        @default([])
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt
+  holidays        CompanyHoliday[]
   passengers      Passenger[]
   routes          Route[]
-  holidays        CompanyHoliday[]
 
   @@map("companies")
 }
 
 model Car {
-  id                  Int               @id @default(autoincrement())
-  name                String
-  engine_capacity     String
-  model               String
-  car_no              String
-  car_color           String
-  fuel_per_km         String?
-  car_front_image_url String
-  car_back_image_url  String
-  car_front_card_url  String
-  car_back_card_url   String
-  created_at          DateTime          @default(now())
-  updated_at          DateTime          @updatedAt
-  driver_assign_cars  DriverAssignCar[]
+  id                     Int                         @id @default(autoincrement())
+  name                   String
+  engine_capacity        String
+  model                  String
+  car_no                 String
+  car_color              String
+  fuel_per_km            String?
+  car_front_image_url    String
+  car_back_image_url     String
+  car_front_card_url     String
+  car_back_card_url      String
+  created_at             DateTime                    @default(now())
+  updated_at             DateTime                    @updatedAt
+  driver_assign_cars     DriverAssignCar[]
   selected_phase_drivers RouteDailyPlanPhaseDriver[] @relation("SelectedTripCar")
 
   @@map("cars")
@@ -137,7 +131,6 @@ model Car {
 model Driver {
   id                       Int                         @id @default(autoincrement())
   user_id                  Int?                        @unique
-  user                     User?                       @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                     String
   phone_no                 String?
   address                  String
@@ -156,11 +149,12 @@ model Driver {
   created_at               DateTime                    @default(now())
   updated_at               DateTime                    @updatedAt
   driver_assign_cars       DriverAssignCar[]
-  routes                   Route[]
-  leaves                   DriverLeave[]
-  issue_reports            RouteIssueReport[]
-  daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
   create_requests          DriverCreateRequest[]
+  leaves                   DriverLeave[]
+  user                     User?                       @relation(fields: [user_id], references: [id])
+  daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
+  issue_reports            RouteIssueReport[]
+  routes                   Route[]
 
   @@map("drivers")
 }
@@ -168,17 +162,17 @@ model Driver {
 model DriverCreateRequest {
   id                   Int       @id @default(autoincrement())
   requested_by_user_id Int?
-  requested_by_user    User?     @relation(fields: [requested_by_user_id], references: [id], onDelete: SetNull)
   payload              Json
   status               String    @default("PENDING")
   reviewed_by_user_id  Int?
-  reviewed_by_user     User?     @relation("DriverCreateRequestReviewer", fields: [reviewed_by_user_id], references: [id], onDelete: SetNull)
   reviewed_at          DateTime?
   review_note          String?
   created_driver_id    Int?
-  created_driver       Driver?   @relation(fields: [created_driver_id], references: [id], onDelete: SetNull)
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
+  created_driver       Driver?   @relation(fields: [created_driver_id], references: [id])
+  requested_by_user    User?     @relation(fields: [requested_by_user_id], references: [id])
+  reviewed_by_user     User?     @relation("DriverCreateRequestReviewer", fields: [reviewed_by_user_id], references: [id])
 
   @@index([status, created_at])
   @@map("driver_create_requests")
@@ -187,12 +181,12 @@ model DriverCreateRequest {
 model DriverAssignCar {
   id         Int      @id @default(autoincrement())
   driver_id  Int
-  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   car_id     Int
-  car        Car      @relation(fields: [car_id], references: [id], onDelete: Cascade)
   is_default Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  car        Car      @relation(fields: [car_id], references: [id], onDelete: Cascade)
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
 
   @@unique([driver_id, car_id])
   @@map("driver_assign_cars")
@@ -201,7 +195,6 @@ model DriverAssignCar {
 model Passenger {
   id                                Int                            @id @default(autoincrement())
   user_id                           Int?                           @unique
-  user                              User?                          @relation(fields: [user_id], references: [id], onDelete: SetNull)
   name                              String
   email                             String?
   phone_no                          String
@@ -212,14 +205,15 @@ model Passenger {
   office_lat                        Float?
   office_long                       Float?
   company_id                        Int
-  company                           Company                        @relation(fields: [company_id], references: [id], onDelete: Cascade)
   pick_up_time                      String?
   drop_off_time                     String?
   office_pick_up_time               String?
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
-  routeLegs                         RouteLeg[]
+  company                           Company                        @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user                              User?                          @relation(fields: [user_id], references: [id])
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
+  routeLegs                         RouteLeg[]
 
   @@map("passengers")
 }
@@ -240,9 +234,7 @@ model DriverConfiguration {
 model Route {
   id                   Int                @id @default(autoincrement())
   company_id           Int
-  company              Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
   driver_id            Int
-  driver               Driver             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   office_address       String
   office_lat           Float
   office_long          Float
@@ -250,14 +242,16 @@ model Route {
   recurring_plan_end   DateTime?          @db.Date
   route_daily_plan_id  Int?               @unique
   route_price          Float?
-  daily_plan           RouteDailyPlan?    @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
-  defined_plans        RouteDailyPlan[]   @relation("RouteDefinitionPlans")
   created_at           DateTime           @default(now())
   updated_at           DateTime           @updatedAt
-  legs                 RouteLeg[]
   batches              RouteBatch[]
-  segments             RouteSegment[]
+  defined_plans        RouteDailyPlan[]   @relation("RouteDefinitionPlans")
   issue_reports        RouteIssueReport[]
+  legs                 RouteLeg[]
+  segments             RouteSegment[]
+  company              Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  driver               Driver             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  daily_plan           RouteDailyPlan?    @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
 
   @@index([driver_id])
   @@map("routes")
@@ -266,13 +260,13 @@ model Route {
 model RouteIssueReport {
   id         Int      @id @default(autoincrement())
   route_id   Int
-  route      Route    @relation(fields: [route_id], references: [id], onDelete: Cascade)
   driver_id  Int
-  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   image_url  String
   note       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  route      Route    @relation(fields: [route_id], references: [id], onDelete: Cascade)
 
   @@index([route_id, created_at])
   @@index([driver_id, created_at])
@@ -280,18 +274,17 @@ model RouteIssueReport {
 }
 
 model RouteDailyPlan {
-  id                  Int         @id @default(autoincrement())
+  id                  Int                         @id @default(autoincrement())
   definition_route_id Int
-  definition_route    Route       @relation("RouteDefinitionPlans", fields: [definition_route_id], references: [id], onDelete: Cascade)
-  scheduled_date      DateTime    @db.Date
-  status              RouteStatus @default(PENDING)
+  scheduled_date      DateTime                    @db.Date
+  status              RouteStatus                 @default(PENDING)
   started_at          DateTime?
   completed_at        DateTime?
-  created_at          DateTime    @default(now())
-  updated_at          DateTime    @updatedAt
-
-  execution_route Route?                      @relation("PlanExecutionRoute")
-  phase_drivers   RouteDailyPlanPhaseDriver[]
+  created_at          DateTime                    @default(now())
+  updated_at          DateTime                    @updatedAt
+  phase_drivers       RouteDailyPlanPhaseDriver[]
+  definition_route    Route                       @relation("RouteDefinitionPlans", fields: [definition_route_id], references: [id], onDelete: Cascade)
+  execution_route     Route?                      @relation("PlanExecutionRoute")
 
   @@unique([definition_route_id, scheduled_date])
   @@index([scheduled_date])
@@ -301,11 +294,11 @@ model RouteDailyPlan {
 model CompanyHoliday {
   id         Int      @id @default(autoincrement())
   company_id Int
-  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
   date       DateTime @db.Date
   name       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
 
   @@unique([company_id, date])
   @@map("company_holidays")
@@ -314,11 +307,11 @@ model CompanyHoliday {
 model DriverLeave {
   id         Int      @id @default(autoincrement())
   driver_id  Int
-  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   date       DateTime @db.Date
   note       String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
 
   @@unique([driver_id, date])
   @@map("driver_leaves")
@@ -327,7 +320,6 @@ model DriverLeave {
 model RouteBatch {
   id                         Int            @id @default(autoincrement())
   route_id                   Int
-  route                      Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
   batch_order                Int
   pickup_directions_polyline String?
   pickup_waypoint_order      Json?
@@ -341,6 +333,7 @@ model RouteBatch {
   drop_distance_meters       Int?
   drop_duration_seconds      Int?
   drop_updated_at            DateTime?
+  route                      Route          @relation(fields: [route_id], references: [id], onDelete: Cascade)
   legs                       RouteLeg[]
   segments                   RouteSegment[]
 
@@ -351,12 +344,12 @@ model RouteBatch {
 model RouteSegment {
   id            Int           @id @default(autoincrement())
   route_id      Int
-  route         Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
   segment_order Int
   batch_id      Int
-  batch         RouteBatch    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   kind          SegmentKind
   status        SegmentStatus @default(PENDING)
+  batch         RouteBatch    @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  route         Route         @relation(fields: [route_id], references: [id], onDelete: Cascade)
 
   @@unique([route_id, segment_order])
   @@map("route_segments")
@@ -365,11 +358,8 @@ model RouteSegment {
 model RouteLeg {
   id                  Int        @id @default(autoincrement())
   route_id            Int
-  route               Route      @relation(fields: [route_id], references: [id], onDelete: Cascade)
   batch_id            Int
-  batch               RouteBatch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   passenger_id        Int
-  passenger           Passenger  @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
   sequence            Int        @default(0)
   drop_sequence       Int        @default(0)
   pickup_address      String
@@ -384,6 +374,9 @@ model RouteLeg {
   toll_amount         Float?
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt
+  batch               RouteBatch @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  passenger           Passenger  @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  route               Route      @relation(fields: [route_id], references: [id], onDelete: Cascade)
 
   @@map("route_legs")
 }
@@ -391,17 +384,14 @@ model RouteLeg {
 model RouteDailyPlanPhaseDriver {
   id                                Int                            @id @default(autoincrement())
   route_daily_plan_id               Int
-  route_daily_plan                  RouteDailyPlan                 @relation(fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
   phase                             RouteDailyPlanPhase
   driver_id                         Int
-  driver                            Driver                         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   scheduled_date                    DateTime                       @db.Date
   trip_start_time                   String?
   trip_started_at                   DateTime?
   status                            RouteStatus                    @default(PENDING)
   trip_price                        Float?
   selected_car_id                   Int?
-  selected_car                      Car?                           @relation("SelectedTripCar", fields: [selected_car_id], references: [id], onDelete: SetNull)
   trip_km                           Float?
   fuel_price_per_liter_snapshot     Float?
   km_per_liter_snapshot             Float?
@@ -412,6 +402,9 @@ model RouteDailyPlanPhaseDriver {
   fuel_paid_at                      DateTime?
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
+  driver                            Driver                         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  route_daily_plan                  RouteDailyPlan                 @relation(fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  selected_car                      Car?                           @relation("SelectedTripCar", fields: [selected_car_id], references: [id])
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
 
   @@unique([route_daily_plan_id, phase])
@@ -434,9 +427,7 @@ model FuelPrice {
 model RouteDailyPlanPhasePassenger {
   id                               Int                       @id @default(autoincrement())
   route_daily_plan_phase_driver_id Int
-  route_daily_plan_phase_driver    RouteDailyPlanPhaseDriver @relation(fields: [route_daily_plan_phase_driver_id], references: [id], onDelete: Cascade)
   passenger_id                     Int
-  passenger                        Passenger                 @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
   status                           PhasePassengerStatus      @default(PENDING)
   driver_arrived_at                DateTime?
   passenger_ack                    PassengerAck?
@@ -445,6 +436,8 @@ model RouteDailyPlanPhasePassenger {
   dropped_at                       DateTime?
   created_at                       DateTime                  @default(now())
   updated_at                       DateTime                  @updatedAt
+  passenger                        Passenger                 @relation(fields: [passenger_id], references: [id], onDelete: Cascade)
+  route_daily_plan_phase_driver    RouteDailyPlanPhaseDriver @relation(fields: [route_daily_plan_phase_driver_id], references: [id], onDelete: Cascade)
 
   @@map("route_daily_plan_phase_passengers")
 }

@@ -14,10 +14,13 @@ export class AuthService {
 	private db = DatabaseService.getInstance().getPrisma();
 
 	async login(email: string, password: string) {
+console.log("email", email);
+		console.log("password", password);
 		const user = await this.db.user.findUnique({
 			where: { email: String(email).trim().toLowerCase() },
 			include: { role: true },
 		});
+		console.log("user", user);
 		if (!user) throw ResponseHandler.unauthorized("Invalid email or password");
 		const valid = await bcrypt.compare(password, user.password);
 		if (!valid) throw ResponseHandler.unauthorized("Invalid password");

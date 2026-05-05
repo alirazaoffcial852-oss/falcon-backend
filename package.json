@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev src/app.ts",
     "build": "tsc && node scripts/copy-prisma-to-dist.cjs",
-    "start": "node dist/app.js",
+    "start": "node dist/src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:generate": "prisma generate",
     "migrate": "prisma migrate dev",
