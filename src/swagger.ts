@@ -9,9 +9,7 @@ const swaggerDocument = {
 			"API docs for Falcon backend. Use Authorize to set Bearer token (from POST /f1/auth/login). All admin routes require admin role.",
 	},
 	servers: [
-		{ url: "/", description: "Current (Vercel / same origin)" },
-		{ url: "http://192.168.1.22:5001", description: "Server" },
-		{ url: "http://localhost:5051", description: "Local" },
+		{ url: "/", description: "Current host (same origin)" },
 	],
 	components: {
 		securitySchemes: {
@@ -123,16 +121,18 @@ const swaggerDocument = {
 				type: "object",
 				required: [
 					"email",
+					"password",
+					"confirmPassword",
 					"name",
-					"phone_no",
 					"address",
 					"emergency_phone_no",
-					"car_id",
 				],
 				properties: {
 					email: { type: "string", format: "email" },
+					password: { type: "string", minLength: 6 },
+					confirmPassword: { type: "string", minLength: 6 },
 					name: { type: "string" },
-					phone_no: { type: "string" },
+					phone_no: { type: "string", nullable: true },
 					address: { type: "string" },
 					home_lat: {
 						type: "number",
@@ -148,9 +148,15 @@ const swaggerDocument = {
 					driver_cnic_back_url: { type: "string", nullable: true },
 					driver_license_front_url: { type: "string", nullable: true },
 					driver_license_back_url: { type: "string", nullable: true },
-					salary: { type: "string", nullable: true },
 					car_id: { type: "integer", minimum: 1 },
+					car_ids: {
+						type: "array",
+						items: { type: "integer", minimum: 1 },
+						minItems: 1,
+					},
+					default_car_id: { type: "integer", minimum: 1, nullable: true },
 				},
+				oneOf: [{ required: ["car_id"] }, { required: ["car_ids"] }],
 			},
 			UpdateDriverBody: {
 				type: "object",
@@ -168,8 +174,13 @@ const swaggerDocument = {
 					driver_cnic_back_url: { type: "string", nullable: true },
 					driver_license_front_url: { type: "string", nullable: true },
 					driver_license_back_url: { type: "string", nullable: true },
-					salary: { type: "string" },
 					car_id: { type: "integer", minimum: 1 },
+					car_ids: {
+						type: "array",
+						items: { type: "integer", minimum: 1 },
+						minItems: 1,
+					},
+					default_car_id: { type: "integer", minimum: 1, nullable: true },
 				},
 			},
 			// Passenger
@@ -466,11 +477,20 @@ const swaggerDocument = {
 			// Public driver registration (same shape as POST /f1/drivers for drivers)
 			DriverSelfRegisterBody: {
 				type: "object",
-				required: ["email", "name", "address", "emergency_phone_no"],
+				required: [
+					"email",
+					"password",
+					"confirmPassword",
+					"name",
+					"address",
+					"emergency_phone_no",
+				],
 				description:
 					"Requires car_id or car_ids (min 1). phone_no may be empty. Creates PENDING driver until admin approves.",
 				properties: {
 					email: { type: "string", format: "email" },
+					password: { type: "string", minLength: 6 },
+					confirmPassword: { type: "string", minLength: 6 },
 					name: { type: "string" },
 					phone_no: { type: "string", nullable: true },
 					address: { type: "string" },
@@ -490,6 +510,15 @@ const swaggerDocument = {
 						minItems: 1,
 					},
 					default_car_id: { type: "integer", minimum: 1 },
+				},
+				oneOf: [{ required: ["car_id"] }, { required: ["car_ids"] }],
+			},
+			ApproveDriverCreateRequestBody: {
+				type: "object",
+				required: ["password", "confirmPassword"],
+				properties: {
+					password: { type: "string", minLength: 6 },
+					confirmPassword: { type: "string", minLength: 6 },
 				},
 			},
 			CreateFuelPriceBody: {
@@ -938,7 +967,7 @@ const swaggerDocument = {
 				tags: ["Drivers"],
 				summary: "Create driver",
 				description:
-					"Admin: creates APPROVED driver + user (email gets temp password). Driver role: submits PENDING registration (use POST /f1/auth/driver/register for pre-login). Use car_ids + default_car_id or legacy car_id.",
+					"Admin: creates APPROVED driver + user using provided password/confirmPassword. Driver role: submits PENDING registration (use POST /f1/auth/driver/register for pre-login). Use car_ids + default_car_id or legacy car_id.",
 				security: [{ bearerAuth: [] }],
 				requestBody: {
 					required: true,
@@ -1060,7 +1089,7 @@ const swaggerDocument = {
 				tags: ["Drivers"],
 				summary: "Approve a driver create-request (admin)",
 				description:
-					"Creates user account, sets driver APPROVED, links request to user.",
+					"Creates user account with provided password/confirmPassword, sets driver APPROVED, links request to user.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1071,6 +1100,16 @@ const swaggerDocument = {
 						description: "DriverCreateRequest id",
 					},
 				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								$ref: "#/components/schemas/ApproveDriverCreateRequestBody",
+							},
+						},
+					},
+				},
 				responses: {
 					"200": { description: "Request approved" },
 					"400": { description: "Validation error" },

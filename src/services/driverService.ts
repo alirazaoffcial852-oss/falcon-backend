@@ -3,8 +3,7 @@ import { ResponseHandler } from "../utils/responses/ResponseHandler";
 import type { DriverListQuery, Driver } from "../types/admin/driver";
 import { buildWhereCondition } from "../utils/buildWhereCondition";
 import bcrypt from "bcryptjs";
-import { generateRandomNumericPassword } from "../utils/generateRandomPassword";
-import { sendCredentialEmail } from "../utils/email";
+// import { sendCredentialEmail } from "../utils/email"; // Keep for later use
 
 export class DriverService {
   private db = DatabaseService.getInstance().getPrisma();
@@ -115,14 +114,21 @@ export class DriverService {
     if (!data.email) {
       throw ResponseHandler.badRequest("Email is required");
     }
+    if (!data.password || !data.confirmPassword) {
+      throw ResponseHandler.badRequest(
+        "password and confirmPassword are required",
+      );
+    }
+    if (data.password !== data.confirmPassword) {
+      throw ResponseHandler.badRequest("confirmPassword must match password");
+    }
     const email = data.email.trim().toLowerCase();
     const existingUser = await this.db.user.findUnique({ where: { email } });
     if (existingUser) {
       throw ResponseHandler.duplicateResource("User", "email");
     }
 
-    const plainPassword = generateRandomNumericPassword(6, 8);
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const { carIds, defaultCarId } = this.normalizeCars(data);
     await this.ensureCarsExist(carIds);
@@ -167,7 +173,7 @@ export class DriverService {
       return createdDriver;
     });
 
-    await sendCredentialEmail(email, "driver", plainPassword);
+    // await sendCredentialEmail(email, "driver", data.password);
 
     return {
       email,
@@ -286,7 +292,15 @@ export class DriverService {
     return this.createApprovedDriver(data);
   }
 
-  async approveCreateRequest(requestId: number, adminUserId: number) {
+  async approveCreateRequest(
+    requestId: number,
+    adminUserId: number,
+    password: string,
+    confirmPassword: string,
+  ) {
+    if (password !== confirmPassword) {
+      throw ResponseHandler.badRequest("confirmPassword must match password");
+    }
     const prisma = this.db as any;
     const req = await prisma.driverCreateRequest.findUnique({
       where: { id: requestId },
@@ -309,8 +323,7 @@ export class DriverService {
       if (existingUser) {
         throw ResponseHandler.duplicateResource("User", "email");
       }
-      const plainPassword = generateRandomNumericPassword(6, 8);
-      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       const approved = await this.db.$transaction(async (tx) => {
         const driverRoleId = await this.getDriverRoleId();
 
@@ -329,7 +342,7 @@ export class DriverService {
           },
         });
       });
-      await sendCredentialEmail(email, "driver", plainPassword);
+      // await sendCredentialEmail(email, "driver", password);
       created = {
         email,
         ...approved,

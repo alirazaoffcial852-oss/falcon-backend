@@ -7,6 +7,8 @@ export interface DriverListQuery {
 export interface Driver {
 	id?: number;
 	email?: string;
+	password?: string;
+	confirmPassword?: string;
 	/** Optional fixed home coordinates for route pickup ordering; geocoded from address on first route if omitted */
 	home_lat?: number | null;
 	home_long?: number | null;

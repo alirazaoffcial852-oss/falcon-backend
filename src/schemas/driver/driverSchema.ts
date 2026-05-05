@@ -6,6 +6,18 @@ export const createDriverSchema = Joi.object({
 		"string.email": "Email must be valid",
 		"string.empty": "Email is required",
 	}),
+	password: Joi.string().min(6).required().messages({
+		"any.required": "Password is required",
+		"string.min": "Password must be at least 6 characters",
+		"string.empty": "Password is required",
+	}),
+	confirmPassword: Joi.string()
+		.valid(Joi.ref("password"))
+		.required()
+		.messages({
+			"any.only": "confirmPassword must match password",
+			"any.required": "confirmPassword is required",
+		}),
 	name: Joi.string().trim().required().messages({
 		"any.required": "Name is required",
 		"string.empty": "Name is required",
@@ -123,3 +135,18 @@ export const driverIdParamSchema = Joi.object({
 		"number.min": "Id must be greater than 0",
 	}),
 });
+
+export const approveDriverCreateRequestBodySchema = Joi.object({
+	password: Joi.string().min(6).required().messages({
+		"any.required": "Password is required",
+		"string.min": "Password must be at least 6 characters",
+		"string.empty": "Password is required",
+	}),
+	confirmPassword: Joi.string()
+		.valid(Joi.ref("password"))
+		.required()
+		.messages({
+			"any.only": "confirmPassword must match password",
+			"any.required": "confirmPassword is required",
+		}),
+}).required();

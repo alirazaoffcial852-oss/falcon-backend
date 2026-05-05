@@ -5,6 +5,7 @@ import {
 	createDriverSchema,
 	updateDriverSchema,
 	driverIdParamSchema,
+	approveDriverCreateRequestBodySchema,
 } from "../../schemas/driver/driverSchema";
 import { roleMiddleware } from "../../middleware/authMiddleware";
 
@@ -31,7 +32,7 @@ router.post(
 router.post(
 	"/create-requests/:id/approve",
 	roleMiddleware("admin"),
-	validate.params(driverIdParamSchema),
+	validate.combined(approveDriverCreateRequestBodySchema, driverIdParamSchema),
 	DriverController.approveCreateRequest,
 );
 router.put(
