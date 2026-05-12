@@ -2192,10 +2192,11 @@ const swaggerDocument = {
 		"/f1/mobile/passenger/session": {
 			get: {
 				tags: ["Mobile passenger"],
-				summary: "Passenger trip session (ETA, driver, leg state)",
+				summary:
+					"Passenger trip session (ui title/subtitle/ETA, driver, vehicle, phase ids)",
 				security: [{ bearerAuth: [] }],
 				responses: {
-					"200": { description: "Passenger session" },
+					"200": { description: "Passenger session with ui + vehicle for mobile home" },
 					"401": { description: "Unauthorized" },
 				},
 			},
