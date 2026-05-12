@@ -11,6 +11,11 @@ import http from "http";
 import swaggerDocument from "./swagger";
 import { initSocket } from "./config/socketService";
 import { initDailyRouteCron } from "./config/dailyRouteCron";
+import {
+	initFirebaseAdmin,
+	isFirebaseMessagingReady,
+	getFirebaseInitError,
+} from "./config/firebaseAdmin";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -145,6 +150,13 @@ async function startServer() {
 	try {
 		const dbService = DatabaseService.getInstance();
 
+		initFirebaseAdmin();
+		if (isFirebaseMessagingReady()) {
+			console.log("[Firebase] Admin initialized — FCM push enabled");
+		} else {
+			console.warn("[Firebase] FCM disabled:", getFirebaseInitError());
+		}
+
 		// Initialise Socket.io on the shared HTTP server
 		initSocket(httpServer);
 
@@ -177,6 +189,16 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
 	res.status(200).json({ message: "Server is healthy" });
+});
+
+/** Firebase / FCM readiness (no secrets). Use after setting FIREBASE_* env. */
+app.get("/health/firebase", (_req, res) => {
+	initFirebaseAdmin();
+	const ok = isFirebaseMessagingReady();
+	res.status(ok ? 200 : 503).json({
+		firebase_messaging: ok ? "ready" : "unavailable",
+		...(ok ? {} : { error: getFirebaseInitError() }),
+	});
 });
 
 // Export app for Vercel serverless; only start HTTP server when not on Vercel

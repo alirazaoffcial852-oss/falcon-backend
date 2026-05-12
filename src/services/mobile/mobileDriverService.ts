@@ -117,6 +117,10 @@ async function getCurrentFuelPricePerLiter(): Promise<number> {
 }
 
 const MAX_SEGMENT_SYNC_STEPS = 64;
+const DRIVER_LOCATION_HEARTBEAT_SECONDS = (() => {
+	const n = Number(process.env.DRIVER_LOCATION_HEARTBEAT_SECONDS);
+	return Number.isFinite(n) && n >= 2 && n <= 30 ? n : 5;
+})();
 
 /** Same DB updates as `officeCheckpoint` after pickups in batch are cleared. */
 async function runPickupOfficeAdvanceCore(
@@ -1031,7 +1035,6 @@ export const MobileDriverService = {
 				},
 			},
 		});
-		console.log("phaseDriver", phaseDriver);
 		if (!phaseDriver) {
 			throw ResponseHandler.notFound(
 				"Trip not found, not assigned to you, or not scheduled for today",
@@ -1197,21 +1200,34 @@ export const MobileDriverService = {
 			}
 		});
 
-		for (const leg of route.legs) {
-			emitToPassenger(leg.passenger_id, "driver:started", {
-				routeId: route.id,
-				driverId: driver.id,
-				driverName: driver.name,
-				car: car
-					? { name: car.name, car_no: car.car_no, car_color: car.car_color }
-					: null,
-			});
-			void notificationService.sendToPassengerIds([leg.passenger_id], {
-				title: "Trip Started",
-				body: `${driver.name} has started your trip`,
-				data: { routeId: String(route.id), type: "trip_started" },
-			});
+		const phasePassengerRows = await db.routeDailyPlanPhasePassenger.findMany({
+			where: { route_daily_plan_phase_driver_id: phaseDriver.id },
+			select: { passenger_id: true },
+		});
+		const passengerIdsOnPhase = [
+			...new Set(phasePassengerRows.map((r) => r.passenger_id)),
+		];
+		const startedPayload = {
+			routeId: route.id,
+			driverId: driver.id,
+			driverName: driver.name,
+			car: car
+				? { name: car.name, car_no: car.car_no, car_color: car.car_color }
+				: null,
+			phase: phaseDriver.phase,
+		};
+		for (const pid of passengerIdsOnPhase) {
+			emitToPassenger(pid, "driver:started", startedPayload);
 		}
+		void notificationService.sendToPassengerIds(passengerIdsOnPhase, {
+			title: "Trip Started",
+			body: `${driver.name} has started your trip`,
+			data: {
+				routeId: String(route.id),
+				type: "trip_started",
+				phase: phaseDriver.phase,
+			},
+		});
 
 		const firstLegGlobal = await getFirstRouteLegInPickupOrder(db, routeId);
 		if (isPickup && firstLegGlobal?.pickup_time) {
@@ -1278,7 +1294,12 @@ export const MobileDriverService = {
 			emitToAdmins("driver:location", payload);
 		}
 
-		return { lat, long, updated_at: updatedAt };
+		return {
+			lat,
+			long,
+			updated_at: updatedAt,
+			next_update_in_seconds: DRIVER_LOCATION_HEARTBEAT_SECONDS,
+		};
 	},
 
 	/**
@@ -1564,6 +1585,47 @@ export const MobileDriverService = {
 										trip_start_time: plannedDropTime,
 										trip_started_at: new Date(),
 										status: "ONGOING",
+									},
+								});
+
+								const dropPhaseDriverIds = await db.routeDailyPlanPhaseDriver.findMany(
+									{
+										where: {
+											route_daily_plan_id: execForPlan.route_daily_plan_id,
+											phase: "DROP",
+										},
+										select: { id: true },
+									},
+								);
+								const dropPpRows =
+									await db.routeDailyPlanPhasePassenger.findMany({
+										where: {
+											route_daily_plan_phase_driver_id: {
+												in: dropPhaseDriverIds.map((d) => d.id),
+											},
+										},
+										select: { passenger_id: true },
+									});
+								const dropPassengerIds = [
+									...new Set(dropPpRows.map((r) => r.passenger_id)),
+								];
+								const dropStartedPayload = {
+									routeId: routeId,
+									driverId: driver.id,
+									driverName: driver.name,
+									car: null,
+									phase: "DROP" as const,
+								};
+								for (const pid of dropPassengerIds) {
+									emitToPassenger(pid, "driver:started", dropStartedPayload);
+								}
+								void notificationService.sendToPassengerIds(dropPassengerIds, {
+									title: "Trip Started",
+									body: `${driver.name} has started your trip`,
+									data: {
+										routeId: String(routeId),
+										type: "trip_started",
+										phase: "DROP",
 									},
 								});
 							}
