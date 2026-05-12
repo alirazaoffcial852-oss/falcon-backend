@@ -15,3 +15,6 @@ dist
 /src/generated/prisma
 
 /uploads
+
+
+src/*.js
