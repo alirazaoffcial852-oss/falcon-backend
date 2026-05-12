@@ -19,7 +19,20 @@ export const MobilePassengerController = {
 
 	/** GET /f1/mobile/passenger/driver/location */
 	getDriverLocation: catchAsync(async (req: AuthRequest, res: Response) => {
-		const result = await MobilePassengerService.getDriverLocation(getUserId(req));
+		const sinceRaw = req.query.since;
+		const limitRaw = req.query.limit;
+		const since =
+			typeof sinceRaw === "string" && sinceRaw.trim().length > 0
+				? sinceRaw
+				: undefined;
+		const limit =
+			typeof limitRaw === "string" && limitRaw.trim().length > 0
+				? Number(limitRaw)
+				: undefined;
+		const result = await MobilePassengerService.getDriverLocation(getUserId(req), {
+			since,
+			limit,
+		});
 		ResponseHandler.success(res, result, "Driver location");
 	}),
 

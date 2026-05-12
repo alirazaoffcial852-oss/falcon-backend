@@ -15,6 +15,7 @@
     "seed:setup": "pnpm exec ts-node prisma/seed-setup.ts",
     "db:setup": "prisma migrate reset --force --skip-seed && pnpm run seed:setup",
     "db:reset": "pnpm exec ts-node prisma/reset.ts",
+    "diagnose:passenger-push": "pnpm exec ts-node scripts/diagnose-passenger-push.ts",
     "postinstall": "pnpm run prisma:generate"
   },
   "prisma": {

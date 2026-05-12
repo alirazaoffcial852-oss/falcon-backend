@@ -2,6 +2,10 @@ node_modules
 # Keep environment variables out of version control
 .env
 
+# Firebase Admin JSON (FIREBASE_SERVICE_ACCOUNT_PATH) — do not commit
+firebase-service-account.json
+*-firebase-service-account.json
+
 # generated Prisma client
 prisma/generated
 

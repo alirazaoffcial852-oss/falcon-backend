@@ -1,12 +1,28 @@
 import { Prisma } from "../generated/prisma/client";
 import { DatabaseService } from "../config/database";
-import { getFirebaseMessaging } from "../config/firebaseAdmin";
+import {
+	getFirebaseMessaging,
+	getFirebaseInitError,
+} from "../config/firebaseAdmin";
 
 type NotificationPayload = {
 	title: string;
 	body: string;
 	data?: Record<string, string>;
 };
+
+/** FCM requires every `data` value to be a string; non-string values can fail delivery. */
+function normalizeDataForFcm(
+	data?: Record<string, string>,
+): Record<string, string> {
+	if (!data || typeof data !== "object") return {};
+	const out: Record<string, string> = {};
+	for (const [k, v] of Object.entries(data)) {
+		if (v === undefined || v === null) continue;
+		out[String(k)] = String(v);
+	}
+	return out;
+}
 
 export class NotificationService {
 	private db = DatabaseService.getInstance().getPrisma();
@@ -45,7 +61,8 @@ export class NotificationService {
 
 	async sendToUsers(userIds: number[], payload: NotificationPayload) {
 		if (!userIds.length) return { sent: 0 };
-		await this.createHistoryForUsers(userIds, payload);
+		const dataPayload = normalizeDataForFcm(payload.data);
+		await this.createHistoryForUsers(userIds, { ...payload, data: dataPayload });
 		const tokens = await this.db.userDeviceToken.findMany({
 			where: {
 				user_id: { in: userIds },
@@ -56,10 +73,21 @@ export class NotificationService {
 		const uniqueTokens = Array.from(
 			new Set(tokens.map((t) => t.device_token).filter(Boolean)),
 		);
-		if (!uniqueTokens.length) return { sent: 0 };
+		if (!uniqueTokens.length) {
+			console.warn(
+				`[notifications] No active device tokens for user_ids=[${userIds.join(",")}] title="${payload.title}" — history saved, push skipped`,
+			);
+			return { sent: 0 };
+		}
 
 		const messaging = getFirebaseMessaging();
-		if (!messaging) return { sent: 0 };
+		if (!messaging) {
+			const hint = getFirebaseInitError();
+			console.warn(
+				`[notifications] Firebase messaging not initialized — history saved for user_ids=[${userIds.join(",")}], push skipped${hint ? ` (${hint})` : ""}`,
+			);
+			return { sent: 0 };
+		}
 
 		const response = await messaging.sendEachForMulticast({
 			tokens: uniqueTokens,
@@ -67,8 +95,18 @@ export class NotificationService {
 				title: payload.title,
 				body: payload.body,
 			},
-			data: payload.data ?? {},
+			data: dataPayload,
 		});
+
+		if (response.failureCount > 0) {
+			response.responses.forEach((r, idx) => {
+				if (!r.success) {
+					console.warn(
+						`[notifications] FCM failure token[${idx}]=${uniqueTokens[idx]?.slice(0, 24)}… error=${r.error?.message ?? r.error ?? "unknown"}`,
+					);
+				}
+			});
+		}
 
 		// Deactivate invalid tokens to keep table clean
 		const invalidIndexes: number[] = [];
@@ -120,11 +158,23 @@ export class NotificationService {
 		if (!passengerIds.length) return { sent: 0 };
 		const passengers = await this.db.passenger.findMany({
 			where: { id: { in: passengerIds } },
-			select: { user_id: true },
+			select: { id: true, user_id: true },
 		});
+		const missingUser = passengers.filter((p) => p.user_id == null).map((p) => p.id);
+		if (missingUser.length) {
+			console.warn(
+				`[notifications] Passenger row(s) have no linked user_id — push/history only for linked accounts. passenger_ids=${missingUser.join(",")} title="${payload.title}"`,
+			);
+		}
 		const userIds = passengers
 			.map((p) => p.user_id)
 			.filter((id): id is number => id !== null);
+		if (!userIds.length && passengerIds.length) {
+			console.warn(
+				`[notifications] sendToPassengerIds: no user_ids resolved from passenger_ids=[${passengerIds.join(",")}] — nothing sent`,
+			);
+			return { sent: 0 };
+		}
 		return this.sendToUsers(userIds, payload);
 	}
 
