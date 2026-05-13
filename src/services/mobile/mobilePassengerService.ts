@@ -7,7 +7,6 @@ import {
 } from "../../utils/liveLocationStore";
 import { notificationService } from "../notificationService";
 import { phaseDriverScheduledDateWhere } from "../../utils/routeDayScope";
-import { parseTimeToMinutesFromMidnight } from "../../utils/pickupSchedule";
 import {
 	getPhaseDriverId,
 	getRouteDailyPlanId,
@@ -15,10 +14,6 @@ import {
 
 const db = DatabaseService.getInstance().getPrisma();
 
-const EN_ROUTE_ETA_FALLBACK_MINUTES = (() => {
-	const n = Number(process.env.PASSENGER_EN_ROUTE_ETA_FALLBACK_MINUTES);
-	return Number.isFinite(n) && n > 0 && n <= 180 ? n : 12;
-})();
 const DRIVER_LOCATION_HEARTBEAT_SECONDS = (() => {
 	const n = Number(process.env.DRIVER_LOCATION_HEARTBEAT_SECONDS);
 	return Number.isFinite(n) && n >= 2 && n <= 30 ? n : 5;
@@ -56,31 +51,6 @@ function toCarDisplay(car: {
 		car_front_image_url: car.car_front_image_url,
 		display_label: `${car.model} – ${car.car_color}`.trim(),
 	};
-}
-
-/** Minutes from now until scheduled_date + trip_start_time (UTC calendar day + HH:MM). */
-function minutesUntilScheduledDateTime(
-	scheduledDate: Date,
-	timeHHMM: string | null | undefined,
-	now: Date,
-): number | null {
-	const mins = parseTimeToMinutesFromMidnight(timeHHMM);
-	if (mins == null) return null;
-	const d = new Date(scheduledDate);
-	const y = d.getUTCFullYear();
-	const mo = d.getUTCMonth();
-	const day = d.getUTCDate();
-	const targetUtc = Date.UTC(
-		y,
-		mo,
-		day,
-		Math.floor(mins / 60),
-		mins % 60,
-		0,
-		0,
-	);
-	const diffMs = targetUtc - now.getTime();
-	return Math.max(0, Math.ceil(diffMs / 60_000));
 }
 
 function resolveTripCarForPassengerUi(params: {
@@ -130,14 +100,6 @@ function resolveTripCarForPassengerUi(params: {
 	return null;
 }
 
-function firstBatchPickupEtaMinutes(route: {
-	batches?: Array<{ pickup_duration_seconds: number | null }> | null;
-}): number | null {
-	const sec = route.batches?.[0]?.pickup_duration_seconds;
-	if (sec == null || !Number.isFinite(sec) || sec <= 0) return null;
-	return Math.max(1, Math.ceil(sec / 60));
-}
-
 type PassengerProfile = {
 	id: number;
 	user_id: number | null;
@@ -180,11 +142,125 @@ function passengerStillInActiveTrip(
 	pickupStatus: string,
 	dropStatus: string,
 ): boolean {
+	// Drop complete → session must use PASSENGER_DROPPED branch, not active-trip UI.
+	if (dropStatus === "DROPPED") return false;
+
 	return (
 		["PENDING", "ARRIVED", "STILL_WAITING"].includes(pickupStatus) ||
 		(pickupStatus === "PICKED" &&
 			["PENDING", "ARRIVED", "STILL_WAITING"].includes(dropStatus))
 	);
+}
+
+/** Today’s plan where this passenger’s DROP row is DROPPED — no driver/vehicle (trip over for this passenger). */
+async function buildDroppedPassengerSessionForToday(passenger: PassengerProfile): Promise<{
+	session: Record<string, unknown>;
+} | null> {
+	const dropRow = await db.routeDailyPlanPhasePassenger.findFirst({
+		where: {
+			passenger_id: passenger.id,
+			status: "DROPPED",
+			route_daily_plan_phase_driver: {
+				phase: "DROP",
+				scheduled_date: phaseDriverScheduledDateWhere(),
+				route_daily_plan: {
+					status: { in: ["PENDING", "ONGOING", "COMPLETED"] },
+				},
+			},
+		},
+		orderBy: [{ dropped_at: "desc" }, { id: "desc" }],
+		include: {
+			route_daily_plan_phase_driver: {
+				include: {
+					route_daily_plan: {
+						select: {
+							id: true,
+							status: true,
+							scheduled_date: true,
+							execution_route: { select: { id: true } },
+							definition_route: { select: { id: true } },
+						},
+					},
+				},
+			},
+		},
+	});
+
+	if (!dropRow) return null;
+
+	const dropPd = dropRow.route_daily_plan_phase_driver;
+	const plan = dropPd.route_daily_plan;
+	const routeId =
+		plan.execution_route?.id ?? plan.definition_route?.id ?? null;
+	if (routeId == null) return null;
+
+	const pickupPp = await db.routeDailyPlanPhasePassenger.findFirst({
+		where: {
+			passenger_id: passenger.id,
+			route_daily_plan_phase_driver: {
+				route_daily_plan_id: plan.id,
+				phase: "PICKUP",
+			},
+		},
+		include: {
+			route_daily_plan_phase_driver: {
+				select: {
+					id: true,
+					status: true,
+					trip_start_time: true,
+				},
+			},
+		},
+	});
+
+	const pickupPd = pickupPp?.route_daily_plan_phase_driver;
+	const pickupStatus = pickupPp?.status ?? "PICKED";
+
+	const planId = plan.id;
+	const scheduledDate = plan.scheduled_date;
+	const tripStartHHMM =
+		pickupPd?.trip_start_time?.trim() ||
+		passenger.pick_up_time?.trim() ||
+		null;
+
+	const droppedAt = dropRow.dropped_at ?? dropRow.updated_at;
+
+	return {
+		session: {
+			state: "PASSENGER_DROPPED",
+			trip_completed: true,
+			completion_message:
+				"You have been dropped off. Your trip for today is complete.",
+			driver_available: false,
+			availability_message: null,
+			active_trip_phase: "DROP",
+			active_phase_driver_id: dropPd.id,
+			plan_status: plan.status,
+			scheduled_date: scheduledDate.toISOString().slice(0, 10),
+			trip_start_time: tripStartHHMM,
+			route_id: routeId,
+			route_daily_plan_id: planId,
+			plan_id: planId,
+			pickup_phase_driver_id: pickupPd?.id ?? null,
+			drop_phase_driver_id: dropPd.id,
+			pickup_phase_passenger_id: pickupPp?.id ?? null,
+			drop_phase_passenger_id: dropRow.id,
+			pickup_status: pickupStatus,
+			passenger_ack: pickupPp?.passenger_ack ?? null,
+			driver_arrived_at: pickupPp?.driver_arrived_at ?? null,
+			pickup_address: passenger.home_address,
+			pickup_lat: passenger.home_lat,
+			pickup_long: passenger.home_long,
+			pickup_time: passenger.pick_up_time,
+			dropoff_status: "DROPPED",
+			dropped_at: droppedAt.toISOString(),
+			dropoff_address: passenger.home_address,
+			dropoff_lat: passenger.home_lat,
+			dropoff_long: passenger.home_long,
+			driver: null,
+			vehicle: null,
+		},
+	};
 }
 
 export const MobilePassengerService = {
@@ -323,7 +399,14 @@ export const MobilePassengerService = {
 		}
 
 		if (!candidates.length) {
-			return { session: null, message: "No active trip today ..." };
+			const droppedSession = await buildDroppedPassengerSessionForToday(
+				passenger,
+			);
+			if (droppedSession) return droppedSession;
+			return {
+				session: null,
+				message: "No active trip for today.",
+			};
 		}
 
 		candidates.sort((a, b) => {
@@ -427,64 +510,11 @@ export const MobilePassengerService = {
 			? passenger.home_long
 			: passenger.office_long;
 
-		const now = new Date();
 		const scheduledDate = chosen.plan.scheduled_date;
 		const tripStartHHMM =
 			pickupPd?.trip_start_time?.trim() ||
 			passenger.pick_up_time?.trim() ||
 			null;
-		const startsInMinutes = minutesUntilScheduledDateTime(
-			scheduledDate,
-			tripStartHHMM,
-			now,
-		);
-		const enRouteEtaMinutes =
-			firstBatchPickupEtaMinutes(route) ?? EN_ROUTE_ETA_FALLBACK_MINUTES;
-
-		let ui_screen: string;
-		let ui_title: string;
-		let ui_subtitle: string | null = null;
-		let ui_starts_in_minutes: number | null = null;
-		let ui_eta_minutes: number | null = null;
-
-		if (state === "DRIVER_ON_WAY") {
-			ui_screen = "DRIVER_EN_ROUTE";
-			ui_title = "Your Driver is on the way!";
-			ui_eta_minutes = enRouteEtaMinutes;
-			ui_subtitle =
-				ui_eta_minutes != null ? `Estimated time: ${ui_eta_minutes} min` : null;
-		} else if (
-			state === "DRIVER_ARRIVED" ||
-			state === "STILL_WAITING_AT_PICKUP"
-		) {
-			ui_screen = "DRIVER_AT_PICKUP";
-			ui_title = "Driver has Arrived!";
-			ui_subtitle = null;
-		} else if (state === "WAITING_FOR_DRIVER") {
-			ui_screen = "WAITING_TRIP_START";
-			ui_title = "Waiting for your driver";
-			ui_starts_in_minutes = startsInMinutes;
-			ui_subtitle =
-				ui_starts_in_minutes != null
-					? `Starts in: ${ui_starts_in_minutes} min`
-					: null;
-		} else if (state === "DRIVER_AVAILABLE") {
-			ui_screen = "WAITING_TRIP_START";
-			ui_title = "Waiting for the Driver to Start!";
-			ui_starts_in_minutes = startsInMinutes;
-			ui_subtitle =
-				ui_starts_in_minutes != null
-					? `Starts in: ${ui_starts_in_minutes} min`
-					: null;
-		} else {
-			ui_screen = "OTHER";
-			ui_title = "Trip in progress";
-			ui_subtitle = null;
-		}
-
-		const canAcknowledgePickup =
-			state === "DRIVER_ARRIVED" || state === "STILL_WAITING_AT_PICKUP";
-		const ackPending = pickupPp?.passenger_ack == null;
 
 		const dropLegActive = ["PENDING", "ARRIVED", "STILL_WAITING"].includes(
 			dropStatus,
@@ -494,30 +524,21 @@ export const MobilePassengerService = {
 		const active_phase_driver_id =
 			active_trip_phase === "PICKUP" ? pickupPd?.id ?? null : dropPd?.id ?? null;
 
+		const driverAvailableForTrip =
+			planStatus !== "PENDING" || driver.is_available;
+		const availability_message = !driverAvailableForTrip
+			? "Driver is not available now."
+			: null;
+
+		const hideDriverAndVehicle = state === "WAITING_FOR_DRIVER";
+
 		return {
 			session: {
 				state,
+				driver_available: driver.is_available,
+				availability_message,
 				active_trip_phase,
 				active_phase_driver_id,
-				ui_screen,
-				ui: {
-					screen: ui_screen,
-					phase: active_trip_phase,
-					title: ui_title,
-					subtitle: ui_subtitle,
-					starts_in_minutes: ui_starts_in_minutes,
-					eta_minutes: ui_eta_minutes,
-					primary_action: {
-						id: "ACK_COMING",
-						label: "OK I'm Coming",
-						enabled: canAcknowledgePickup && ackPending,
-					},
-					secondary_action: {
-						id: "ACK_NOT_COMING",
-						label: "I'm not Coming",
-						enabled: canAcknowledgePickup && ackPending,
-					},
-				},
 				plan_status: planStatus,
 				scheduled_date: scheduledDate.toISOString().slice(0, 10),
 				trip_start_time: tripStartHHMM,
@@ -539,19 +560,19 @@ export const MobilePassengerService = {
 				dropoff_address: dropoffAddress,
 				dropoff_lat: dropoffLat,
 				dropoff_long: dropoffLong,
-				driver: {
-					id: driver.id,
-					name: driver.name,
-					phone_no: driver.phone_no,
-					image_url: driver.driver_image_url,
-					profile_image_url: driver.driver_image_url,
-					is_available: driver.is_available,
-					current_lat: driverLive?.lat ?? null,
-					current_long: driverLive?.long ?? null,
-					location_updated_at: driverLive?.updated_at ?? null,
-				},
-				vehicle,
-				car: vehicle,
+				driver: hideDriverAndVehicle
+					? null
+					: {
+							id: driver.id,
+							name: driver.name,
+							phone_no: driver.phone_no,
+							image_url: driver.driver_image_url,
+							is_available: driver.is_available,
+							current_lat: driverLive?.lat ?? null,
+							current_long: driverLive?.long ?? null,
+							location_updated_at: driverLive?.updated_at ?? null,
+						},
+				vehicle: hideDriverAndVehicle ? null : vehicle,
 			},
 		};
 	},
@@ -745,12 +766,25 @@ export const MobilePassengerService = {
 		const targetLeg = shouldUseDropTarget ? nextDropLeg : nextPickupLeg;
 		const targetMode = shouldUseDropTarget ? "DROP" : "PICKUP";
 
+		console.log(
+			`[PASSENGER][GET driver/location] passenger_db_id=${passenger.id} user_id=${passenger.user_id ?? "?"} driver_id=${driver.id} lat=${resolvedLat} long=${resolvedLong} source=${locationSource} history_points=${locationHistory.length}`,
+		);
+		console.log(
+			`[PASSENGER][socket hint] Real-time movement: client must socket.emit("join:passenger", ${passenger.id}) then socket.on("driver:location", …). Driver app emits("driver:location:update", { driverId, lat, long }); server broadcasts event "driver:location" to room passenger:${passenger.id}.`,
+		);
+
 		return {
+			passenger_id: passenger.id,
 			driver_id: driver.id,
 			lat: resolvedLat,
 			long: resolvedLong,
 			updated_at: driverLive?.updated_at ?? null,
 			location_source: locationSource,
+			/** Socket.IO on same host as API: emit join then subscribe (passenger_id above). */
+			realtime: {
+				join_emit: "join:passenger",
+				listen_event: "driver:location",
+			},
 			live_tracking: {
 				heartbeat_interval_seconds: DRIVER_LOCATION_HEARTBEAT_SECONDS,
 				stale_after_seconds: DRIVER_LOCATION_STALE_AFTER_SECONDS,

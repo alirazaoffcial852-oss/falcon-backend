@@ -38,8 +38,12 @@ export const RouteController = {
 	update: catchAsync(async (req: Request, res: Response) => {
 		const id = parseIdParam(req.params.id);
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
-		const route = await routeService.update(id, { ...req.body });
-		ResponseHandler.success(res, route, "Route updated successfully");
+		const result = await routeService.update(id, { ...req.body });
+		const message =
+			result.update_mode === "in_place"
+				? "Route updated in place"
+				: "New route created; previous route unchanged";
+		ResponseHandler.created(res, result, message);
 	}),
 
 	optimize: catchAsync(async (req: Request, res: Response) => {

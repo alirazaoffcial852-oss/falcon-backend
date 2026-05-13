@@ -117,7 +117,7 @@ export const updateRouteSchema = Joi.object({
 		.pattern(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
-}).min(1);
+}).min(0);
 
 export const listRoutesQuerySchema = Joi.object({
 	page: Joi.number().integer().min(1).default(1),
