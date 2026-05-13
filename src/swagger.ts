@@ -583,6 +583,18 @@ const swaggerDocument = {
 					},
 				},
 			},
+			PassengerDropBody: {
+				type: "object",
+				description:
+					"Optional dropped_at (ISO 8601). Omit to use server time when recording drop on route_daily_plan_phase_passengers.",
+				properties: {
+					dropped_at: {
+						type: "string",
+						format: "date-time",
+						nullable: true,
+					},
+				},
+			},
 			RouteIssueReportBody: {
 				type: "object",
 				required: ["image_url"],
@@ -1596,7 +1608,10 @@ const swaggerDocument = {
 			},
 			put: {
 				tags: ["Routes"],
-				summary: "Update route",
+				summary:
+					"Update route in place (driver, price, recurring only) or fork (office/company/batches/legs)",
+				description:
+					"Validated body is stripUnknown. Fork only when company, office, or non-empty batches/legs actually change vs DB; driver / route_price / recurring always patch the same route row.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1607,7 +1622,7 @@ const swaggerDocument = {
 					},
 				],
 				requestBody: {
-					required: true,
+					required: false,
 					content: {
 						"application/json": {
 							schema: { $ref: "#/components/schemas/UpdateRouteBody" },
@@ -1615,7 +1630,10 @@ const swaggerDocument = {
 					},
 				},
 				responses: {
-					"200": { description: "Route updated" },
+					"201": {
+						description:
+							"New route created; data.previous_route_id is the template id, data.route is the new route",
+					},
 					"400": { description: "Validation error" },
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
@@ -2114,6 +2132,41 @@ const swaggerDocument = {
 				},
 			},
 		},
+		"/f1/mobile/driver/session/phase-passengers/{phasePassengerId}/drop": {
+			post: {
+				tags: ["Mobile driver"],
+				summary:
+					"Drop one passenger (DROP leg) — sets status DROPPED and dropped_at on route_daily_plan_phase_passengers",
+				description:
+					"phasePassengerId = RouteDailyPlanPhasePassenger.id for the DROP phase row from GET /session. Same behaviour as POST .../action with action=PICKED while active segment is DROP_TO_HOMES. Optional body.dropped_at (ISO 8601); default is server time.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "phasePassengerId",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: false,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/PassengerDropBody" },
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description:
+							"Drop recorded; data.phase_passenger includes dropped_at",
+					},
+					"400": { description: "Wrong phase/segment or invalid dropped_at" },
+					"401": { description: "Unauthorized" },
+					"404": { description: "Not found" },
+				},
+			},
+		},
 		"/f1/mobile/driver/session/{routeId}/office-checkpoint": {
 			post: {
 				tags: ["Mobile driver"],
@@ -2193,10 +2246,13 @@ const swaggerDocument = {
 			get: {
 				tags: ["Mobile passenger"],
 				summary:
-					"Passenger trip session (ui title/subtitle/ETA, driver, vehicle, phase ids)",
+					"Passenger trip session (WAITING_FOR_DRIVER hides driver/vehicle; PASSENGER_DROPPED after drop-off)",
 				security: [{ bearerAuth: [] }],
 				responses: {
-					"200": { description: "Passenger session with ui + vehicle for mobile home" },
+					"200": {
+						description:
+							"session.state PASSENGER_DROPPED when drop is DROPPED (driver/vehicle null); driver/vehicle also null for WAITING_FOR_DRIVER; session null when no trip today",
+					},
 					"401": { description: "Unauthorized" },
 				},
 			},
@@ -2204,11 +2260,16 @@ const swaggerDocument = {
 		"/f1/mobile/passenger/driver/location": {
 			get: {
 				tags: ["Mobile passenger"],
-				summary: "Driver live location for map",
+				summary:
+					"Driver GPS snapshot + history; passenger_id + realtime hints for Socket.IO (join:passenger / driver:location)",
 				security: [{ bearerAuth: [] }],
 				responses: {
-					"200": { description: "lat/long or null" },
+					"200": {
+						description:
+							"passenger_id, driver_id, lat/long, location_history, realtime.join_emit + listen_event; poll + subscribe socket for live movement",
+					},
 					"401": { description: "Unauthorized" },
+					"404": { description: "No active trip" },
 				},
 			},
 		},

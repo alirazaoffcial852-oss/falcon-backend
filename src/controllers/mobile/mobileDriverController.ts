@@ -152,6 +152,19 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Action processed");
 	}),
 
+	/** POST /f1/mobile/driver/session/phase-passengers/:phasePassengerId/drop — DROP phase only; sets dropped_at */
+	dropPassenger: catchAsync(async (req: AuthRequest, res: Response) => {
+		const phasePassengerId = parseInt(req.params.phasePassengerId as string);
+		if (isNaN(phasePassengerId)) {
+			throw ResponseHandler.badRequest("Invalid phasePassengerId");
+		}
+		const result = await MobileDriverService.dropPassenger(
+			getUserId(req),
+			phasePassengerId,
+		);
+		ResponseHandler.success(res, result, "Passenger dropped");
+	}),
+
 	/** POST /f1/mobile/driver/session/:routeId/office-checkpoint */
 	officeCheckpoint: catchAsync(async (req: AuthRequest, res: Response) => {
 		const routeId = parseInt(req.params.routeId as string);

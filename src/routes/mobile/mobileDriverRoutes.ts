@@ -24,6 +24,11 @@ router.post(
 	MobileDriverController.arriveAtPassenger,
 );
 
+router.post(
+	"/session/phase-passengers/:phasePassengerId/drop",
+	MobileDriverController.dropPassenger,
+);
+
 // Driver action — body { action }; updates RouteDailyPlanPhasePassenger by phase_passengers[].id
 router.post(
 	"/session/phase-passengers/:phasePassengerId/action",

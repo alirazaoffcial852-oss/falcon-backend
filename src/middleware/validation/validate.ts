@@ -4,10 +4,14 @@ import type { Schema } from "joi";
 export const validate = {
 	body: (schema: Schema) => {
 		return (req: Request, res: Response, next: NextFunction) => {
-			const { error } = schema.validate(req.body, { abortEarly: false });
+			const { error, value } = schema.validate(req.body, {
+				abortEarly: false,
+				stripUnknown: true,
+			});
 			if (error) {
 				return next(error);
 			}
+			req.body = value;
 			next();
 		};
 	},
@@ -44,17 +48,22 @@ export const validate = {
 		return (req: Request, res: Response, next: NextFunction) => {
 			const paramsResult = paramsSchema.validate(req.params, {
 				abortEarly: false,
+				stripUnknown: true,
 			});
 
 			if (paramsResult.error) {
 				return next(paramsResult.error);
 			}
+			Object.assign(req.params, paramsResult.value);
 
-			const bodyResult = bodySchema.validate(req.body, { abortEarly: false });
+			const bodyResult = bodySchema.validate(req.body, {
+				abortEarly: false,
+				stripUnknown: true,
+			});
 			if (bodyResult.error) {
 				return next(bodyResult.error);
 			}
-
+			req.body = bodyResult.value;
 			next();
 		};
 	},
