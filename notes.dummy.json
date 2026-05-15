@@ -1,0 +1,815 @@
+{
+  "status": "success",
+  "message": "Route against id 176",
+  "data": {
+      "id": 176,
+      "company_id": 3,
+      "driver_id": 13,
+      "office_address": "Arfa Software Technology Park, Ferozepur Road, Lahore",
+      "office_lat": 31.4754914,
+      "office_long": 74.3415067,
+      "recurring_plan_start": "2026-04-17T00:00:00.000Z",
+      "recurring_plan_end": "2026-05-16T00:00:00.000Z",
+      "route_daily_plan_id": 235,
+      "route_price": 1000,
+      "created_at": "2026-04-20T05:33:44.692Z",
+      "updated_at": "2026-05-14T04:20:05.885Z",
+      "company": {
+          "id": 3,
+          "name": "Updated Company Name",
+          "email": "contact@falconcompany.com",
+          "phone_no": "042-111-222-333",
+          "address": "Arfa Software Technology Park, Ferozepur Road, Lahore",
+          "lat": 31.4754914,
+          "long": 74.3415067,
+          "weekly_off_days": [],
+          "created_at": "2026-03-27T06:43:47.984Z",
+          "updated_at": "2026-04-08T13:02:43.559Z"
+      },
+      "driver": {
+          "id": 13,
+          "user_id": 15,
+          "name": "Driver Muhammad Musab",
+          "phone_no": "0300-1234567",
+          "address": "Airport Rd, Punjab, Lahore, 54000, Pakistan",
+          "emergency_phone_no": "0300-7654321",
+          "driver_image_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933410/falcon_uploads/driver_image-1774933408195.jpg",
+          "rate_per_km": 100,
+          "driver_cnic_front_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933412/falcon_uploads/driver_cnic_front-1774933411351.jpg",
+          "driver_cnic_back_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933415/falcon_uploads/driver_cnic_back-1774933414422.jpg",
+          "driver_license_front_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933419/falcon_uploads/driver_license_front-1774933418294.jpg",
+          "driver_license_back_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933423/falcon_uploads/driver_license_back-1774933422045.jpg",
+          "status": "APPROVED",
+          "is_available": true,
+          "available_at": "2026-05-14T04:34:11.829Z",
+          "home_lat": 31.5202724,
+          "home_long": 74.4057943,
+          "created_at": "2026-03-31T04:51:09.308Z",
+          "updated_at": "2026-05-14T04:34:11.831Z"
+      },
+      "batches": [
+          {
+              "id": 118,
+              "route_id": 176,
+              "batch_order": 1,
+              "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+              "pickup_waypoint_order": [
+                  2,
+                  1,
+                  0
+              ],
+              "pickup_directions_legs": [
+                  {
+                      "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                      "distance_meters": 4938,
+                      "duration_seconds": 728
+                  },
+                  {
+                      "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "distance_meters": 8291,
+                      "duration_seconds": 1175
+                  },
+                  {
+                      "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                      "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "distance_meters": 8055,
+                      "duration_seconds": 983
+                  }
+              ],
+              "pickup_distance_meters": 21284,
+              "pickup_duration_seconds": 2886,
+              "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+              "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+              "drop_waypoint_order": [
+                  0,
+                  1,
+                  2
+              ],
+              "drop_directions_legs": [
+                  {
+                      "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                      "distance_meters": 7241,
+                      "duration_seconds": 1039
+                  },
+                  {
+                      "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "distance_meters": 9480,
+                      "duration_seconds": 1166
+                  },
+                  {
+                      "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                      "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "distance_meters": 5141,
+                      "duration_seconds": 726
+                  }
+              ],
+              "drop_distance_meters": 21862,
+              "drop_duration_seconds": 2931,
+              "drop_updated_at": "2026-05-14T04:20:07.103Z",
+              "legs": [
+                  {
+                      "id": 442,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 10,
+                      "sequence": 1,
+                      "drop_sequence": 3,
+                      "pickup_address": "Kalma Chowk Lahore",
+                      "pickup_lat": 31.5047896,
+                      "pickup_long": 74.3327175,
+                      "pickup_time": "08:05",
+                      "dropoff_address": "Kalma Chowk Lahore",
+                      "dropoff_lat": 31.5047896,
+                      "dropoff_long": 74.3327175,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.127Z",
+                      "passenger": {
+                          "id": 10,
+                          "name": "muhammad"
+                      }
+                  },
+                  {
+                      "id": 441,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 9,
+                      "sequence": 2,
+                      "drop_sequence": 2,
+                      "pickup_address": "Muslim Town Lahore",
+                      "pickup_lat": 31.5208419,
+                      "pickup_long": 74.3110569,
+                      "pickup_time": "08:17",
+                      "dropoff_address": "Muslim Town Lahore",
+                      "dropoff_lat": 31.5208419,
+                      "dropoff_long": 74.3110569,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.138Z",
+                      "passenger": {
+                          "id": 9,
+                          "name": "musab khan"
+                      }
+                  },
+                  {
+                      "id": 440,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 8,
+                      "sequence": 3,
+                      "drop_sequence": 1,
+                      "pickup_address": "123 Street Johar Town, Lahore",
+                      "pickup_lat": 31.4653667,
+                      "pickup_long": 74.2897579,
+                      "pickup_time": "08:37",
+                      "dropoff_address": "123 Street Johar Town, Lahore",
+                      "dropoff_lat": 31.4653667,
+                      "dropoff_long": 74.2897579,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.148Z",
+                      "passenger": {
+                          "id": 8,
+                          "name": "numan khan"
+                      }
+                  }
+              ]
+          }
+      ],
+      "segments": [
+          {
+              "id": 235,
+              "route_id": 176,
+              "segment_order": 0,
+              "batch_id": 118,
+              "kind": "PICKUP_TO_OFFICE",
+              "status": "COMPLETED",
+              "batch": {
+                  "id": 118,
+                  "route_id": 176,
+                  "batch_order": 1,
+                  "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+                  "pickup_waypoint_order": [
+                      2,
+                      1,
+                      0
+                  ],
+                  "pickup_directions_legs": [
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "distance_meters": 4938,
+                          "duration_seconds": 728
+                      },
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 8291,
+                          "duration_seconds": 1175
+                      },
+                      {
+                          "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 8055,
+                          "duration_seconds": 983
+                      }
+                  ],
+                  "pickup_distance_meters": 21284,
+                  "pickup_duration_seconds": 2886,
+                  "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+                  "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+                  "drop_waypoint_order": [
+                      0,
+                      1,
+                      2
+                  ],
+                  "drop_directions_legs": [
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "distance_meters": 7241,
+                          "duration_seconds": 1039
+                      },
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 9480,
+                          "duration_seconds": 1166
+                      },
+                      {
+                          "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 5141,
+                          "duration_seconds": 726
+                      }
+                  ],
+                  "drop_distance_meters": 21862,
+                  "drop_duration_seconds": 2931,
+                  "drop_updated_at": "2026-05-14T04:20:07.103Z"
+              }
+          },
+          {
+              "id": 236,
+              "route_id": 176,
+              "segment_order": 1,
+              "batch_id": 118,
+              "kind": "DROP_TO_HOMES",
+              "status": "ONGOING",
+              "batch": {
+                  "id": 118,
+                  "route_id": 176,
+                  "batch_order": 1,
+                  "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+                  "pickup_waypoint_order": [
+                      2,
+                      1,
+                      0
+                  ],
+                  "pickup_directions_legs": [
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "distance_meters": 4938,
+                          "duration_seconds": 728
+                      },
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 8291,
+                          "duration_seconds": 1175
+                      },
+                      {
+                          "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 8055,
+                          "duration_seconds": 983
+                      }
+                  ],
+                  "pickup_distance_meters": 21284,
+                  "pickup_duration_seconds": 2886,
+                  "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+                  "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+                  "drop_waypoint_order": [
+                      0,
+                      1,
+                      2
+                  ],
+                  "drop_directions_legs": [
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "distance_meters": 7241,
+                          "duration_seconds": 1039
+                      },
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 9480,
+                          "duration_seconds": 1166
+                      },
+                      {
+                          "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 5141,
+                          "duration_seconds": 726
+                      }
+                  ],
+                  "drop_distance_meters": 21862,
+                  "drop_duration_seconds": 2931,
+                  "drop_updated_at": "2026-05-14T04:20:07.103Z"
+              }
+          }
+      ],
+      "legs": [
+          {
+              "id": 442,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 10,
+              "sequence": 1,
+              "drop_sequence": 3,
+              "pickup_address": "Kalma Chowk Lahore",
+              "pickup_lat": 31.5047896,
+              "pickup_long": 74.3327175,
+              "pickup_time": "08:05",
+              "dropoff_address": "Kalma Chowk Lahore",
+              "dropoff_lat": 31.5047896,
+              "dropoff_long": 74.3327175,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.127Z",
+              "passenger": {
+                  "id": 10,
+                  "name": "muhammad"
+              }
+          },
+          {
+              "id": 441,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 9,
+              "sequence": 2,
+              "drop_sequence": 2,
+              "pickup_address": "Muslim Town Lahore",
+              "pickup_lat": 31.5208419,
+              "pickup_long": 74.3110569,
+              "pickup_time": "08:17",
+              "dropoff_address": "Muslim Town Lahore",
+              "dropoff_lat": 31.5208419,
+              "dropoff_long": 74.3110569,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.138Z",
+              "passenger": {
+                  "id": 9,
+                  "name": "musab khan"
+              }
+          },
+          {
+              "id": 440,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 8,
+              "sequence": 3,
+              "drop_sequence": 1,
+              "pickup_address": "123 Street Johar Town, Lahore",
+              "pickup_lat": 31.4653667,
+              "pickup_long": 74.2897579,
+              "pickup_time": "08:37",
+              "dropoff_address": "123 Street Johar Town, Lahore",
+              "dropoff_lat": 31.4653667,
+              "dropoff_long": 74.2897579,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.148Z",
+              "passenger": {
+                  "id": 8,
+                  "name": "numan khan"
+              }
+          }
+      ]
+  }
+}{
+  "status": "success",
+  "message": "Route against id 176",
+  "data": {
+      "id": 176,
+      "company_id": 3,
+      "driver_id": 13,
+      "office_address": "Arfa Software Technology Park, Ferozepur Road, Lahore",
+      "office_lat": 31.4754914,
+      "office_long": 74.3415067,
+      "recurring_plan_start": "2026-04-17T00:00:00.000Z",
+      "recurring_plan_end": "2026-05-16T00:00:00.000Z",
+      "route_daily_plan_id": 235,
+      "route_price": 1000,
+      "created_at": "2026-04-20T05:33:44.692Z",
+      "updated_at": "2026-05-14T04:20:05.885Z",
+      "company": {
+          "id": 3,
+          "name": "Updated Company Name",
+          "email": "contact@falconcompany.com",
+          "phone_no": "042-111-222-333",
+          "address": "Arfa Software Technology Park, Ferozepur Road, Lahore",
+          "lat": 31.4754914,
+          "long": 74.3415067,
+          "weekly_off_days": [],
+          "created_at": "2026-03-27T06:43:47.984Z",
+          "updated_at": "2026-04-08T13:02:43.559Z"
+      },
+      "driver": {
+          "id": 13,
+          "user_id": 15,
+          "name": "Driver Muhammad Musab",
+          "phone_no": "0300-1234567",
+          "address": "Airport Rd, Punjab, Lahore, 54000, Pakistan",
+          "emergency_phone_no": "0300-7654321",
+          "driver_image_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933410/falcon_uploads/driver_image-1774933408195.jpg",
+          "rate_per_km": 100,
+          "driver_cnic_front_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933412/falcon_uploads/driver_cnic_front-1774933411351.jpg",
+          "driver_cnic_back_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933415/falcon_uploads/driver_cnic_back-1774933414422.jpg",
+          "driver_license_front_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933419/falcon_uploads/driver_license_front-1774933418294.jpg",
+          "driver_license_back_url": "https://res.cloudinary.com/dtzlwkp1i/image/upload/v1774933423/falcon_uploads/driver_license_back-1774933422045.jpg",
+          "status": "APPROVED",
+          "is_available": true,
+          "available_at": "2026-05-14T04:34:11.829Z",
+          "home_lat": 31.5202724,
+          "home_long": 74.4057943,
+          "created_at": "2026-03-31T04:51:09.308Z",
+          "updated_at": "2026-05-14T04:34:11.831Z"
+      },
+      "batches": [
+          {
+              "id": 118,
+              "route_id": 176,
+              "batch_order": 1,
+              "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+              "pickup_waypoint_order": [
+                  2,
+                  1,
+                  0
+              ],
+              "pickup_directions_legs": [
+                  {
+                      "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                      "distance_meters": 4938,
+                      "duration_seconds": 728
+                  },
+                  {
+                      "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "distance_meters": 8291,
+                      "duration_seconds": 1175
+                  },
+                  {
+                      "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                      "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "distance_meters": 8055,
+                      "duration_seconds": 983
+                  }
+              ],
+              "pickup_distance_meters": 21284,
+              "pickup_duration_seconds": 2886,
+              "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+              "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+              "drop_waypoint_order": [
+                  0,
+                  1,
+                  2
+              ],
+              "drop_directions_legs": [
+                  {
+                      "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                      "distance_meters": 7241,
+                      "duration_seconds": 1039
+                  },
+                  {
+                      "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                      "distance_meters": 9480,
+                      "duration_seconds": 1166
+                  },
+                  {
+                      "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                      "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                      "distance_meters": 5141,
+                      "duration_seconds": 726
+                  }
+              ],
+              "drop_distance_meters": 21862,
+              "drop_duration_seconds": 2931,
+              "drop_updated_at": "2026-05-14T04:20:07.103Z",
+              "legs": [
+                  {
+                      "id": 442,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 10,
+                      "sequence": 1,
+                      "drop_sequence": 3,
+                      "pickup_address": "Kalma Chowk Lahore",
+                      "pickup_lat": 31.5047896,
+                      "pickup_long": 74.3327175,
+                      "pickup_time": "08:05",
+                      "dropoff_address": "Kalma Chowk Lahore",
+                      "dropoff_lat": 31.5047896,
+                      "dropoff_long": 74.3327175,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.127Z",
+                      "passenger": {
+                          "id": 10,
+                          "name": "muhammad"
+                      }
+                  },
+                  {
+                      "id": 441,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 9,
+                      "sequence": 2,
+                      "drop_sequence": 2,
+                      "pickup_address": "Muslim Town Lahore",
+                      "pickup_lat": 31.5208419,
+                      "pickup_long": 74.3110569,
+                      "pickup_time": "08:17",
+                      "dropoff_address": "Muslim Town Lahore",
+                      "dropoff_lat": 31.5208419,
+                      "dropoff_long": 74.3110569,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.138Z",
+                      "passenger": {
+                          "id": 9,
+                          "name": "musab khan"
+                      }
+                  },
+                  {
+                      "id": 440,
+                      "route_id": 176,
+                      "batch_id": 118,
+                      "passenger_id": 8,
+                      "sequence": 3,
+                      "drop_sequence": 1,
+                      "pickup_address": "123 Street Johar Town, Lahore",
+                      "pickup_lat": 31.4653667,
+                      "pickup_long": 74.2897579,
+                      "pickup_time": "08:37",
+                      "dropoff_address": "123 Street Johar Town, Lahore",
+                      "dropoff_lat": 31.4653667,
+                      "dropoff_long": 74.2897579,
+                      "dropoff_time": "08:53",
+                      "office_pick_up_time": "17:00",
+                      "toll_amount": 0,
+                      "created_at": "2026-04-20T05:33:44.696Z",
+                      "updated_at": "2026-05-14T04:20:07.148Z",
+                      "passenger": {
+                          "id": 8,
+                          "name": "numan khan"
+                      }
+                  }
+              ]
+          }
+      ],
+      "segments": [
+          {
+              "id": 235,
+              "route_id": 176,
+              "segment_order": 0,
+              "batch_id": 118,
+              "kind": "PICKUP_TO_OFFICE",
+              "status": "COMPLETED",
+              "batch": {
+                  "id": 118,
+                  "route_id": 176,
+                  "batch_order": 1,
+                  "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+                  "pickup_waypoint_order": [
+                      2,
+                      1,
+                      0
+                  ],
+                  "pickup_directions_legs": [
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "distance_meters": 4938,
+                          "duration_seconds": 728
+                      },
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 8291,
+                          "duration_seconds": 1175
+                      },
+                      {
+                          "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 8055,
+                          "duration_seconds": 983
+                      }
+                  ],
+                  "pickup_distance_meters": 21284,
+                  "pickup_duration_seconds": 2886,
+                  "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+                  "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+                  "drop_waypoint_order": [
+                      0,
+                      1,
+                      2
+                  ],
+                  "drop_directions_legs": [
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "distance_meters": 7241,
+                          "duration_seconds": 1039
+                      },
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 9480,
+                          "duration_seconds": 1166
+                      },
+                      {
+                          "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 5141,
+                          "duration_seconds": 726
+                      }
+                  ],
+                  "drop_distance_meters": 21862,
+                  "drop_duration_seconds": 2931,
+                  "drop_updated_at": "2026-05-14T04:20:07.103Z"
+              }
+          },
+          {
+              "id": 236,
+              "route_id": 176,
+              "segment_order": 1,
+              "batch_id": 118,
+              "kind": "DROP_TO_HOMES",
+              "status": "ONGOING",
+              "batch": {
+                  "id": 118,
+                  "route_id": 176,
+                  "batch_order": 1,
+                  "pickup_directions_polyline": "_hh_EobudMe@_CY}@a@mAYq@a@w@g@cAiCiEsE{H}@wAyC{EcAwAL_@HGFAz@`Ax@tAzChFlBbD`ArBjAfBLRJDLBL@RAD?@FVh@x@zAz@lBn@tBp@nDVzAVvB@JCRw@z@q@TkDzAu@ZqCbAoCv@]@s@RcAVgBb@gBb@gG|AhAnHFbAFdFCfHA|@KfA]xAWn@o@rAa@dAeBfCMl@mAnB]r@y@lAUb@wAxBMLaAtAsBfDWJ{AnBmCjDW^sCnDYVk@P}@VWH_AgC[TiC|AyCdB}@b@oGrDm@^m@L}@ZOTWN^jAJd@Z|@Bv@A`@BxAEnADoACyA@a@Cw@[}@Ke@_@kAVONU|@[l@Ml@_@bEcC|@g@]aAKOxCgBxCcBlB_AzA~DNThBi@XWrCoDV_@lCkDzAoBJYpB{Cn@eAnBgDTPd@HtCrCnBjBxAxANh@tEpE|IlIhDxClEnEjB|AtC~B~AxApFhFtBnBtFtFjG|FfDpCfEbEtDlDtFdFvC~ChChCfBlBvBbC`AnA|IjKtC~D|DxFtApB`BnChBfCbAbBxAbC`BtCnBfEf@dAt@zAnEzJl@SJHj@?bEDfB?jC@xABt@@f@Cp@@HFdA@b@@h@I`CAjABx@EdA@nD?xC?bADd@HZLV\\FPxALn@PpE`@dDn@|AZfB@zAFfCZ`B?jBFbKNAl@|EHrC@xBFHqDHuG?i@Gs@E_@?i@Dc@BKiB}DXQqBkEyBwFq@wAe@oAaAuByB}EaAyBy@yBeB{EiAsCaAsByBeFs@iBY_AW_AU[SOe@IuCf@oA\\cATOs@p@ObBOvCs@n@MtA[~D_ApAc@tAm@d@a@d@k@x@eATk@Po@|@kCr@sBf@eBlAkEbAuDjF{R|AkFdBuGr@gCjAeER_Az@}BN]Ps@X{@dC{IrDuMzBiItB_HpCoJh@wBb@{A|AeFPi@pBcIb@uBd@qAd@iAb@qAx@qCbBsGp@sBLg@?_@GQ[[uBcAo@UuC}@aCw@kA[m@S{@_@w@e@aAi@eA_@cAg@cCqAgEaDiAs@aB{@qB_AkGoCkEkBiEmBqFeCqAk@eAk@cDwAgGwCCCK@G@a@EQ?}@R}GnBmCr@YBSEqA\\`@lBnAhF_Cn@o@V",
+                  "pickup_waypoint_order": [
+                      2,
+                      1,
+                      0
+                  ],
+                  "pickup_directions_legs": [
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "distance_meters": 4938,
+                          "duration_seconds": 728
+                      },
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 8291,
+                          "duration_seconds": 1175
+                      },
+                      {
+                          "end_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 8055,
+                          "duration_seconds": 983
+                      }
+                  ],
+                  "pickup_distance_meters": 21284,
+                  "pickup_duration_seconds": 2886,
+                  "pickup_updated_at": "2026-05-14T04:20:06.532Z",
+                  "drop_directions_polyline": "ypb_EkyvdMkA`@sA`@FZjApF^fB{FdBIJEPl@tD`@nBbAbEZjBd@pBR~@bA~EzCrNbFrUp@pDxA|Gp@jD`@pBd@tBtAtGx@nDv@jD^xCTbAFf@~@j@z@^FBf@VnAl@pGtCtDfB~GpCvClAdBz@DU\\@PEBI`AkDHSNCF@HF@B]lAo@|BeDpLcBzFqBnHmCfJkCbJk@nBw@tCw@dCUf@QXkAvAWTu@b@kBn@{DfAg@f@Gh@?h@Nh@p@tBjAnCbA~BfCbGlAbDnBbFtBxEbAvBlAxCvD~IfCvFlBvEEREBQ?]q@So@{@wBoCgGyBwFi@GzF|MjB~DIVCb@NnB?h@?i@MmAAa@Bc@HWkB_EXQqBkEyBwFq@wA{AoDyAcDmBiE{AcEmCeHiCwFaA_Co@gB_@qAEQOWIIIGKC_@GeAPiBZyBl@gHxA_Dn@qBf@qBl@aFzA}EtAeBd@c@Rc@ZiB`B}A`B_@^_Av@iAnAmCnCcA~@oBfBsAnAqBpBi@j@oArA_BxAyAnAyDnD]^w@r@iBzAgC~BwAjAy@t@c@d@OPU@E@SRk@f@G@KGEQBILM|@{@@E?EPI`@Sh@a@hCuBlAaA~@}ARm@@k@Ec@]u@mAuBg@eAoAgCCM@EwB}CW]{BwC_@o@q@kAKOcBcCqBmCwAgB{@eAoA}AsEkF}DaEmBmBaBcBwCkCqBgBoBiBkIwHkE}D_@[[Yw@u@UYKOY[sBiBo@{@cCuBmBaBuAiAqBeB_B_BsEwEoYuWyA_Bm@K]WyDyCwCwBeA{@[\\oAlBwA~BWJiFzGW^}BtCc@f@]P_AXo@P_AgCoGzD{@b@_Ad@oHjEm@L}@ZEHONQJTt@Nl@FRVl@B\\?jABtAG|AJDjAp@zAx@p@bAB@r@_AI]tAu@f@[Re@dBcArAu@x@nBzA`Eb@hATBp@I|AYrAs@jD}B|@i@bAvCvC|HdCjGnFhNr@hBxAvDn@~APBb@BXEVS|@{AbBqCbDiFzHyM~MsTfDoFbBoCh@eAjD{FlCkEnBgD`@u@X{@H[F[De@Ca@Io@i@iCg@uCG{@Kg@e@uBo@}Ca@mB}AiIqBgJgAmDa@oCYwCaA}E}AqGa@eBq@mDy@mE",
+                  "drop_waypoint_order": [
+                      0,
+                      1,
+                      2
+                  ],
+                  "drop_directions_legs": [
+                      {
+                          "end_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "start_address": "ARFA Tower, Lahore – Kasur Rd, Nishtar Town, Lahore, Pakistan",
+                          "distance_meters": 7241,
+                          "duration_seconds": 1039
+                      },
+                      {
+                          "end_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "start_address": "Plot 30, Block F Phase 1 Johar Town, Lahore, 54600, Pakistan",
+                          "distance_meters": 9480,
+                          "duration_seconds": 1166
+                      },
+                      {
+                          "end_address": "59, Block L Gulberg III, Lahore, Pakistan",
+                          "start_address": "G8C6+H56, Kamboh Colony, Lahore, 54000, Pakistan",
+                          "distance_meters": 5141,
+                          "duration_seconds": 726
+                      }
+                  ],
+                  "drop_distance_meters": 21862,
+                  "drop_duration_seconds": 2931,
+                  "drop_updated_at": "2026-05-14T04:20:07.103Z"
+              }
+          }
+      ],
+      "legs": [
+          {
+              "id": 442,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 10,
+              "sequence": 1,
+              "drop_sequence": 3,
+              "pickup_address": "Kalma Chowk Lahore",
+              "pickup_lat": 31.5047896,
+              "pickup_long": 74.3327175,
+              "pickup_time": "08:05",
+              "dropoff_address": "Kalma Chowk Lahore",
+              "dropoff_lat": 31.5047896,
+              "dropoff_long": 74.3327175,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.127Z",
+              "passenger": {
+                  "id": 10,
+                  "name": "muhammad"
+              }
+          },
+          {
+              "id": 441,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 9,
+              "sequence": 2,
+              "drop_sequence": 2,
+              "pickup_address": "Muslim Town Lahore",
+              "pickup_lat": 31.5208419,
+              "pickup_long": 74.3110569,
+              "pickup_time": "08:17",
+              "dropoff_address": "Muslim Town Lahore",
+              "dropoff_lat": 31.5208419,
+              "dropoff_long": 74.3110569,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.138Z",
+              "passenger": {
+                  "id": 9,
+                  "name": "musab khan"
+              }
+          },
+          {
+              "id": 440,
+              "route_id": 176,
+              "batch_id": 118,
+              "passenger_id": 8,
+              "sequence": 3,
+              "drop_sequence": 1,
+              "pickup_address": "123 Street Johar Town, Lahore",
+              "pickup_lat": 31.4653667,
+              "pickup_long": 74.2897579,
+              "pickup_time": "08:37",
+              "dropoff_address": "123 Street Johar Town, Lahore",
+              "dropoff_lat": 31.4653667,
+              "dropoff_long": 74.2897579,
+              "dropoff_time": "08:53",
+              "office_pick_up_time": "17:00",
+              "toll_amount": 0,
+              "created_at": "2026-04-20T05:33:44.696Z",
+              "updated_at": "2026-05-14T04:20:07.148Z",
+              "passenger": {
+                  "id": 8,
+                  "name": "numan khan"
+              }
+          }
+      ]
+  }
+}

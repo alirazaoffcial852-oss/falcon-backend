@@ -396,15 +396,28 @@ const swaggerDocument = {
 					"officeAddress",
 					"officeLat",
 					"officeLong",
+					"waypointMode",
 				],
 				description:
-					"Provide either batches (one or more pickup loads) or legacy legs (single batch).",
+					"Provide either batches (one or more pickup loads) or legacy legs (single batch). waypointMode is required ('auto' | 'manual'); you may send waypoint_mode instead of waypointMode.",
 				properties: {
 					companyId: { type: "integer", minimum: 1 },
 					driverId: { type: "integer", minimum: 1 },
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					waypointMode: {
+						type: "string",
+						enum: ["auto", "manual"],
+						description:
+							"Required (unless you send waypoint_mode instead). auto: nearest-first pickup + existing drop logic. manual: pickup order = batches[].legs / legs array; drop_waypoint_order = reverse of that leg order (per batch).",
+					},
+					waypoint_mode: {
+						type: "string",
+						enum: ["auto", "manual"],
+						description:
+							"Snake_case alternative to waypointMode — send one of them (required).",
+					},
 					recurring_plan_start: {
 						type: "string",
 						example: "2026-04-08",
@@ -444,6 +457,16 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					waypointMode: {
+						type: "string",
+						enum: ["auto", "manual"],
+						description:
+							"When forking route (structural PUT), same semantics as create waypointMode.",
+					},
+					waypoint_mode: {
+						type: "string",
+						enum: ["auto", "manual"],
+					},
 					recurring_plan_start: {
 						type: "string",
 						example: "2026-04-08",

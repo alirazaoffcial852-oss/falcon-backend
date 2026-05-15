@@ -20,6 +20,9 @@ export interface RouteBatchInput {
 	legs: RouteLegInput[];
 }
 
+/** How pickup/drop waypoint order is derived after create. */
+export type RouteWaypointMode = "auto" | "manual";
+
 export interface CreateRouteInput {
 	companyId: number;
 	driverId: number;
@@ -27,6 +30,11 @@ export interface CreateRouteInput {
 	officeLat: number;
 	officeLong: number;
 	route_price?: number | null;
+	/**
+	 * `auto`: nearest-first pickup (per batch rules) then drop path as today.
+	 * `manual`: pickup follows `batches[].legs` / `legs` array order; `drop_waypoint_order` uses reverse of that order (indices 0..n-1).
+	 */
+	waypointMode: RouteWaypointMode;
 	/** Inclusive recurring window on this definition route (default 1 month). Use `0` to disable cron. */
 	recurringPlanStartDate?: string;
 	/** Alias for create API compatibility (YYYY-MM-DD). */
@@ -45,7 +53,10 @@ export interface UpdateRouteInput {
 	officeLat?: number;
 	officeLong?: number;
 	route_price?: number | null;
+	/** Same as create; snake_case `waypoint_mode` accepted in service. */
+	waypointMode?: RouteWaypointMode;
 	batches?: RouteBatchInput[];
+	legs?: RouteLegInput[];
 	recurringPlanStartDate?: string;
 	recurring_plan_start?: string;
 	recurringPlanMonths?: number;

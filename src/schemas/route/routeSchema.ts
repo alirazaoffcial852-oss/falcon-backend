@@ -82,8 +82,15 @@ export const createRouteSchema = Joi.object({
 			"string.pattern.base": "recurring_plan_start must be YYYY-MM-DD",
 		}),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
+	waypointMode: Joi.string().valid("auto", "manual").messages({
+		"any.only": "waypointMode must be auto or manual",
+	}),
+	waypoint_mode: Joi.string().valid("auto", "manual").messages({
+		"any.only": "waypoint_mode must be auto or manual",
+	}),
 })
 	.or("batches", "legs")
+	.or("waypointMode", "waypoint_mode")
 	.messages({
 		"object.missing": "Provide batches (preferred) or legacy legs array",
 	})
@@ -117,6 +124,8 @@ export const updateRouteSchema = Joi.object({
 		.pattern(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
+	waypointMode: Joi.string().valid("auto", "manual").optional(),
+	waypoint_mode: Joi.string().valid("auto", "manual").optional(),
 }).min(0);
 
 export const listRoutesQuerySchema = Joi.object({

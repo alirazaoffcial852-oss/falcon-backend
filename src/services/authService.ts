@@ -26,12 +26,23 @@ console.log("email", email);
 		if (!valid) throw ResponseHandler.unauthorized("Invalid password");
 		const secret = process.env.JWT_SECRET;
 		if (!secret) throw ResponseHandler.internal("Server misconfiguration");
+
+		let passengerId: number | undefined;
+		if (user.role.name === "passenger") {
+			const passenger = await this.db.passenger.findUnique({
+				where: { user_id: user.id },
+				select: { id: true },
+			});
+			if (passenger) passengerId = passenger.id;
+		}
+
 		const token = jwt.sign(
 			{
 				id: user.id,
 				role: user.role.name,
 				is_admin_role: user.role.is_admin_role,
 				is_super_admin: user.is_super_admin,
+				...(passengerId !== undefined && { passengerId }),
 			},
 			secret,
 			{
