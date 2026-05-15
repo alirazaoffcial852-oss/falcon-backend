@@ -197,12 +197,11 @@ export class RouteService {
 				sortPoint = office;
 			}
 
-			const rawWaypoints: Array<{ idx: number; point: LatLng }> = batch.legs.map(
-				(leg, idx) => ({
+			const rawWaypoints: Array<{ idx: number; point: LatLng }> =
+				batch.legs.map((leg, idx) => ({
 					idx,
 					point: { lat: leg.pickup_lat, lng: leg.pickup_long },
-				}),
-			);
+				}));
 
 			const orderedWaypoints = rawWaypoints
 				.slice()
@@ -621,6 +620,72 @@ export class RouteService {
 		);
 	}
 
+	private async findRouteById(id: number) {
+		const route = await this.db.route.findUnique({
+			where: { id },
+			include: {
+				company: true,
+				driver: true,
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: {
+						legs: {
+							include: {
+								passenger: { select: { id: true, name: true } },
+							},
+						},
+					},
+				},
+				segments: {
+					orderBy: { segment_order: "asc" },
+					include: { batch: true },
+				},
+				legs: { include: { passenger: { select: { id: true, name: true } } } },
+			},
+		});
+		if (!route)
+			throw ResponseHandler.notFound("No route found against this id: " + id);
+		return route;
+	}
+
+	/** Stable API shape: always `waypointMode` + ordered `legs` (from batches when present). */
+	private formatRouteForApi<
+		R extends {
+			waypointMode: NonNullable<
+				Awaited<ReturnType<RouteService["findRouteById"]>>
+			>["waypointMode"];
+		} & Pick<
+			NonNullable<Awaited<ReturnType<RouteService["findRouteById"]>>>,
+			"batches" | "legs"
+		>,
+	>(route: R) {
+		const waypointMode: RouteWaypointMode =
+			route.waypointMode === "manual" ? "manual" : "auto";
+		const legs = this.flattenRouteLegsForApi(route);
+		return { ...route, waypointMode, legs };
+	}
+
+	private flattenRouteLegsForApi(
+		route: Pick<
+			NonNullable<Awaited<ReturnType<RouteService["findRouteById"]>>>,
+			"batches" | "legs"
+		>,
+	) {
+		if (route.batches?.length) {
+			const batches = [...route.batches].sort(
+				(a, b) => a.batch_order - b.batch_order,
+			);
+			const fromBatches = batches.flatMap((batch) =>
+				[...(batch.legs ?? [])].sort((a, b) => a.sequence - b.sequence),
+			);
+			if (fromBatches.length > 0) return fromBatches;
+		}
+		if (route.legs?.length) {
+			return [...route.legs].sort((a, b) => a.sequence - b.sequence);
+		}
+		return [];
+	}
+
 	private mergeRecurringForkPayload(
 		existing: NonNullable<Awaited<ReturnType<typeof this.getById>>>,
 		data: UpdateRouteInput,
@@ -638,7 +703,9 @@ export class RouteService {
 			const out: Partial<
 				Pick<
 					CreateRouteInput,
-					"recurringPlanStartDate" | "recurring_plan_start" | "recurringPlanMonths"
+					| "recurringPlanStartDate"
+					| "recurring_plan_start"
+					| "recurringPlanMonths"
 				>
 			> = {};
 			if (data.recurringPlanStartDate !== undefined) {
@@ -739,7 +806,7 @@ export class RouteService {
 			},
 		});
 		return {
-			data,
+			data: data.map((route) => this.formatRouteForApi(route)),
 			pagination: {
 				total,
 				page: params.page,
@@ -750,31 +817,8 @@ export class RouteService {
 	}
 
 	async getById(id: number) {
-		const route = await this.db.route.findUnique({
-			where: { id },
-			include: {
-				company: true,
-				driver: true,
-				batches: {
-					orderBy: { batch_order: "asc" },
-					include: {
-						legs: {
-							include: {
-								passenger: { select: { id: true, name: true } },
-							},
-						},
-					},
-				},
-				segments: {
-					orderBy: { segment_order: "asc" },
-					include: { batch: true },
-				},
-				legs: { include: { passenger: { select: { id: true, name: true } } } },
-			},
-		});
-		if (!route)
-			throw ResponseHandler.notFound("No route found against this id: " + id);
-		return route;
+		const route = await this.findRouteById(id);
+		return this.formatRouteForApi(route);
 	}
 
 	async create(data: CreateRouteInput & { legs?: RouteBatchInput["legs"] }) {
@@ -869,16 +913,20 @@ export class RouteService {
 	]);
 
 	/** Strip nested GET-route payload; accept snake_case aliases from clients. */
-	private normalizePutKeyAliases(raw: Record<string, unknown>): Record<string, unknown> {
+	private normalizePutKeyAliases(
+		raw: Record<string, unknown>,
+	): Record<string, unknown> {
 		const o = { ...raw };
-		if (o.driverId === undefined && o.driver_id !== undefined) o.driverId = o.driver_id;
+		if (o.driverId === undefined && o.driver_id !== undefined)
+			o.driverId = o.driver_id;
 		if (o.companyId === undefined && o.company_id !== undefined) {
 			o.companyId = o.company_id;
 		}
 		if (o.officeAddress === undefined && o.office_address !== undefined) {
 			o.officeAddress = o.office_address;
 		}
-		if (o.officeLat === undefined && o.office_lat !== undefined) o.officeLat = o.office_lat;
+		if (o.officeLat === undefined && o.office_lat !== undefined)
+			o.officeLat = o.office_lat;
 		if (o.officeLong === undefined && o.office_long !== undefined) {
 			o.officeLong = o.office_long;
 		}
@@ -920,7 +968,8 @@ export class RouteService {
 	): boolean {
 		if (data.batches !== undefined && data.batches.length > 0) return true;
 		const legs = (data as { legs?: unknown[] }).legs;
-		if (legs !== undefined && Array.isArray(legs) && legs.length > 0) return true;
+		if (legs !== undefined && Array.isArray(legs) && legs.length > 0)
+			return true;
 
 		if (
 			data.companyId !== undefined &&
@@ -970,7 +1019,9 @@ export class RouteService {
 			where: { id },
 			data: {
 				...(data.driverId !== undefined && { driver_id: data.driverId }),
-				...(data.route_price !== undefined && { route_price: data.route_price }),
+				...(data.route_price !== undefined && {
+					route_price: data.route_price,
+				}),
 			},
 		});
 
