@@ -7,6 +7,7 @@ import type {
 	RouteListQuery,
 	RouteBatchInput,
 	RouteLegInput,
+	RouteWaypointMode,
 } from "../types/admin/route";
 import { buildWhereCondition } from "../utils/buildWhereCondition";
 import { fetchGoogleDirections, type LatLng } from "../utils/googleDirections";
@@ -28,6 +29,21 @@ type SortOriginMode = "driver_home" | "office";
 
 export class RouteService {
 	private db = DatabaseService.getInstance().getPrisma();
+
+	private normalizeWaypointMode(
+		data: CreateRouteInput & { waypoint_mode?: unknown },
+	): RouteWaypointMode {
+		const raw =
+			(data as { waypointMode?: unknown }).waypointMode ?? data.waypoint_mode;
+		if (raw === undefined || raw === null || String(raw).trim() === "") {
+			throw ResponseHandler.badRequest(
+				"waypointMode is required — send 'auto' or 'manual' (or snake_case waypoint_mode)",
+			);
+		}
+		const s = String(raw).trim().toLowerCase();
+		if (s === "auto" || s === "manual") return s;
+		throw ResponseHandler.badRequest("waypointMode must be 'auto' or 'manual'");
+	}
 
 	private async assertDriverApproved(driverId: number): Promise<void> {
 		const driver = await this.db.driver.findUnique({
@@ -134,12 +150,14 @@ export class RouteService {
 
 	/**
 	 * Pickup path: first pickup → … → office. Origin for Google = first pickup (driver home is NOT on the path).
-	 * Sort order: nearest to sortOrigin (driver home for first batch, office for later batches).
+	 * `auto`: nearest to sortOrigin (driver home for first batch, office for later batches).
+	 * `manual`: visit order matches `legs` creation order (batch `legs` array / id asc).
 	 */
 	private async optimizeBatchPickup(
 		batchId: number,
 		sortOrigin: SortOriginMode,
 		office: LatLng,
+		mode: RouteWaypointMode = "auto",
 	): Promise<void> {
 		const batch = await this.db.routeBatch.findUnique({
 			where: { id: batchId },
@@ -149,33 +167,68 @@ export class RouteService {
 			},
 		});
 		if (!batch || batch.legs.length === 0) return;
-		if (!process.env.GOOGLE_MAPS_API_KEY) return;
 
-		let sortPoint: LatLng;
-		if (sortOrigin === "driver_home") {
-			sortPoint = await this.ensureDriverHomeLatLng(batch.route.driver_id);
+		let waypointOrder: number[];
+		let pickupPoints: LatLng[];
+
+		if (mode === "manual") {
+			const n = batch.legs.length;
+			waypointOrder = Array.from({ length: n }, (_, i) => i);
+			pickupPoints = batch.legs.map((leg) => ({
+				lat: leg.pickup_lat,
+				lng: leg.pickup_long,
+			}));
 		} else {
-			sortPoint = office;
+			let sortPoint: LatLng;
+			if (sortOrigin === "driver_home") {
+				sortPoint = await this.ensureDriverHomeLatLng(batch.route.driver_id);
+			} else {
+				sortPoint = office;
+			}
+
+			const rawWaypoints: Array<{ idx: number; point: LatLng }> = batch.legs.map(
+				(leg, idx) => ({
+					idx,
+					point: { lat: leg.pickup_lat, lng: leg.pickup_long },
+				}),
+			);
+
+			const orderedWaypoints = rawWaypoints
+				.slice()
+				.sort(
+					(a, b) =>
+						this.distanceKm(sortPoint, a.point) -
+						this.distanceKm(sortPoint, b.point),
+				);
+			waypointOrder = orderedWaypoints.map((w) => w.idx);
+			pickupPoints = orderedWaypoints.map((w) => w.point);
 		}
 
-		const rawWaypoints: Array<{ idx: number; point: LatLng }> = batch.legs.map(
-			(leg, idx) => ({
-				idx,
-				point: { lat: leg.pickup_lat, lng: leg.pickup_long },
-			}),
-		);
+		if (!process.env.GOOGLE_MAPS_API_KEY) {
+			if (mode === "manual") {
+				await this.db.$transaction(async (tx) => {
+					for (let idx = 0; idx < waypointOrder.length; idx++) {
+						const origIdx = waypointOrder[idx];
+						const leg = batch.legs[origIdx];
+						if (!leg) continue;
+						await tx.routeLeg.update({
+							where: { id: leg.id },
+							data: { sequence: idx + 1 },
+						});
+					}
+					await tx.routeBatch.update({
+						where: { id: batchId },
+						data: {
+							pickup_waypoint_order: waypointOrder,
+							pickup_updated_at: new Date(),
+						},
+					});
+				});
+			}
+			return;
+		}
 
-		const orderedWaypoints = rawWaypoints
-			.slice()
-			.sort(
-				(a, b) =>
-					this.distanceKm(sortPoint, a.point) -
-					this.distanceKm(sortPoint, b.point),
-			);
-		const waypointOrder = orderedWaypoints.map((w) => w.idx);
-		const pickupPoints: LatLng[] = orderedWaypoints.map((w) => w.point);
-
-		const origin: LatLng = pickupPoints[0];
+		const origin: LatLng = pickupPoints[0]!;
 		const destination: LatLng = office;
 		const waypoints: LatLng[] =
 			pickupPoints.length > 1 ? pickupPoints.slice(1) : [];
@@ -231,6 +284,7 @@ export class RouteService {
 	private async optimizeBatchDrop(
 		batchId: number,
 		office: LatLng,
+		mode: RouteWaypointMode = "auto",
 	): Promise<void> {
 		const batch = await this.db.routeBatch.findUnique({
 			where: { id: batchId },
@@ -239,7 +293,6 @@ export class RouteService {
 			},
 		});
 		if (!batch || batch.legs.length === 0) return;
-		if (!process.env.GOOGLE_MAPS_API_KEY) return;
 
 		for (let i = 0; i < batch.legs.length; i++) {
 			await this.db.routeLeg.update({
@@ -253,6 +306,31 @@ export class RouteService {
 			include: { legs: { orderBy: { drop_sequence: "asc" } } },
 		});
 		if (!reloaded) return;
+
+		const idAscLegs = await this.db.routeLeg.findMany({
+			where: { batch_id: batchId },
+			orderBy: { id: "asc" },
+			select: { id: true },
+		});
+		const dropWaypointOrderMeta =
+			mode === "manual"
+				? reloaded.legs.map((leg) =>
+						idAscLegs.findIndex((l) => l.id === leg.id),
+					)
+				: reloaded.legs.map((_, i) => i);
+
+		if (!process.env.GOOGLE_MAPS_API_KEY) {
+			if (mode === "manual") {
+				await this.db.routeBatch.update({
+					where: { id: batchId },
+					data: {
+						drop_waypoint_order: dropWaypointOrderMeta,
+						drop_updated_at: new Date(),
+					},
+				});
+			}
+			return;
+		}
 
 		const orderedHomes = reloaded.legs.map((leg) => ({
 			lat: leg.dropoff_lat,
@@ -278,7 +356,6 @@ export class RouteService {
 		}
 
 		const polyline = finalDirections.overview_polyline?.points ?? null;
-		const waypointOrder = reloaded.legs.map((_, i) => i);
 		const totalDistance = (finalDirections.legs ?? []).reduce(
 			(sum, leg) => sum + (leg.distance?.value ?? 0),
 			0,
@@ -292,7 +369,7 @@ export class RouteService {
 			where: { id: batchId },
 			data: {
 				drop_directions_polyline: polyline,
-				drop_waypoint_order: waypointOrder,
+				drop_waypoint_order: dropWaypointOrderMeta,
 				drop_directions_legs: (finalDirections.legs ?? []).map((leg) => ({
 					distance_meters: leg.distance?.value ?? 0,
 					duration_seconds: leg.duration?.value ?? 0,
@@ -306,7 +383,10 @@ export class RouteService {
 		});
 	}
 
-	private async optimizeAllBatches(routeId: number): Promise<void> {
+	private async optimizeAllBatches(
+		routeId: number,
+		mode: RouteWaypointMode = "auto",
+	): Promise<void> {
 		const route = await this.db.route.findUnique({
 			where: { id: routeId },
 			include: { batches: { orderBy: { batch_order: "asc" } } },
@@ -320,8 +400,8 @@ export class RouteService {
 		for (const b of route.batches) {
 			const sortOrigin: SortOriginMode =
 				b.batch_order === 1 ? "driver_home" : "office";
-			await this.optimizeBatchPickup(b.id, sortOrigin, office);
-			await this.optimizeBatchDrop(b.id, office);
+			await this.optimizeBatchPickup(b.id, sortOrigin, office, mode);
+			await this.optimizeBatchDrop(b.id, office, mode);
 		}
 	}
 
@@ -691,6 +771,9 @@ export class RouteService {
 		await this.assertDriverApproved(data.driverId);
 
 		const recurringPlan = this.computeRecurringPlanForCreate(data);
+		const waypointMode = this.normalizeWaypointMode(
+			data as CreateRouteInput & { waypoint_mode?: unknown },
+		);
 
 		const route = await this.db.$transaction(async (tx) => {
 			const created = await tx.route.create({
@@ -753,7 +836,7 @@ export class RouteService {
 			return created;
 		});
 
-		await this.optimizeAllBatches(route.id);
+		await this.optimizeAllBatches(route.id, waypointMode);
 		await this.applyComputedPickupTimesForRoute(route.id);
 		return this.getById(route.id);
 	}
@@ -770,6 +853,7 @@ export class RouteService {
 		"recurringPlanStartDate",
 		"recurring_plan_start",
 		"recurringPlanMonths",
+		"waypointMode",
 	]);
 
 	/** Strip nested GET-route payload; accept snake_case aliases from clients. */
@@ -788,6 +872,9 @@ export class RouteService {
 		}
 		if (o.route_price === undefined && o.routePrice !== undefined) {
 			o.route_price = o.routePrice;
+		}
+		if (o.waypointMode === undefined && o.waypoint_mode !== undefined) {
+			o.waypointMode = o.waypoint_mode;
 		}
 		return o;
 	}
@@ -948,6 +1035,9 @@ export class RouteService {
 			route_price: Number(routePrice),
 			batches,
 			...this.mergeRecurringForkPayload(existing, data),
+			waypointMode: this.normalizeWaypointMode(
+				data as CreateRouteInput & { waypoint_mode?: unknown },
+			),
 		};
 
 		const created = await this.create(merged);
