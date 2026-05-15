@@ -242,6 +242,7 @@ model Route {
   recurring_plan_end   DateTime?          @db.Date
   route_daily_plan_id  Int?               @unique
   route_price          Float?
+  waypointMode         WaypointMode       @default(auto) @map("waypoint_mode")
   created_at           DateTime           @default(now())
   updated_at           DateTime           @updatedAt
   batches              RouteBatch[]
@@ -498,4 +499,10 @@ enum Weekday {
   THURSDAY
   FRIDAY
   SATURDAY
+}
+
+/** Pickup/drop ordering strategy for a route definition. */
+enum WaypointMode {
+  auto
+  manual
 }

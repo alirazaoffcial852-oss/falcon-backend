@@ -45,6 +45,17 @@ export class RouteService {
 		throw ResponseHandler.badRequest("waypointMode must be 'auto' or 'manual'");
 	}
 
+	private waypointModeFromExisting(
+		existing: NonNullable<Awaited<ReturnType<RouteService["getById"]>>>,
+	): RouteWaypointMode {
+		return existing.waypointMode === "manual" ? "manual" : "auto";
+	}
+
+	private hasWaypointModeInBody(data: UpdateRouteInput): boolean {
+		const d = data as Record<string, unknown>;
+		return d.waypointMode !== undefined || d.waypoint_mode !== undefined;
+	}
+
 	private async assertDriverApproved(driverId: number): Promise<void> {
 		const driver = await this.db.driver.findUnique({
 			where: { id: driverId },
@@ -784,6 +795,7 @@ export class RouteService {
 					office_lat: data.officeLat,
 					office_long: data.officeLong,
 					route_price: data.route_price ?? null,
+					waypointMode,
 					...(recurringPlan && {
 						recurring_plan_start: recurringPlan.start,
 						recurring_plan_end: recurringPlan.end,
@@ -995,6 +1007,25 @@ export class RouteService {
 			}
 		}
 
+		if (this.hasWaypointModeInBody(data)) {
+			const current = await this.db.route.findUnique({
+				where: { id },
+				select: { waypointMode: true },
+			});
+			const prev = (current?.waypointMode ?? "auto") as RouteWaypointMode;
+			const next = this.normalizeWaypointMode(
+				data as CreateRouteInput & { waypoint_mode?: unknown },
+			);
+			if (next !== prev) {
+				await this.db.route.update({
+					where: { id },
+					data: { waypointMode: next },
+				});
+				await this.optimizeAllBatches(id, next);
+				await this.applyComputedPickupTimesForRoute(id);
+			}
+		}
+
 		const route = await this.getById(id);
 		return {
 			previous_route_id: id,
@@ -1035,9 +1066,11 @@ export class RouteService {
 			route_price: Number(routePrice),
 			batches,
 			...this.mergeRecurringForkPayload(existing, data),
-			waypointMode: this.normalizeWaypointMode(
-				data as CreateRouteInput & { waypoint_mode?: unknown },
-			),
+			waypointMode: this.hasWaypointModeInBody(data)
+				? this.normalizeWaypointMode(
+						data as CreateRouteInput & { waypoint_mode?: unknown },
+					)
+				: this.waypointModeFromExisting(existing),
 		};
 
 		const created = await this.create(merged);
@@ -1050,7 +1083,12 @@ export class RouteService {
 
 	async optimizeById(id: number) {
 		await this.getById(id);
-		await this.optimizeAllBatches(id);
+		const row = await this.db.route.findUnique({
+			where: { id },
+			select: { waypointMode: true },
+		});
+		const mode = (row?.waypointMode ?? "auto") as RouteWaypointMode;
+		await this.optimizeAllBatches(id, mode);
 		return this.getById(id);
 	}
 
@@ -1245,7 +1283,8 @@ export class RouteService {
 			},
 		);
 
-		await this.optimizeAllBatches(templateRouteId);
+		const mode = (definition.waypointMode ?? "auto") as RouteWaypointMode;
+		await this.optimizeAllBatches(templateRouteId, mode);
 		// Ensure pickup_time / office_pick_up_time are computed before phase trip times.
 		await this.applyComputedPickupTimesForRoute(templateRouteId);
 		await this.setTripStartTimesForDailyPlan(templateRouteId, planId);

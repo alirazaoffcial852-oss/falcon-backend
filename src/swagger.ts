@@ -1623,7 +1623,10 @@ const swaggerDocument = {
 					},
 				],
 				responses: {
-					"200": { description: "Route details" },
+					"200": {
+						description:
+							"Route with relations; includes waypointMode (Prisma enum: auto | manual) on the route row.",
+					},
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -1634,7 +1637,7 @@ const swaggerDocument = {
 				summary:
 					"Update route in place (driver, price, recurring only) or fork (office/company/batches/legs)",
 				description:
-					"Validated body is stripUnknown. Fork only when company, office, or non-empty batches/legs actually change vs DB; driver / route_price / recurring always patch the same route row.",
+					"Validated body is stripUnknown. Fork when company, office, or non-empty batches/legs change. In-place patch: driver, route_price, recurring, waypointMode (re-runs optimize when mode changes).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
