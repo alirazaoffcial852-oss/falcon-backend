@@ -1,11 +1,12 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import type { Server as HttpServer } from "http";
-import { DatabaseService } from "./database";
+import {
+	getPassengerIdsForDriverLocationBroadcast,
+	resolveDriverFromLocationPayload,
+} from "../utils/driverLocationBroadcast";
 import { setDriverLiveLocation } from "../utils/liveLocationStore";
-import { dailyPlanForActiveDayWhere } from "../utils/routeDayScope";
 
 let io: SocketIOServer | null = null;
-const db = DatabaseService.getInstance().getPrisma();
 
 export function initSocket(httpServer: HttpServer): SocketIOServer {
 	console.log("[Socket] Initializing Socket.IO server...");
@@ -75,145 +76,52 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
 						return;
 					}
 
-					let driverId = rawDriverId;
-					let driverDetails: {
-						id: number;
-						user_id: number | null;
-						name: string;
-						phone_no: string | null;
-						user: { email: string } | null;
-					} | null = null;
+					const driverDetails =
+						await resolveDriverFromLocationPayload(rawDriverId);
 
-					try {
-						const resolvedByUserId = await db.driver.findFirst({
-							where: { user_id: rawDriverId },
-							select: { id: true },
+					if (!driverDetails) {
+						socket.emit("driver:location:error", {
+							message: `No driver found for driverId=${rawDriverId}`,
 						});
-						if (resolvedByUserId) {
-							driverId = resolvedByUserId.id;
-							console.log(
-								`🔄 [DRIVER][id:resolve] user_id=${rawDriverId} → driver.id=${driverId}`,
-							);
-						}
+						return;
+					}
 
-						driverDetails = await db.driver.findFirst({
-							where: {
-								OR: [
-									{ id: driverId },
-									{ id: rawDriverId },
-									{ user_id: rawDriverId },
-									{ user_id: driverId },
-								],
-							},
-							select: {
-								id: true,
-								user_id: true,
-								name: true,
-								phone_no: true,
-								user: {
-									select: { email: true },
-								},
-							},
-						});
-
-						if (driverDetails) {
-							driverId = driverDetails.id;
-						}
-
-						if (!driverDetails) {
-							const routeDriver = await db.route.findFirst({
-								where: {
-									OR: [
-										{ driver_id: rawDriverId },
-										{ driver: { user_id: rawDriverId } },
-									],
-								},
-								orderBy: { id: "desc" },
-								select: {
-									driver: {
-										select: {
-											id: true,
-											user_id: true,
-											name: true,
-											phone_no: true,
-											user: { select: { email: true } },
-										},
-									},
-								},
-							});
-
-							if (routeDriver?.driver) {
-								driverDetails = routeDriver.driver;
-								driverId = routeDriver.driver.id;
-								console.log(
-									`🔄 [DRIVER][id:resolve:route] payload=${rawDriverId} → driver.id=${driverId}`,
-								);
-							}
-						}
-					} catch (lookupErr) {
-						console.warn(
-							`⚠️ [DRIVER][id:resolve] Failed to resolve payload driverId=${rawDriverId}, using as-is:`,
-							lookupErr,
+					const driverId = driverDetails.id;
+					if (driverId !== rawDriverId) {
+						console.log(
+							`🔄 [DRIVER][id:resolve] payload=${rawDriverId} → driver.id=${driverId}`,
 						);
 					}
-					// ------------------------------------
 
 					const updatedAt = new Date();
 					setDriverLiveLocation(driverId, lat, long, updatedAt);
-
-					const fallbackUser =
-						!driverDetails && Number.isFinite(rawDriverId)
-							? await db.user.findUnique({
-									where: { id: rawDriverId },
-									select: { email: true },
-								})
-							: null;
-
-					if (!driverDetails && !fallbackUser) {
-						console.warn(
-							`⚠️ [DRIVER][details:missing] payload.driverId=${rawDriverId} resolved.driverId=${driverId} -> no matching driver/user found`,
-						);
-					}
 
 					console.log(
 						`📍 [DRIVER][location:update] driver=${driverId} lat=${lat} long=${long} at=${updatedAt.toISOString()}`,
 					);
 
-					const route = await db.route.findFirst({
-						where: {
-							driver_id: driverId,
-							route_daily_plan_id: { not: null },
-							daily_plan: {
-								status: "ONGOING",
-								...dailyPlanForActiveDayWhere(),
-							},
-						},
-						include: { legs: { select: { passenger_id: true } } },
-						orderBy: { id: "desc" },
-					});
+					const passengerIds =
+						await getPassengerIdsForDriverLocationBroadcast(driverId);
 
 					const data = {
 						driverId,
 						lat,
 						long,
 						updated_at: updatedAt,
-						driver_name: driverDetails?.name ?? null,
-						driver_phone_no: driverDetails?.phone_no ?? null,
-						driver_email:
-							driverDetails?.user?.email ?? fallbackUser?.email ?? null,
-						user_id:
-							driverDetails?.user_id ?? (fallbackUser ? rawDriverId : null),
+						driver_name: driverDetails.name ?? null,
+						driver_phone_no: driverDetails.phone_no ?? null,
+						driver_email: driverDetails.user?.email ?? null,
+						user_id: driverDetails.user_id ?? null,
 					};
 
-					if (route) {
-						const passengerIds = route.legs.map((l) => l.passenger_id);
+					if (passengerIds.length > 0) {
 						console.log(
-							`🧍📡 [PASSENGER][emit] event=driver:location route=${route.id} passengers=${passengerIds.join(",")} driver=${driverId} lat=${lat} long=${long}`,
+							`🧍📡 [PASSENGER][emit] event=driver:location passengers=${passengerIds.join(",")} driver=${driverId} lat=${lat} long=${long}`,
 						);
 						emitToPassengers(passengerIds, "driver:location", data);
 					} else {
 						console.log(
-							`🧍⚠️ [PASSENGER][emit:skip] no ONGOING route driver=${driverId} lat=${lat} long=${long}`,
+							`🧍⚠️ [PASSENGER][emit:skip] no ONGOING trip passengers driver=${driverId} lat=${lat} long=${long}`,
 						);
 					}
 

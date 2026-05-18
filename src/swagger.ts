@@ -2269,12 +2269,12 @@ const swaggerDocument = {
 			get: {
 				tags: ["Mobile passenger"],
 				summary:
-					"Passenger trip session (WAITING_FOR_DRIVER hides driver/vehicle; PASSENGER_DROPPED after drop-off)",
+					"Passenger trip session (DRIVER_NOT_AVAILABLE hides driver/vehicle; PASSENGER_DROPPED after drop-off)",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": {
 						description:
-							"session.state PASSENGER_DROPPED when drop is DROPPED (driver/vehicle null); driver/vehicle also null for WAITING_FOR_DRIVER; session null when no trip today",
+							"session.state PASSENGER_DROPPED when drop is DROPPED (driver/vehicle null); driver/vehicle also null for DRIVER_NOT_AVAILABLE; session null when no trip today",
 					},
 					"401": { description: "Unauthorized" },
 				},
