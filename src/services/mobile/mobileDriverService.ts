@@ -7,6 +7,7 @@ import {
 	emitToAdmins,
 } from "../../config/socketService";
 import type { LegAction } from "../../types/mobile/driver";
+import { getPassengerIdsForDriverLocationBroadcast } from "../../utils/driverLocationBroadcast";
 import {
 	getDriverLiveLocation,
 	setDriverLiveLocation,
@@ -1252,47 +1253,24 @@ export const MobileDriverService = {
 		const updatedAt = new Date();
 		setDriverLiveLocation(driver.id, lat, long, updatedAt);
 
-		const route = await db.route.findFirst({
-			where: {
-				driver_id: driver.id,
-				route_daily_plan_id: { not: null },
-				daily_plan: {
-					status: "ONGOING",
-					...dailyPlanForActiveDayWhere(),
-				},
-			},
-			include: { legs: { select: { passenger_id: true } } },
-		});
-
-		if (route) {
-			const passengerIds = route.legs.map((l) => l.passenger_id);
-			const payload = {
-				driverId: driver.id,
-				lat,
-				long,
-				updated_at: updatedAt,
-				driver_name: driver.name ?? null,
-				driver_phone_no: driver.phone_no ?? null,
-				driver_email: driver.user?.email ?? null,
-				user_id: driver.user_id ?? null,
-			};
+		const passengerIds = await getPassengerIdsForDriverLocationBroadcast(
+			driver.id,
+		);
+		const payload = {
+			driverId: driver.id,
+			lat,
+			long,
+			updated_at: updatedAt,
+			driver_name: driver.name ?? null,
+			driver_phone_no: driver.phone_no ?? null,
+			driver_email: driver.user?.email ?? null,
+			user_id: driver.user_id ?? null,
+		};
+		if (passengerIds.length > 0) {
 			emitToPassengers(passengerIds, "driver:location", payload);
-			emitToDriver(driver.id, "driver:location", payload);
-			emitToAdmins("driver:location", payload);
-		} else {
-			const payload = {
-				driverId: driver.id,
-				lat,
-				long,
-				updated_at: updatedAt,
-				driver_name: driver.name ?? null,
-				driver_phone_no: driver.phone_no ?? null,
-				driver_email: driver.user?.email ?? null,
-				user_id: driver.user_id ?? null,
-			};
-			emitToDriver(driver.id, "driver:location", payload);
-			emitToAdmins("driver:location", payload);
 		}
+		emitToDriver(driver.id, "driver:location", payload);
+		emitToAdmins("driver:location", payload);
 
 		return {
 			lat,

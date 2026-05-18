@@ -445,9 +445,11 @@ export const MobilePassengerService = {
 					})
 				: null;
 
+		const pickupNotComplete = pickupStatus !== "PICKED";
+
 		let state: string;
-		if (planStatus === "PENDING" && !driver.is_available) {
-			state = "WAITING_FOR_DRIVER";
+		if (!driver.is_available && pickupNotComplete) {
+			state = "DRIVER_NOT_AVAILABLE";
 		} else if (planStatus === "PENDING" && driver.is_available) {
 			state = "DRIVER_AVAILABLE";
 		} else if (planStatus === "ONGOING" && pickupStatus === "PENDING") {
@@ -524,13 +526,10 @@ export const MobilePassengerService = {
 		const active_phase_driver_id =
 			active_trip_phase === "PICKUP" ? pickupPd?.id ?? null : dropPd?.id ?? null;
 
-		const driverAvailableForTrip =
-			planStatus !== "PENDING" || driver.is_available;
-		const availability_message = !driverAvailableForTrip
+		const hideDriverAndVehicle = !driver.is_available && pickupNotComplete;
+		const availability_message = hideDriverAndVehicle
 			? "Driver is not available now."
 			: null;
-
-		const hideDriverAndVehicle = state === "WAITING_FOR_DRIVER";
 
 		return {
 			session: {
