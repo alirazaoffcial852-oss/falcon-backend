@@ -1,11 +1,40 @@
 import { Request, Response } from "express";
 import { RouteService } from "../../services/routeService";
+import { routeHistoryService } from "../../services/routeHistoryService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { parseIdParam } from "../../utils/parseId";
 const routeService = new RouteService();
 
 export const RouteController = {
+	/** GET /routes/history — daily route report (default today). Query: date, companyId, driverId */
+	getHistoryReport: catchAsync(async (req: Request, res: Response) => {
+		const date =
+			typeof req.query.date === "string" ? req.query.date : undefined;
+		const companyIdRaw = req.query.companyId;
+		const driverIdRaw = req.query.driverId;
+		const companyId =
+			companyIdRaw != null && String(companyIdRaw).trim() !== ""
+				? parseInt(String(companyIdRaw), 10)
+				: undefined;
+		const driverId =
+			driverIdRaw != null && String(driverIdRaw).trim() !== ""
+				? parseInt(String(driverIdRaw), 10)
+				: undefined;
+		if (companyId != null && Number.isNaN(companyId)) {
+			throw ResponseHandler.badRequest("Invalid companyId");
+		}
+		if (driverId != null && Number.isNaN(driverId)) {
+			throw ResponseHandler.badRequest("Invalid driverId");
+		}
+		const result = await routeHistoryService.getDailyRouteHistoryReport({
+			date,
+			companyId,
+			driverId,
+		});
+		ResponseHandler.success(res, result, "Route history report");
+	}),
+
 	list: catchAsync(async (req: Request, res: Response) => {
 		const query = {
 			page: parseInt(req.query.page as string) || 1,

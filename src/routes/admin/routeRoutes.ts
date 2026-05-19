@@ -5,6 +5,7 @@ import {
 	createRouteSchema,
 	updateRouteSchema,
 	routeIdParamSchema,
+	routeHistoryQuerySchema,
 	optionalDayBodySchema,
 	generateDailyBodySchema,
 	generateDailyPreviewQuerySchema,
@@ -13,6 +14,11 @@ import {
 
 const router = express.Router();
 
+router.get(
+	"/history",
+	validate.query(routeHistoryQuerySchema),
+	RouteController.getHistoryReport,
+);
 router.get("/", RouteController.list);
 router.post(
 	"/generate-daily",

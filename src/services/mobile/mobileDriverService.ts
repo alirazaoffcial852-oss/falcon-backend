@@ -18,7 +18,10 @@ import {
 	phaseDriverScheduledDateWhere,
 } from "../../utils/routeDayScope";
 import { getFirstRouteLegInPickupOrder } from "../../utils/routeFirstPickupLeg";
-import { parseTimeToMinutesFromMidnight } from "../../utils/pickupSchedule";
+import {
+	parseTimeToMinutesFromMidnight,
+	sortRouteLegsByPickupTime,
+} from "../../utils/pickupSchedule";
 import {
 	getRouteDailyPlanId,
 	updatePhasePassengerRow,
@@ -30,6 +33,7 @@ import {
 	countDropPendingOrArrivedInBatch,
 	countBlockingPhasePassengersOnRoute,
 } from "../../utils/phasePassengerHelpers";
+import { buildPhasePassengersWithEstimates } from "../../utils/phasePassengerEstimates";
 
 const db = DatabaseService.getInstance().getPrisma();
 
@@ -499,13 +503,10 @@ async function buildStartTripResponse(params: {
 		? startedRoute.batches.find((b) => b.id === activeSeg.batch_id)
 		: null;
 
-	const sortedLegs: StartTripRouteLeg[] = activeBatch?.legs.length
-		? [...activeBatch.legs].sort((a, b) =>
-				isPickup ? a.sequence - b.sequence : a.drop_sequence - b.drop_sequence,
-			)
-		: [...startedRoute.legs].sort((a, b) =>
-				isPickup ? a.sequence - b.sequence : a.drop_sequence - b.drop_sequence,
-			);
+	const sortedLegs: StartTripRouteLeg[] = sortRouteLegsByPickupTime(
+		activeBatch?.legs.length ? activeBatch.legs : startedRoute.legs,
+		isPickup ? "PICKUP" : "DROP",
+	);
 
 	const pickupStatusMap = await getPhaseStatusMapByPassengerId(
 		db,
@@ -767,11 +768,35 @@ export const MobileDriverService = {
 			});
 		}
 
+		return this.buildDriverAvailabilityResponse(updatedDriver, config);
+	},
+
+	/** Read current availability (does not change is_available). */
+	async getAvailability(userId: number) {
+		const driver = await resolveDriver(userId);
+		const config = await db.driverConfiguration.findFirst();
+		if (!config) {
+			throw ResponseHandler.notFound("Driver configuration not found");
+		}
+		return this.buildDriverAvailabilityResponse(driver, config);
+	},
+
+	buildDriverAvailabilityResponse(
+		driver: {
+			id: number;
+			is_available: boolean;
+			available_at: Date | null;
+		},
+		config: {
+			availability_time: string;
+			remaining_start_time: string;
+		},
+	) {
 		return {
 			driver: {
-				id: updatedDriver.id,
-				is_available: updatedDriver.is_available,
-				available_at: updatedDriver.available_at,
+				id: driver.id,
+				is_available: driver.is_available,
+				available_at: driver.available_at,
 			},
 			config: {
 				availability_time: config.availability_time,
@@ -868,6 +893,9 @@ export const MobileDriverService = {
 						select: {
 							route_id: true,
 							passenger_id: true,
+							batch_id: true,
+							sequence: true,
+							drop_sequence: true,
 							pickup_lat: true,
 							pickup_long: true,
 							pickup_address: true,
@@ -928,47 +956,28 @@ export const MobileDriverService = {
 								drop_duration_seconds: b.drop_duration_seconds,
 							};
 						}) ?? [],
-					phase_passengers: pd.route_daily_plan_phase_passengers.map((pp) => {
-						const leg =
-							routeIdForLegs != null
-								? legByRoutePassenger.get(
-										`${routeIdForLegs}:${pp.passenger_id}`,
-									)
-								: undefined;
-						const stop =
-							pd.phase === "PICKUP"
-								? {
-										lat: leg?.pickup_lat ?? null,
-										long: leg?.pickup_long ?? null,
-										pickup_address: leg?.pickup_address ?? null,
-										pickup_time: leg?.pickup_time ?? null,
-									}
-								: {
-										lat: leg?.dropoff_lat ?? null,
-										long: leg?.dropoff_long ?? null,
-										dropoff_address: leg?.dropoff_address ?? null,
-										dropoff_time: leg?.dropoff_time ?? null,
-									};
-						return {
-							id: pp.id,
-							route_daily_plan_phase_driver_id:
-								pp.route_daily_plan_phase_driver_id,
-							passenger_id: pp.passenger_id,
-							status: pp.status,
-							driver_arrived_at: pp.driver_arrived_at,
-							passenger_ack: pp.passenger_ack,
-							picked_at: pp.picked_at,
-							dropoff_arrived_at: pp.dropoff_arrived_at,
-							dropped_at: pp.dropped_at,
-							created_at: pp.created_at,
-							updated_at: pp.updated_at,
-							...stop,
-							passenger: {
-								id: pp.passenger.id,
-								name: pp.passenger.name,
-								phone_no: pp.passenger.phone_no,
-							},
-						};
+					phase_passengers: buildPhasePassengersWithEstimates({
+						phase: pd.phase as "PICKUP" | "DROP",
+						phasePassengers: pd.route_daily_plan_phase_passengers,
+						legByPassengerId: new Map(
+							pd.route_daily_plan_phase_passengers
+								.map((pp) => {
+									const leg =
+										routeIdForLegs != null
+											? legByRoutePassenger.get(
+													`${routeIdForLegs}:${pp.passenger_id}`,
+												)
+											: undefined;
+									return leg
+										? ([pp.passenger_id, leg] as const)
+										: null;
+								})
+								.filter((x): x is [number, (typeof routeLegs)[number]] =>
+									x != null,
+								),
+						),
+						batches: exec?.batches ?? [],
+						driverLocation: driverLive,
 					}),
 				};
 			}),
@@ -1457,10 +1466,18 @@ export const MobileDriverService = {
 				id: phasePassengerId,
 				route_daily_plan_phase_driver: { driver_id: driver.id },
 			},
-			include: {
+			select: {
+				id: true,
+				passenger_id: true,
+				status: true,
+				dropped_at: true,
 				passenger: { select: { id: true, name: true, phone_no: true } },
 				route_daily_plan_phase_driver: {
-					include: {
+					select: {
+						id: true,
+						route_daily_plan_id: true,
+						phase: true,
+						status: true,
 						route_daily_plan: { select: { id: true, status: true } },
 					},
 				},
@@ -1514,17 +1531,29 @@ export const MobileDriverService = {
 				"No active segment for this leg / batch",
 			);
 
-		const isPickup = seg.kind === "PICKUP_TO_OFFICE";
-		if (isPickup && phaseDriver.phase !== "PICKUP") {
+		const isPickupSegment = seg.kind === "PICKUP_TO_OFFICE";
+		const isDropPhaseRow = phaseDriver.phase === "DROP";
+		/** DROP row: DROPPED or legacy PICKED. PICKUP row: PICKED means picked up, not drop. */
+		const isDropRecordAction =
+			action === "DROPPED" || (action === "PICKED" && isDropPhaseRow);
+
+		if (isPickupSegment && !isDropPhaseRow && phaseDriver.phase !== "PICKUP") {
 			throw ResponseHandler.badRequest(
 				"This phase passenger is not for the active pickup segment — use the PICKUP phase_passenger id",
 			);
 		}
-		if (!isPickup && phaseDriver.phase !== "DROP") {
+		if (!isPickupSegment && !isDropPhaseRow && phaseDriver.phase !== "DROP") {
 			throw ResponseHandler.badRequest(
 				"This phase passenger is not for the active drop segment — use the DROP phase_passenger id",
 			);
 		}
+		if (action === "DROPPED" && !isDropPhaseRow) {
+			throw ResponseHandler.badRequest(
+				"DROPPED must use the DROP phase_passenger id from GET /session (drop_phase_passenger_id)",
+			);
+		}
+
+		const isPickup = isPickupSegment && !(isDropPhaseRow && isDropRecordAction);
 
 		if (phaseDriver.status !== "ONGOING") {
 			if (phaseDriver.status === "COMPLETED") {
@@ -1561,6 +1590,11 @@ export const MobileDriverService = {
 		const passengerId = ppRow.passenger_id;
 
 		if (isPickup) {
+			if (action === "DROPPED") {
+				throw ResponseHandler.badRequest(
+					"DROPPED is only valid on the DROP segment — use PICKED for pickup",
+				);
+			}
 			if (action === "PICKED") {
 				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
 					status: "PICKED",
@@ -1816,11 +1850,23 @@ export const MobileDriverService = {
 			};
 		}
 
-		// DROP segment
-		if (action === "PICKED") {
-			await updatePhasePassengerRow(db, routePlanId, "DROP", passengerId, {
-				status: "DROPPED",
-				dropped_at: options?.dropRecordedAt ?? new Date(),
+		// DROP segment (or DROP phase row recording drop while pickup segment still active)
+		const isDropAction = isDropRecordAction;
+		let dropRecordedAtResponse: string | null = null;
+		if (isDropAction) {
+			if (ppRow.dropped_at != null) {
+				throw ResponseHandler.badRequest(
+					"This passenger has already been dropped.",
+				);
+			}
+			const droppedAt = options?.dropRecordedAt ?? new Date();
+			dropRecordedAtResponse = droppedAt.toISOString();
+			await db.routeDailyPlanPhasePassenger.update({
+				where: { id: phasePassengerId },
+				data: {
+					status: "DROPPED",
+					dropped_at: droppedAt,
+				},
 			});
 		} else if (action === "STILL_WAITING") {
 			await updatePhasePassengerRow(db, routePlanId, "DROP", passengerId, {
@@ -1845,7 +1891,7 @@ export const MobileDriverService = {
 			phase: "DROP",
 			action: String(action),
 		};
-		if (action === "PICKED") {
+		if (isDropAction) {
 			void notificationService.sendToPassengerIds([passengerId], {
 				title: "Dropped off",
 				body: "You have been dropped off. Your trip for today is complete.",
@@ -1873,6 +1919,15 @@ export const MobileDriverService = {
 				},
 			});
 		}
+
+		const dropActionMeta =
+			dropRecordedAtResponse != null
+				? {
+						phase_passenger_id: ppRow.id,
+						passenger_id: passengerId,
+						dropped_at: dropRecordedAtResponse,
+					}
+				: {};
 
 		const nextDrop = await findNextDropLegInBatch(
 			db,
@@ -1907,6 +1962,7 @@ export const MobileDriverService = {
 					});
 					return {
 						action,
+						...dropActionMeta,
 						next_passenger: null,
 						navigate_to_office: nextSeg.kind === "PICKUP_TO_OFFICE",
 						message:
@@ -1965,6 +2021,7 @@ export const MobileDriverService = {
 
 				return {
 					action,
+					...dropActionMeta,
 					next_passenger: null,
 					navigate_to_office: false,
 					route_completed: true,
@@ -2004,6 +2061,7 @@ export const MobileDriverService = {
 
 		return {
 			action,
+			...dropActionMeta,
 			next_passenger: nextDrop
 				? {
 						leg_id: nextDrop.id,
@@ -2116,10 +2174,12 @@ export const MobileDriverService = {
 			);
 		}
 
+		const droppedAt = new Date();
 		const updated = await db.routeDailyPlanPhasePassenger.update({
 			where: { id: phasePassengerId },
 			data: {
-				dropped_at: new Date(),
+				status: "DROPPED",
+				dropped_at: droppedAt,
 			},
 			select: {
 				id: true,
@@ -2128,6 +2188,35 @@ export const MobileDriverService = {
 				dropped_at: true,
 			},
 		});
+
+		const dropPd = await db.routeDailyPlanPhasePassenger.findFirst({
+			where: { id: phasePassengerId },
+			select: {
+				route_daily_plan_phase_driver: {
+					select: { route_daily_plan_id: true },
+				},
+			},
+		});
+		const planId =
+			dropPd?.route_daily_plan_phase_driver.route_daily_plan_id ?? null;
+		const execRoute = planId
+			? await db.route.findFirst({
+					where: { route_daily_plan_id: planId },
+					select: { id: true },
+				})
+			: null;
+		if (execRoute) {
+			void notificationService.sendToPassengerIds([updated.passenger_id], {
+				title: "Dropped off",
+				body: "You have been dropped off. Your trip for today is complete.",
+				data: {
+					routeId: String(execRoute.id),
+					type: "passenger_dropped",
+					phase: "DROP",
+				},
+			});
+		}
+
 		return { phase_passenger: updated };
 	},
 

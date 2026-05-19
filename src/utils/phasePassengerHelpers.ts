@@ -13,6 +13,40 @@ export async function getRouteDailyPlanId(
 	return r?.route_daily_plan_id ?? null;
 }
 
+/** Execution route id for a daily plan (passenger APIs should use this in URLs when possible). */
+export async function getExecutionRouteIdForPlan(
+	db: PrismaClient,
+	routeDailyPlanId: number,
+): Promise<number | null> {
+	const r = await db.route.findFirst({
+		where: { route_daily_plan_id: routeDailyPlanId },
+		select: { id: true },
+		orderBy: { id: "desc" },
+	});
+	return r?.id ?? null;
+}
+
+/**
+ * Resolve today's active plan from either execution route id or definition (template) route id.
+ */
+export async function resolveActivePlanIdFromRoute(
+	db: PrismaClient,
+	routeId: number,
+): Promise<number | null> {
+	const fromExecution = await getRouteDailyPlanId(db, routeId);
+	if (fromExecution) return fromExecution;
+
+	const fromDefinition = await db.routeDailyPlan.findFirst({
+		where: {
+			definition_route_id: routeId,
+			status: { in: ["PENDING", "ONGOING"] },
+		},
+		orderBy: { id: "desc" },
+		select: { id: true },
+	});
+	return fromDefinition?.id ?? null;
+}
+
 export async function getPhaseDriverId(
 	db: PrismaClient,
 	routeDailyPlanId: number,

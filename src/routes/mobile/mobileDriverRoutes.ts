@@ -3,7 +3,8 @@ import { MobileDriverController } from "../../controllers/mobile/mobileDriverCon
 
 const router = Router();
 
-// Driver goes available (slide to go available)
+// Driver availability status (read) + go available (write)
+router.get("/available", MobileDriverController.getAvailability);
 router.post("/available", MobileDriverController.goAvailable);
 router.get("/leaves", MobileDriverController.getMyLeaves);
 router.get("/stats", MobileDriverController.getStats);

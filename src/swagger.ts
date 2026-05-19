@@ -602,7 +602,16 @@ const swaggerDocument = {
 				properties: {
 					action: {
 						type: "string",
-						enum: ["PICKED", "STILL_WAITING", "MOVE_TO_NEXT"],
+						enum: ["PICKED", "STILL_WAITING", "MOVE_TO_NEXT", "DROPPED"],
+						description:
+							"PICKUP segment: PICKED | STILL_WAITING | MOVE_TO_NEXT. DROP segment: DROPPED (preferred) or PICKED to record drop with dropped_at.",
+					},
+					dropped_at: {
+						type: "string",
+						format: "date-time",
+						nullable: true,
+						description:
+							"Optional ISO 8601 when action is DROPPED (or PICKED on DROP); default server time.",
 					},
 				},
 			},
@@ -1555,6 +1564,30 @@ const swaggerDocument = {
 			},
 		},
 		// ----- Routes -----
+		"/f1/routes/history": {
+			get: {
+				tags: ["Routes"],
+				summary:
+					"Daily route history report (default today): plan status, pickup/drop per passenger",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "date",
+						in: "query",
+						required: false,
+						schema: { type: "string", format: "date", example: "2026-05-19" },
+						description: "Calendar day (YYYY-MM-DD). Defaults to today.",
+					},
+					{ name: "companyId", in: "query", schema: { type: "integer" } },
+					{ name: "driverId", in: "query", schema: { type: "integer" } },
+				],
+				responses: {
+					"200": { description: "Route history report for the day" },
+					"400": { description: "Invalid date" },
+					"401": { description: "Unauthorized" },
+				},
+			},
+		},
 		"/f1/routes": {
 			get: {
 				tags: ["Routes"],
@@ -1966,6 +1999,18 @@ const swaggerDocument = {
 		},
 		// ----- Mobile driver -----
 		"/f1/mobile/driver/available": {
+			get: {
+				tags: ["Mobile driver"],
+				summary: "Get driver availability status (read-only)",
+				security: [{ bearerAuth: [] }],
+				responses: {
+					"200": {
+						description:
+							"driver.is_available, available_at, and driver_configuration timings",
+					},
+					"401": { description: "Unauthorized" },
+				},
+			},
 			post: {
 				tags: ["Mobile driver"],
 				summary: "Mark driver as available for trips",
@@ -2038,7 +2083,7 @@ const swaggerDocument = {
 				tags: ["Mobile driver"],
 				summary: "Today's phases, segments, passengers for this driver",
 				description:
-					"Returns PICKUP/DROP phase rows for local today with route and phase_passengers.",
+					"Returns PICKUP/DROP phase rows for local today. Each phase_passengers[] item includes queue_position, scheduled_stop_time, travel_from_previous_* (seconds/minutes/label), travel_from (DRIVER|PREVIOUS_PASSENGER|OFFICE), and cumulative_travel_seconds — sorted by visit order.",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": { description: "Driver session payload" },
@@ -2164,7 +2209,7 @@ const swaggerDocument = {
 				summary:
 					"Drop one passenger (DROP leg) — sets status DROPPED and dropped_at on route_daily_plan_phase_passengers",
 				description:
-					"phasePassengerId = RouteDailyPlanPhasePassenger.id for the DROP phase row from GET /session. Same behaviour as POST .../action with action=PICKED while active segment is DROP_TO_HOMES. Optional body.dropped_at (ISO 8601); default is server time.",
+					"phasePassengerId = RouteDailyPlanPhasePassenger.id for the DROP phase row from GET /session. Same behaviour as POST .../action with action=DROPPED (or legacy PICKED) on DROP_TO_HOMES. Optional body.dropped_at (ISO 8601); default is server time.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
