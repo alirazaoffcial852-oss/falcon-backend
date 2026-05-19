@@ -27,6 +27,35 @@ export function formatSecondsFromMidnightToHHMM(seconds: number): string {
 	return formatMinutesFromMidnightToHHMM(totalMin);
 }
 
+/** Sort route legs for driver queue: PICKUP by pickup_time, DROP by drop_sequence then pickup_time. */
+export function compareRouteLegsForDriverQueue<
+	T extends {
+		pickup_time: string;
+		sequence: number;
+		drop_sequence: number;
+	},
+>(a: T, b: T, phase: "PICKUP" | "DROP"): number {
+	if (phase === "DROP" && a.drop_sequence !== b.drop_sequence) {
+		return a.drop_sequence - b.drop_sequence;
+	}
+	const ma = parseTimeToMinutesFromMidnight(a.pickup_time);
+	const mb = parseTimeToMinutesFromMidnight(b.pickup_time);
+	if (ma !== null && mb !== null && ma !== mb) return ma - mb;
+	if (ma === null && mb !== null) return 1;
+	if (mb === null && ma !== null) return -1;
+	return phase === "PICKUP" ? a.sequence - b.sequence : a.drop_sequence - b.drop_sequence;
+}
+
+export function sortRouteLegsByPickupTime<
+	T extends {
+		pickup_time: string;
+		sequence: number;
+		drop_sequence: number;
+	},
+>(legs: T[], phase: "PICKUP" | "DROP" = "PICKUP"): T[] {
+	return [...legs].sort((a, b) => compareRouteLegsForDriverQueue(a, b, phase));
+}
+
 export function getOfficeArrivalBufferMinutes(): number {
 	const raw = process.env.ROUTE_OFFICE_ARRIVAL_BUFFER_MINUTES;
 	const n = raw != null ? Number(raw) : NaN;

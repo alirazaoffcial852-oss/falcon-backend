@@ -66,7 +66,16 @@ export const MobileDriverController = {
 		ResponseHandler.success(res, result, "Driver stats");
 	}),
 
-	/** POST /f1/mobile/driver/available */
+	/** GET /f1/mobile/driver/available — current availability (read-only) */
+	getAvailability: catchAsync(async (req: AuthRequest, res: Response) => {
+		const result = await MobileDriverService.getAvailability(getUserId(req));
+		const message = result.driver.is_available
+			? "Driver is now available"
+			: "Driver is not available";
+		ResponseHandler.success(res, result, message);
+	}),
+
+	/** POST /f1/mobile/driver/available — mark driver available */
 	goAvailable: catchAsync(async (req: AuthRequest, res: Response) => {
 		const result = await MobileDriverService.goAvailable(getUserId(req));
 		ResponseHandler.success(res, result, "Driver is now available");
@@ -136,18 +145,32 @@ export const MobileDriverController = {
 	/** POST /f1/mobile/driver/session/phase-passengers/:phasePassengerId/action — body { action } */
 	legAction: catchAsync(async (req: AuthRequest, res: Response) => {
 		const phasePassengerId = parseInt(req.params.phasePassengerId as string);
-		const action = (req.body as { action?: string }).action as LegAction;
+		const body = req.body as { action?: string; dropped_at?: string };
+		const action = body.action as LegAction;
 		if (isNaN(phasePassengerId))
 			throw ResponseHandler.badRequest("Invalid phasePassengerId");
-		if (!["PICKED", "STILL_WAITING", "MOVE_TO_NEXT"].includes(action)) {
+		if (
+			!["PICKED", "STILL_WAITING", "MOVE_TO_NEXT", "DROPPED"].includes(
+				action ?? "",
+			)
+		) {
 			throw ResponseHandler.badRequest(
-				"action must be PICKED, STILL_WAITING, or MOVE_TO_NEXT",
+				"action must be PICKED, STILL_WAITING, MOVE_TO_NEXT, or DROPPED",
 			);
+		}
+		let dropRecordedAt: Date | undefined;
+		if (body.dropped_at != null && String(body.dropped_at).trim() !== "") {
+			const parsed = new Date(body.dropped_at);
+			if (Number.isNaN(parsed.getTime())) {
+				throw ResponseHandler.badRequest("dropped_at must be a valid ISO 8601 date");
+			}
+			dropRecordedAt = parsed;
 		}
 		const result = await MobileDriverService.legAction(
 			getUserId(req),
 			phasePassengerId,
 			action,
+			dropRecordedAt ? { dropRecordedAt } : undefined,
 		);
 		ResponseHandler.success(res, result, "Action processed");
 	}),

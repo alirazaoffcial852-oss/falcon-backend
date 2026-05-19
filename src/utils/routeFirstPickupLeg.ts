@@ -1,7 +1,8 @@
 import type { PrismaClient } from "../generated/prisma/client";
+import { sortRouteLegsByPickupTime } from "./pickupSchedule";
 
 /**
- * First pickup leg across the route: batches ascending `batch_order`, then legs ascending `sequence`.
+ * First pickup leg across the route (earliest pickup_time, then batch_order / sequence).
  */
 export async function getFirstRouteLegInPickupOrder(
 	prisma: PrismaClient,
@@ -12,9 +13,6 @@ export async function getFirstRouteLegInPickupOrder(
 		orderBy: { batch_order: "asc" },
 		include: { legs: true },
 	});
-	for (const b of batches) {
-		const legs = [...b.legs].sort((a, b) => a.sequence - b.sequence);
-		if (legs[0]) return legs[0];
-	}
-	return null;
+	const allLegs = batches.flatMap((b) => b.legs);
+	return sortRouteLegsByPickupTime(allLegs, "PICKUP")[0] ?? null;
 }

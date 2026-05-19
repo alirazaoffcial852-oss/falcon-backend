@@ -8,8 +8,9 @@ import {
 import { notificationService } from "../notificationService";
 import { phaseDriverScheduledDateWhere } from "../../utils/routeDayScope";
 import {
+	getExecutionRouteIdForPlan,
 	getPhaseDriverId,
-	getRouteDailyPlanId,
+	resolveActivePlanIdFromRoute,
 } from "../../utils/phasePassengerHelpers";
 
 const db = DatabaseService.getInstance().getPrisma();
@@ -141,9 +142,15 @@ async function resolvePassenger(userId: number): Promise<PassengerProfile> {
 function passengerStillInActiveTrip(
 	pickupStatus: string,
 	dropStatus: string,
+	passengerAck?: string | null,
 ): boolean {
 	// Drop complete → session must use PASSENGER_DROPPED branch, not active-trip UI.
 	if (dropStatus === "DROPPED") return false;
+
+	// Declined pickup — keep session (no driver/vehicle) until plan ends.
+	if (passengerAck === "NOT_COMING" || pickupStatus === "SKIPPED") {
+		return true;
+	}
 
 	return (
 		["PENDING", "ARRIVED", "STILL_WAITING"].includes(pickupStatus) ||
@@ -386,7 +393,10 @@ export const MobilePassengerService = {
 
 			const pickupStatus = phases.pickup?.status ?? "PENDING";
 			const dropStatus = phases.drop?.status ?? "PENDING";
-			if (!passengerStillInActiveTrip(pickupStatus, dropStatus)) continue;
+			const pickupAck = phases.pickup?.passenger_ack ?? null;
+			if (!passengerStillInActiveTrip(pickupStatus, dropStatus, pickupAck)) {
+				continue;
+			}
 
 			candidates.push({
 				planId,
@@ -446,9 +456,12 @@ export const MobilePassengerService = {
 				: null;
 
 		const pickupNotComplete = pickupStatus !== "PICKED";
+		const passengerDeclinedTrip = pickupPp?.passenger_ack === "NOT_COMING";
 
 		let state: string;
-		if (!driver.is_available && pickupNotComplete) {
+		if (passengerDeclinedTrip) {
+			state = "PASSENGER_NOT_COMING";
+		} else if (!driver.is_available && pickupNotComplete) {
 			state = "DRIVER_NOT_AVAILABLE";
 		} else if (planStatus === "PENDING" && driver.is_available) {
 			state = "DRIVER_AVAILABLE";
@@ -526,15 +539,19 @@ export const MobilePassengerService = {
 		const active_phase_driver_id =
 			active_trip_phase === "PICKUP" ? pickupPd?.id ?? null : dropPd?.id ?? null;
 
-		const hideDriverAndVehicle = !driver.is_available && pickupNotComplete;
-		const availability_message = hideDriverAndVehicle
-			? "Driver is not available now."
-			: null;
+		const hideDriverAndVehicle =
+			passengerDeclinedTrip || (!driver.is_available && pickupNotComplete);
+		const availability_message = passengerDeclinedTrip
+			? "You are not taking this trip today."
+			: hideDriverAndVehicle
+				? "Driver is not available now."
+				: null;
 
 		return {
 			session: {
 				state,
-				driver_available: driver.is_available,
+				trip_declined: passengerDeclinedTrip,
+				driver_available: passengerDeclinedTrip ? false : driver.is_available,
 				availability_message,
 				active_trip_phase,
 				active_phase_driver_id,
@@ -827,47 +844,76 @@ export const MobilePassengerService = {
 	) {
 		const passenger = await resolvePassenger(userId);
 
-		const planId = await getRouteDailyPlanId(db, routeId);
-		if (!planId) throw ResponseHandler.notFound("Active plan not found");
+		const planId = await resolveActivePlanIdFromRoute(db, routeId);
+		if (!planId) {
+			throw ResponseHandler.notFound(
+				"Active plan not found for this route — use execution route_id from GET /passenger/session",
+			);
+		}
+
+		const executionRouteId =
+			(await getExecutionRouteIdForPlan(db, planId)) ?? routeId;
 
 		const pickupPdId = await getPhaseDriverId(db, planId, "PICKUP");
-		const arrivedPp = pickupPdId
-			? await db.routeDailyPlanPhasePassenger.findFirst({
-					where: {
-						route_daily_plan_phase_driver_id: pickupPdId,
-						passenger_id: passenger.id,
-						status: "ARRIVED",
-					},
-				})
-			: null;
-		if (!arrivedPp)
+		if (!pickupPdId) {
+			throw ResponseHandler.notFound("Pickup phase not found for this plan");
+		}
+
+		const pickupPp = await db.routeDailyPlanPhasePassenger.findFirst({
+			where: {
+				route_daily_plan_phase_driver_id: pickupPdId,
+				passenger_id: passenger.id,
+			},
+		});
+		if (!pickupPp) {
 			throw ResponseHandler.notFound(
-				"No arrived pickup phase found for this route",
+				"No pickup phase passenger row found for this route",
 			);
+		}
+
+		const canAckPickup =
+			pickupPp.driver_arrived_at != null &&
+			["ARRIVED", "STILL_WAITING"].includes(pickupPp.status);
+		if (!canAckPickup) {
+			throw ResponseHandler.badRequest(
+				pickupPp.status === "PICKED"
+					? "Pickup already completed — acknowledgement is no longer required"
+					: "Driver has not arrived at pickup yet — wait for DRIVER_ARRIVED",
+			);
+		}
+
+		if (pickupPp.passenger_ack != null) {
+			throw ResponseHandler.badRequest(
+				"Passenger acknowledgement was already recorded",
+			);
+		}
 
 		const route = await db.route.findFirst({
-			where: { id: routeId },
+			where: { id: executionRouteId },
 			select: { driver_id: true },
 		});
 		if (!route) throw ResponseHandler.notFound("Route not found");
 
 		const leg = await db.routeLeg.findFirst({
-			where: { passenger_id: passenger.id, route_id: routeId },
+			where: { passenger_id: passenger.id, route_id: executionRouteId },
 			select: { id: true },
 		});
 
 		await db.routeDailyPlanPhasePassenger.update({
-			where: { id: arrivedPp.id },
-			data: { passenger_ack: ack },
+			where: { id: pickupPp.id },
+			data: {
+				passenger_ack: ack,
+				...(ack === "NOT_COMING" ? { status: "SKIPPED" } : {}),
+			},
 		});
 
 		emitToDriver(route.driver_id, "passenger:ack", {
 			legId: leg?.id ?? null,
-			phase_passenger_id: arrivedPp.id,
+			phase_passenger_id: pickupPp.id,
 			passengerId: passenger.id,
 			passengerName: passenger.name,
 			ack,
-			routeId,
+			routeId: executionRouteId,
 		});
 		void notificationService.sendToDriverId(route.driver_id, {
 			title: "Passenger Response",
@@ -876,16 +922,17 @@ export const MobilePassengerService = {
 					? `${passenger.name} is coming`
 					: `${passenger.name} is not coming`,
 			data: {
-				routeId: String(routeId),
+				routeId: String(executionRouteId),
 				legId: leg?.id != null ? String(leg.id) : "",
-				phase_passenger_id: String(arrivedPp.id),
+				phase_passenger_id: String(pickupPp.id),
 				ack,
 				type: "passenger_ack",
 			},
 		});
 
 		return {
-			phase_passenger_id: arrivedPp.id,
+			phase_passenger_id: pickupPp.id,
+			route_id: executionRouteId,
 			leg_id: leg?.id ?? null,
 			ack,
 			message:
