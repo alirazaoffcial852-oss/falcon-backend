@@ -1,6 +1,9 @@
 import { DatabaseService } from "../config/database";
 import { ResponseHandler } from "../utils/responses/ResponseHandler";
-import type { FuelPriceInput } from "../types/admin/fuelPrice";
+import type {
+	FuelPriceInput,
+	FuelPriceUpdateInput,
+} from "../types/admin/fuelPrice";
 
 export class FuelPriceService {
 	private db = DatabaseService.getInstance().getPrisma();
@@ -36,6 +39,39 @@ export class FuelPriceService {
 		return this.db.fuelPrice.findMany({
 			orderBy: [{ effective_from: "desc" }, { id: "desc" }],
 		});
+	}
+
+	async update(id: number, data: FuelPriceUpdateInput) {
+		const row = await this.db.fuelPrice.findUnique({ where: { id } });
+		if (!row) {
+			throw ResponseHandler.notFound("Fuel price record not found");
+		}
+
+		const patch: { price_per_liter?: number; effective_from?: Date } = {};
+		if (data.price_per_liter != null) {
+			patch.price_per_liter = Number(data.price_per_liter);
+		}
+		if (data.effective_from != null) {
+			const effectiveFrom = new Date(data.effective_from);
+			if (Number.isNaN(effectiveFrom.getTime())) {
+				throw ResponseHandler.badRequest("Invalid effective_from datetime");
+			}
+			patch.effective_from = effectiveFrom;
+		}
+
+		return this.db.fuelPrice.update({
+			where: { id },
+			data: patch,
+		});
+	}
+
+	async delete(id: number) {
+		const row = await this.db.fuelPrice.findUnique({ where: { id } });
+		if (!row) {
+			throw ResponseHandler.notFound("Fuel price record not found");
+		}
+		await this.db.fuelPrice.delete({ where: { id } });
+		return row;
 	}
 }
 

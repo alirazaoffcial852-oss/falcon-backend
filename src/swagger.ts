@@ -561,6 +561,21 @@ const swaggerDocument = {
 					},
 				},
 			},
+			UpdateFuelPriceBody: {
+				type: "object",
+				minProperties: 1,
+				properties: {
+					price_per_liter: {
+						type: "number",
+						minimum: 0,
+						exclusiveMinimum: true,
+					},
+					effective_from: {
+						type: "string",
+						format: "date-time",
+					},
+				},
+			},
 			PayrollSettleBody: {
 				type: "object",
 				required: ["from", "to", "components"],
@@ -1501,6 +1516,58 @@ const swaggerDocument = {
 					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/fuel-prices/{id}": {
+			put: {
+				tags: ["Fuel prices"],
+				summary: "Update a fuel price record by id",
+				description:
+					"Partial update: send price_per_liter and/or effective_from (at least one field).",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/UpdateFuelPriceBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Updated fuel price record" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Record not found" },
+				},
+			},
+			delete: {
+				tags: ["Fuel prices"],
+				summary: "Delete a fuel price record by id",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": { description: "Deleted fuel price record" },
+					"400": { description: "Invalid id" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Record not found" },
 				},
 			},
 		},
