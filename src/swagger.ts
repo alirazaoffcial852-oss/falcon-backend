@@ -209,7 +209,16 @@ const swaggerDocument = {
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
 					companyId: { type: "integer", minimum: 1 },
-					pickUpTime: { type: "string", nullable: true },
+					pickUpTime: {
+						type: "string",
+						nullable: true,
+						description: "Optional — computed/synced pickup time (HH:MM)",
+					},
+					homePickupTime: {
+						type: "string",
+						nullable: true,
+						description: "Optional — preferred home pickup time (HH:MM)",
+					},
 					dropOffTime: { type: "string", nullable: true },
 					officePickUpTime: {
 						type: "string",
@@ -231,7 +240,16 @@ const swaggerDocument = {
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
 					companyId: { type: "integer", minimum: 1 },
-					pickUpTime: { type: "string", nullable: true },
+					pickUpTime: {
+						type: "string",
+						nullable: true,
+						description: "Optional — computed/synced pickup time (HH:MM)",
+					},
+					homePickupTime: {
+						type: "string",
+						nullable: true,
+						description: "Optional — preferred home pickup time (HH:MM)",
+					},
 					dropOffTime: { type: "string", nullable: true },
 					officePickUpTime: {
 						type: "string",
@@ -1107,6 +1125,91 @@ const swaggerDocument = {
 				responses: {
 					"200": { description: "Driver deleted" },
 					"404": { description: "Not found" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/drivers/{id}/availability-override": {
+			post: {
+				tags: ["Drivers"],
+				summary: "Grant 10-minute availability button override",
+				description:
+					"After availability deadline (e.g. 09:50), admin can re-enable Go Available on driver app for duration_minutes (default 10).",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer", description: "Driver id" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["phase_driver_id"],
+								properties: {
+									phase_driver_id: { type: "integer" },
+									duration_minutes: {
+										type: "integer",
+										default: 10,
+										minimum: 1,
+										maximum: 120,
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Override granted" },
+					"404": { description: "Phase or driver not found" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/drivers/still-waiting": {
+			get: {
+				tags: ["Drivers"],
+				summary: "List driver–passenger still-waiting events (after passenger_waiting_time elapsed)",
+				description:
+					"Rows where still_waiting_phase_notified_at is set. Real-time: driver:still_waiting, driver:waiting_skip_phase, driver:move_next_ready.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "date",
+						in: "query",
+						schema: { type: "string", example: "2026-05-20" },
+						description: "YYYY-MM-DD (default today)",
+					},
+				],
+				responses: {
+					"200": { description: "Still waiting rows" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/drivers/availability-missed": {
+			get: {
+				tags: ["Drivers"],
+				summary: "List drivers who missed availability deadline today",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "date",
+						in: "query",
+						schema: { type: "string", example: "2026-05-20" },
+						description: "YYYY-MM-DD (default today)",
+					},
+				],
+				responses: {
+					"200": { description: "Missed availability rows" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
 				},
@@ -2069,11 +2172,13 @@ const swaggerDocument = {
 			get: {
 				tags: ["Mobile driver"],
 				summary: "Get driver availability status (read-only)",
+				description:
+					"Includes availability_ui: show_availability_button (true before trip_start − availability_time), trip_start_reminder_at (trip_start − remaining_start_time; driver gets push/socket driver:trip_start_reminder at that time if already available), status OPEN | TOO_EARLY | DEADLINE_PASSED | ADMIN_OVERRIDE | ALREADY_AVAILABLE.",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": {
 						description:
-							"driver.is_available, available_at, and driver_configuration timings",
+							"driver, config, availability_ui (show_availability_button, must_mark_available_before, etc.)",
 					},
 					"401": { description: "Unauthorized" },
 				},
@@ -2081,9 +2186,12 @@ const swaggerDocument = {
 			post: {
 				tags: ["Mobile driver"],
 				summary: "Mark driver as available for trips",
+				description:
+					"Allowed only while availability_ui.can_mark_available is true (before deadline or during admin override).",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": { description: "Driver is available" },
+					"400": { description: "Outside availability window" },
 					"401": { description: "Unauthorized" },
 				},
 			},
@@ -2225,7 +2333,7 @@ const swaggerDocument = {
 				tags: ["Mobile driver"],
 				summary: "Driver arrived at passenger stop",
 				description:
-					"phasePassengerId = phase_passengers[].id from GET /session (RouteDailyPlanPhasePassenger).",
+					"Sets driver_arrived_at / dropoff_arrived_at. waiting_schedule: T1=arrived+passenger_waiting_time (still waiting + notify P+A), T2=T1+still_waiting_button_appear_in (skip countdown + notify P+A), T3=T2+skip_button_appear_in (MOVE_TO_NEXT + notify P+A).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{

@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { DriverService } from "../../services/driverService";
+import { driverAvailabilityService } from "../../services/driverAvailabilityService";
+import { passengerWaitingService } from "../../services/passengerWaitingService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { parseIdParam } from "../../utils/parseId";
@@ -99,5 +101,37 @@ export const DriverController = {
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
 		await driverService.delete(id);
 		ResponseHandler.success(res, null, "Driver deleted");
+	}),
+
+	/** POST /drivers/:id/availability-override — re-show availability button for 10 min */
+	grantAvailabilityOverride: catchAsync(async (req: Request, res: Response) => {
+		const driverId = parseIdParam(req.params.id);
+		if (driverId === null) throw ResponseHandler.badRequest("Invalid driver id");
+		const body = req.body as {
+			phase_driver_id: number;
+			duration_minutes?: number;
+		};
+		const result = await driverAvailabilityService.grantAdminOverride(
+			driverId,
+			body.phase_driver_id,
+			body.duration_minutes ?? 10,
+		);
+		ResponseHandler.success(res, result, "Availability override granted");
+	}),
+
+	/** GET /drivers/availability-missed?date=YYYY-MM-DD */
+	listAvailabilityMissed: catchAsync(async (req: Request, res: Response) => {
+		const date =
+			typeof req.query.date === "string" ? req.query.date : undefined;
+		const result = await driverAvailabilityService.listMissedForDate(date);
+		ResponseHandler.success(res, result, "Drivers who missed availability");
+	}),
+
+	/** GET /drivers/still-waiting?date=YYYY-MM-DD */
+	listStillWaiting: catchAsync(async (req: Request, res: Response) => {
+		const date =
+			typeof req.query.date === "string" ? req.query.date : undefined;
+		const result = await passengerWaitingService.listStillWaitingForDate(date);
+		ResponseHandler.success(res, result, "Drivers still waiting for passengers");
 	}),
 };

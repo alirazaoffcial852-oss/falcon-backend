@@ -11,6 +11,8 @@ import http from "http";
 import swaggerDocument from "./swagger";
 import { initSocket } from "./config/socketService";
 import { initDailyRouteCron } from "./config/dailyRouteCron";
+import { initDriverAvailabilityCron } from "./config/driverAvailabilityCron";
+import { initPassengerWaitingCron } from "./config/passengerWaitingCron";
 import {
 	initFirebaseAdmin,
 	isFirebaseMessagingReady,
@@ -165,6 +167,8 @@ async function startServer() {
 			console.log(`Server running on port ${PORT}`);
 			console.log(`Socket.IO enabled on port ${PORT}`);
 			initDailyRouteCron();
+			initDriverAvailabilityCron();
+			initPassengerWaitingCron();
 		});
 
 		// Graceful shutdown

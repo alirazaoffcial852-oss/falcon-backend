@@ -49,6 +49,12 @@ export const createPassengerSchema = Joi.object({
 	dropOffTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Drop off time must be a string",
 	}),
+	homePickupTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Home pick up time must be a string",
+	}),
+	pickUpTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Pick up time must be a string",
+	}),
 	officePickUpTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Office pick up time must be a string",
 	}),
@@ -88,6 +94,12 @@ export const updatePassengerSchema = Joi.object({
 	}),
 	dropOffTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Drop off time must be a string",
+	}),
+	homePickupTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Home pick up time must be a string",
+	}),
+	pickUpTime: Joi.string().trim().allow("", null).messages({
+		"string.trim": "Pick up time must be a string",
 	}),
 	officePickUpTime: Joi.string().trim().allow("", null).messages({
 		"string.trim": "Office pick up time must be a string",

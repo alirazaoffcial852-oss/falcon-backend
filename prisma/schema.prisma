@@ -206,6 +206,7 @@ model Passenger {
   office_long                       Float?
   company_id                        Int
   pick_up_time                      String?
+  home_pick_up_time                 String?
   drop_off_time                     String?
   office_pick_up_time               String?
   created_at                        DateTime                       @default(now())
@@ -401,6 +402,10 @@ model RouteDailyPlanPhaseDriver {
   fuel_payment_status               PaymentStatus                  @default(UNPAID)
   salary_paid_at                    DateTime?
   fuel_paid_at                      DateTime?
+  availability_missed_at            DateTime?
+  availability_miss_notified_at     DateTime?
+  availability_admin_override_until DateTime?
+  trip_start_reminder_sent_at       DateTime?
   created_at                        DateTime                       @default(now())
   updated_at                        DateTime                       @updatedAt
   driver                            Driver                         @relation(fields: [driver_id], references: [id], onDelete: Cascade)
@@ -431,6 +436,10 @@ model RouteDailyPlanPhasePassenger {
   passenger_id                     Int
   status                           PhasePassengerStatus      @default(PENDING)
   driver_arrived_at                DateTime?
+  passenger_waiting_notified_at    DateTime?
+  still_waiting_phase_notified_at  DateTime?
+  skip_phase_notified_at           DateTime?
+  move_next_notified_at            DateTime?
   passenger_ack                    PassengerAck?
   picked_at                        DateTime?
   dropoff_arrived_at               DateTime?
