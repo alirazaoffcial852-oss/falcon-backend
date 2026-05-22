@@ -2,6 +2,10 @@ import {
 	compareRouteLegsForDriverQueue,
 	parseTimeToMinutesFromMidnight,
 } from "./pickupSchedule";
+import {
+	buildPassengerWaitingSchedule,
+	type DriverWaitingConfig,
+} from "./passengerWaitingSchedule";
 
 export type DirectionsLegJson = {
 	distance_meters?: number;
@@ -112,6 +116,9 @@ type PhasePassengerRow = {
 	route_daily_plan_phase_driver_id: number;
 	status: string;
 	driver_arrived_at: Date | null;
+	still_waiting_phase_notified_at: Date | null;
+	skip_phase_notified_at: Date | null;
+	move_next_notified_at: Date | null;
 	passenger_ack: string | null;
 	picked_at: Date | null;
 	dropoff_arrived_at: Date | null;
@@ -136,9 +143,16 @@ export function buildPhasePassengersWithEstimates(params: {
 	legByPassengerId: Map<number, RouteLegForEstimate>;
 	batches: BatchDirections[];
 	driverLocation: { current_lat: number | null; current_long: number | null };
+	waitingConfig?: DriverWaitingConfig | null;
 }) {
-	const { phase, phasePassengers, legByPassengerId, batches, driverLocation } =
-		params;
+	const {
+		phase,
+		phasePassengers,
+		legByPassengerId,
+		batches,
+		driverLocation,
+		waitingConfig,
+	} = params;
 
 	const durationsByBatchId = new Map<number, number[]>();
 	for (const b of batches) {
@@ -180,6 +194,7 @@ export function buildPhasePassengersWithEstimates(params: {
 				dirDurationsByBatchId: durationsByBatchId,
 				batches,
 				driverLocation,
+				waitingConfig,
 				getCumulative: () => cumulative,
 				addToCumulative: (sec: number) => {
 					cumulative += sec;
@@ -195,12 +210,24 @@ export function buildPhasePassengersWithEstimates(params: {
 			passenger_id: pp.passenger_id,
 			status: pp.status,
 			driver_arrived_at: pp.driver_arrived_at,
+			still_waiting_phase_notified_at: pp.still_waiting_phase_notified_at,
+			skip_phase_notified_at: pp.skip_phase_notified_at,
+			move_next_notified_at: pp.move_next_notified_at,
 			passenger_ack: pp.passenger_ack,
 			picked_at: pp.picked_at,
 			dropoff_arrived_at: pp.dropoff_arrived_at,
 			dropped_at: pp.dropped_at,
 			created_at: pp.created_at,
 			updated_at: pp.updated_at,
+			waiting_schedule: buildPassengerWaitingSchedule({
+				phase,
+				driver_arrived_at: pp.driver_arrived_at,
+				dropoff_arrived_at: pp.dropoff_arrived_at,
+				still_waiting_phase_notified_at: pp.still_waiting_phase_notified_at,
+				skip_phase_notified_at: pp.skip_phase_notified_at,
+				move_next_notified_at: pp.move_next_notified_at,
+				config: waitingConfig ?? null,
+			}),
 			lat: null as number | null,
 			long: null as number | null,
 			queue_position: enriched.length + 1,
@@ -240,6 +267,7 @@ function mapPhasePassengerWithEstimate(ctx: {
 	dirDurationsByBatchId: Map<number, number[]>;
 	batches: BatchDirections[];
 	driverLocation: { current_lat: number | null; current_long: number | null };
+	waitingConfig?: DriverWaitingConfig | null;
 	getCumulative: () => number;
 	addToCumulative: (sec: number) => void;
 }) {
@@ -354,18 +382,32 @@ function mapPhasePassengerWithEstimate(ctx: {
 					dropoff_time: leg.dropoff_time,
 				};
 
+	const waiting_schedule = buildPassengerWaitingSchedule({
+		phase,
+		driver_arrived_at: pp.driver_arrived_at,
+		dropoff_arrived_at: pp.dropoff_arrived_at,
+		still_waiting_phase_notified_at: pp.still_waiting_phase_notified_at,
+		skip_phase_notified_at: pp.skip_phase_notified_at,
+		move_next_notified_at: pp.move_next_notified_at,
+		config: ctx.waitingConfig ?? null,
+	});
+
 	return {
 		id: pp.id,
 		route_daily_plan_phase_driver_id: pp.route_daily_plan_phase_driver_id,
 		passenger_id: pp.passenger_id,
 		status: pp.status,
 		driver_arrived_at: pp.driver_arrived_at,
+		still_waiting_phase_notified_at: pp.still_waiting_phase_notified_at,
+		skip_phase_notified_at: pp.skip_phase_notified_at,
+		move_next_notified_at: pp.move_next_notified_at,
 		passenger_ack: pp.passenger_ack,
 		picked_at: pp.picked_at,
 		dropoff_arrived_at: pp.dropoff_arrived_at,
 		dropped_at: pp.dropped_at,
 		created_at: pp.created_at,
 		updated_at: pp.updated_at,
+		waiting_schedule,
 		...stop,
 		...estimate,
 		passenger: pp.passenger,

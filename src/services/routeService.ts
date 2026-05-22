@@ -631,7 +631,16 @@ export class RouteService {
 					include: {
 						legs: {
 							include: {
-								passenger: { select: { id: true, name: true } },
+								passenger: {
+									select: {
+										id: true,
+										name: true,
+										home_address: true,
+										pick_up_time: true,
+										drop_off_time: true,
+										office_pick_up_time: true,
+									},
+								},
 							},
 						},
 					},
@@ -640,12 +649,115 @@ export class RouteService {
 					orderBy: { segment_order: "asc" },
 					include: { batch: true },
 				},
-				legs: { include: { passenger: { select: { id: true, name: true } } } },
+				legs: {
+					include: {
+						passenger: {
+							select: {
+								id: true,
+								name: true,
+								home_address: true,
+								pick_up_time: true,
+								drop_off_time: true,
+								office_pick_up_time: true,
+							},
+						},
+					},
+				},
 			},
 		});
 		if (!route)
 			throw ResponseHandler.notFound("No route found against this id: " + id);
 		return route;
+	}
+
+	/** Attach live PICKUP/DROP timestamps from today's execution plan when present. */
+	private async attachPhasePassengerTimingToRoutes(
+		routes: Array<{
+			route_daily_plan_id: number | null;
+			batches?: Array<{ legs?: Array<{ passenger_id: number }> }>;
+			legs?: Array<{ passenger_id: number }>;
+		}>,
+	): Promise<void> {
+		const planIds = [
+			...new Set(
+				routes
+					.map((r) => r.route_daily_plan_id)
+					.filter((id): id is number => id != null),
+			),
+		];
+		if (planIds.length === 0) return;
+
+		const rows = await this.db.routeDailyPlanPhasePassenger.findMany({
+			where: {
+				route_daily_plan_phase_driver: {
+					route_daily_plan_id: { in: planIds },
+				},
+			},
+			select: {
+				passenger_id: true,
+				driver_arrived_at: true,
+				picked_at: true,
+				dropoff_arrived_at: true,
+				dropped_at: true,
+				route_daily_plan_phase_driver: {
+					select: { phase: true, route_daily_plan_id: true },
+				},
+			},
+		});
+
+		type PhaseSnap = {
+			driver_arrived_at: string | null;
+			picked_at: string | null;
+			dropoff_arrived_at: string | null;
+			dropped_at: string | null;
+		};
+
+		const map = new Map<string, { pickup?: PhaseSnap; drop?: PhaseSnap }>();
+
+		for (const row of rows) {
+			const planId = row.route_daily_plan_phase_driver.route_daily_plan_id;
+			const phase = row.route_daily_plan_phase_driver.phase;
+			const key = `${planId}:${row.passenger_id}`;
+			const slot = map.get(key) ?? {};
+			const snap: PhaseSnap = {
+				driver_arrived_at: row.driver_arrived_at?.toISOString() ?? null,
+				picked_at: row.picked_at?.toISOString() ?? null,
+				dropoff_arrived_at: row.dropoff_arrived_at?.toISOString() ?? null,
+				dropped_at: row.dropped_at?.toISOString() ?? null,
+			};
+			if (phase === "PICKUP") slot.pickup = snap;
+			else if (phase === "DROP") slot.drop = snap;
+			map.set(key, slot);
+		}
+
+		const applyToLeg = (
+			leg: { passenger_id: number } & Record<string, unknown>,
+			planId: number,
+		) => {
+			const timing = map.get(`${planId}:${leg.passenger_id}`);
+			if (!timing) return;
+			leg.pickup_phase = timing.pickup ?? null;
+			leg.drop_phase = timing.drop ?? null;
+		};
+
+		for (const route of routes) {
+			const planId = route.route_daily_plan_id;
+			if (!planId) continue;
+			for (const batch of route.batches ?? []) {
+				for (const leg of batch.legs ?? []) {
+					applyToLeg(
+						leg as { passenger_id: number } & Record<string, unknown>,
+						planId,
+					);
+				}
+			}
+			for (const leg of route.legs ?? []) {
+				applyToLeg(
+					leg as { passenger_id: number } & Record<string, unknown>,
+					planId,
+				);
+			}
+		}
 	}
 
 	/** Stable API shape: always `waypointMode` + ordered `legs` (from batches when present). */
@@ -792,7 +904,16 @@ export class RouteService {
 					include: {
 						legs: {
 							include: {
-								passenger: { select: { id: true, name: true } },
+								passenger: {
+									select: {
+										id: true,
+										name: true,
+										home_address: true,
+										pick_up_time: true,
+										drop_off_time: true,
+										office_pick_up_time: true,
+									},
+								},
 							},
 						},
 					},
@@ -800,11 +921,22 @@ export class RouteService {
 				segments: { orderBy: { segment_order: "asc" } },
 				legs: {
 					include: {
-						passenger: { select: { id: true, name: true } },
+						passenger: {
+							select: {
+								id: true,
+								name: true,
+								home_address: true,
+								pick_up_time: true,
+								drop_off_time: true,
+								office_pick_up_time: true,
+							},
+						},
 					},
 				},
 			},
 		});
+		await this.attachPhasePassengerTimingToRoutes(data);
+
 		return {
 			data: data.map((route) => this.formatRouteForApi(route)),
 			pagination: {
@@ -818,6 +950,7 @@ export class RouteService {
 
 	async getById(id: number) {
 		const route = await this.findRouteById(id);
+		await this.attachPhasePassengerTimingToRoutes([route]);
 		return this.formatRouteForApi(route);
 	}
 
