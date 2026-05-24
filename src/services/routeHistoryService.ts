@@ -93,7 +93,34 @@ export class RouteHistoryService {
 			orderBy: [{ scheduled_date: "asc" }, { id: "asc" }],
 		});
 
+		const execRouteIds = [
+			...new Set(
+				plans
+					.map((p) => p.execution_route?.id)
+					.filter((id): id is number => id != null),
+			),
+		];
+		const routeLegs =
+			execRouteIds.length === 0
+				? []
+				: await db.routeLeg.findMany({
+						where: { route_id: { in: execRouteIds } },
+						select: {
+							route_id: true,
+							passenger_id: true,
+							pickup_time: true,
+						},
+					});
+		const legPickupTimeByRoutePassenger = new Map<string, string>();
+		for (const leg of routeLegs) {
+			legPickupTimeByRoutePassenger.set(
+				`${leg.route_id}:${leg.passenger_id}`,
+				leg.pickup_time,
+			);
+		}
+
 		const routes = plans.map((plan) => {
+			const executionRouteId = plan.execution_route?.id ?? null;
 			const pickupPd = plan.phase_drivers.find((pd) => pd.phase === "PICKUP");
 			const dropPd = plan.phase_drivers.find((pd) => pd.phase === "DROP");
 			const driver = pickupPd?.driver ?? dropPd?.driver ?? plan.definition_route.driver;
@@ -146,6 +173,13 @@ export class RouteHistoryService {
 				const picked_up = isPickedUp(pickupStatus);
 				const dropped_off = isDropped(dropStatus);
 
+				const legPickupTime =
+					executionRouteId != null
+						? (legPickupTimeByRoutePassenger.get(
+								`${executionRouteId}:${p.passenger_id}`,
+							) ?? null)
+						: null;
+
 				return {
 					passenger_id: p.passenger_id,
 					name: p.name,
@@ -155,6 +189,7 @@ export class RouteHistoryService {
 								phase_passenger_id: p.pickup.phase_passenger_id,
 								status: p.pickup.status,
 								picked_up,
+								actual_pickup_time: legPickupTime,
 								driver_arrived_at: p.pickup.driver_arrived_at,
 								passenger_ack: p.pickup.passenger_ack,
 								picked_at: p.pickup.picked_at,

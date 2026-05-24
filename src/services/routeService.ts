@@ -19,6 +19,7 @@ import {
 	parseLocalYmd,
 } from "../utils/recurringPlan";
 import {
+	formatMinutesFromMidnightToHHMM,
 	formatSecondsFromMidnightToHHMM,
 	getOfficeArrivalBufferMinutes,
 	parseTimeToMinutesFromMidnight,
@@ -391,6 +392,80 @@ export class RouteService {
 				drop_updated_at: new Date(),
 			},
 		});
+	}
+
+	/** Parse HH:mm or HH:mm:ss to route leg pickup_time (HH:mm). */
+	private pickupTimeFromPassengerHome(passenger: {
+		home_pick_up_time: string | null;
+		pick_up_time: string | null;
+	}): string {
+		for (const raw of [passenger.home_pick_up_time, passenger.pick_up_time]) {
+			const trimmed = raw?.trim();
+			if (!trimmed) continue;
+			let mins = parseTimeToMinutesFromMidnight(trimmed);
+			if (mins == null) {
+				const m = /^(\d{1,2}):(\d{2}):(\d{2})$/.exec(trimmed);
+				if (m) {
+					const h = Number(m[1]);
+					const min = Number(m[2]);
+					if (h <= 23 && min <= 59) mins = h * 60 + min;
+				}
+			}
+			if (mins != null) return formatMinutesFromMidnightToHHMM(mins);
+		}
+		return "00:00";
+	}
+
+	/**
+	 * Manual waypoint routes: overwrite each leg's `pickup_time` from passenger `home_pick_up_time`
+	 * (fallback `pick_up_time`). Run after `applyComputedPickupTimesForRoute` so dropoff_time /
+	 * office_pick_up_time stay on the auto/computed logic.
+	 */
+	private async applyManualHomePickupTimesForRoute(
+		routeId: number,
+	): Promise<void> {
+		const route = await this.db.route.findUnique({
+			where: { id: routeId },
+			include: {
+				batches: {
+					orderBy: { batch_order: "asc" },
+					include: {
+						legs: {
+							include: {
+								passenger: {
+									select: {
+										id: true,
+										home_pick_up_time: true,
+										pick_up_time: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+		if (!route) return;
+
+		for (const batch of route.batches) {
+			for (const leg of batch.legs) {
+				const pickupHHMM = this.pickupTimeFromPassengerHome(leg.passenger);
+				await this.db.routeLeg.update({
+					where: { id: leg.id },
+					data: { pickup_time: pickupHHMM },
+				});
+			}
+		}
+	}
+
+	private async applyPickupTimesForRoute(
+		routeId: number,
+		mode: RouteWaypointMode,
+	): Promise<void> {
+		await this.applyComputedPickupTimesForRoute(routeId);
+		if (mode === "manual") {
+			await this.applyManualHomePickupTimesForRoute(routeId);
+		}
 	}
 
 	private async optimizeAllBatches(
@@ -1026,7 +1101,7 @@ export class RouteService {
 		});
 
 		await this.optimizeAllBatches(route.id, waypointMode);
-		await this.applyComputedPickupTimesForRoute(route.id);
+		await this.applyPickupTimesForRoute(route.id, waypointMode);
 		return this.getById(route.id);
 	}
 
@@ -1206,7 +1281,7 @@ export class RouteService {
 					data: { waypointMode: next },
 				});
 				await this.optimizeAllBatches(id, next);
-				await this.applyComputedPickupTimesForRoute(id);
+				await this.applyPickupTimesForRoute(id, next);
 			}
 		}
 
@@ -1469,8 +1544,7 @@ export class RouteService {
 
 		const mode = (definition.waypointMode ?? "auto") as RouteWaypointMode;
 		await this.optimizeAllBatches(templateRouteId, mode);
-		// Ensure pickup_time / office_pick_up_time are computed before phase trip times.
-		await this.applyComputedPickupTimesForRoute(templateRouteId);
+		await this.applyPickupTimesForRoute(templateRouteId, mode);
 		await this.setTripStartTimesForDailyPlan(templateRouteId, planId);
 		return this.getById(templateRouteId);
 	}
