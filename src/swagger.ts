@@ -428,7 +428,7 @@ const swaggerDocument = {
 						type: "string",
 						enum: ["auto", "manual"],
 						description:
-							"Required (unless you send waypoint_mode instead). auto: nearest-first pickup + existing drop logic. manual: pickup order = batches[].legs / legs array; drop_waypoint_order = reverse of that leg order (per batch).",
+							"Required (unless you send waypoint_mode instead). auto: nearest-first pickup + pickup/dropoff times from drop_off_time and directions. manual: pickup order = batches[].legs / legs array; pickup_time = passenger home_pick_up_time after dropoff_time and office_pick_up_time are computed as auto.",
 					},
 					waypoint_mode: {
 						type: "string",
@@ -1738,7 +1738,7 @@ const swaggerDocument = {
 			get: {
 				tags: ["Routes"],
 				summary:
-					"Daily route history report (default today): plan status, pickup/drop per passenger",
+					"Daily route history report (default today): plan status, pickup/drop per passenger; pickup.actual_pickup_time from route_legs (scheduled pickup).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
