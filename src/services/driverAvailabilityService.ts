@@ -218,14 +218,12 @@ export class DriverAvailabilityService {
 		if (ui.status === "ALREADY_AVAILABLE") {
 			throw ResponseHandler.badRequest("Driver is already available");
 		}
-		if (ui.status === "TOO_EARLY") {
-			throw ResponseHandler.badRequest(
-				`Availability opens at ${ui.window_opens_at ?? "scheduled time"}`,
-			);
-		}
 		if (ui.status === "DEADLINE_PASSED") {
+			const by = ui.must_mark_available_before;
 			throw ResponseHandler.badRequest(
-				"Availability deadline passed — contact admin for override",
+				by
+					? `Availability must be marked before ${by} — deadline passed. Contact admin for override.`
+					: "Availability deadline passed — contact admin for override",
 			);
 		}
 		throw ResponseHandler.badRequest("Cannot mark available for this trip");

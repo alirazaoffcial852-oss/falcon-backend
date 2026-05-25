@@ -2173,7 +2173,7 @@ const swaggerDocument = {
 				tags: ["Mobile driver"],
 				summary: "Get driver availability status (read-only)",
 				description:
-					"Includes availability_ui: show_availability_button (true before trip_start − availability_time), trip_start_reminder_at (trip_start − remaining_start_time; driver gets push/socket driver:trip_start_reminder at that time if already available), status OPEN | TOO_EARLY | DEADLINE_PASSED | ADMIN_OVERRIDE | ALREADY_AVAILABLE.",
+					"Includes availability_ui: can mark available any time before must_mark_available_before (trip_start − availability_time). trip_start_reminder_at = trip_start − remaining_start_time (reminder only, does not block marking). status OPEN | DEADLINE_PASSED | ADMIN_OVERRIDE | ALREADY_AVAILABLE | NO_UPCOMING_TRIP.",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": {

@@ -450,7 +450,19 @@ export class DriverService {
   }
 
   async delete(id: number) {
-    await this.getById(id);
-    await this.db.driver.delete({ where: { id } });
+    const driver = await this.db.driver.findUnique({
+      where: { id },
+      select: { id: true, user_id: true },
+    });
+    if (!driver) {
+      throw ResponseHandler.notFound("No driver found against this id: " + id);
+    }
+
+    await this.db.$transaction(async (tx) => {
+      await tx.driver.delete({ where: { id } });
+      if (driver.user_id != null) {
+        await tx.user.delete({ where: { id: driver.user_id } });
+      }
+    });
   }
 }

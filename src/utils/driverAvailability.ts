@@ -115,16 +115,9 @@ export function computeAvailabilityUi(params: {
 	}
 
 	const deadlineMinutes = tripStartMinutes - leadMinutes;
-	const windowOpenMinutes =
-		remainingMinutes != null
-			? tripStartMinutes - remainingMinutes
-			: 0;
 
 	const tripStartLabel = nextPickup.trip_start_time.trim();
 	const deadlineLabel = formatMinutesToHHMM(deadlineMinutes);
-	const windowOpenLabel = formatMinutesToHHMM(
-		Math.max(0, windowOpenMinutes),
-	);
 
 	base.next_trip = {
 		phase_driver_id: nextPickup.phase_driver_id,
@@ -134,7 +127,8 @@ export function computeAvailabilityUi(params: {
 	};
 	base.trip_start_time = tripStartLabel;
 	base.must_mark_available_before = deadlineLabel;
-	base.window_opens_at = windowOpenLabel;
+	/** No early lockout — driver may mark any time before `must_mark_available_before`. */
+	base.window_opens_at = null;
 	if (remainingMinutes != null) {
 		base.trip_start_reminder_at = formatMinutesToHHMM(
 			tripStartMinutes - remainingMinutes,
@@ -161,13 +155,6 @@ export function computeAvailabilityUi(params: {
 			status: "ADMIN_OVERRIDE",
 			admin_override_until: overrideUntil.toISOString(),
 			admin_override_remaining_seconds: remainingSec,
-		};
-	}
-
-	if (nowMinutes < windowOpenMinutes) {
-		return {
-			...base,
-			status: "TOO_EARLY",
 		};
 	}
 
