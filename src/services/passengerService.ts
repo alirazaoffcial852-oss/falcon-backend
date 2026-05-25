@@ -305,7 +305,21 @@ export class PassengerService {
 	}
 
 	async delete(id: number) {
-		await this.getById(id);
-		await this.db.passenger.delete({ where: { id } });
+		const passenger = await this.db.passenger.findUnique({
+			where: { id },
+			select: { id: true, user_id: true },
+		});
+		if (!passenger) {
+			throw ResponseHandler.notFound(
+				"No passenger found against this id: " + id,
+			);
+		}
+
+		await this.db.$transaction(async (tx) => {
+			await tx.passenger.delete({ where: { id } });
+			if (passenger.user_id != null) {
+				await tx.user.delete({ where: { id: passenger.user_id } });
+			}
+		});
 	}
 }
