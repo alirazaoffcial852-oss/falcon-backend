@@ -28,6 +28,38 @@ export function formatMinutesToHHMM(totalMinutes: number): string {
 	return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
+/** Latest HH:MM clock time from a list of route leg time strings. */
+export function maxClockTimeLabel(times: string[]): string | null {
+	let bestMinutes: number | null = null;
+	let bestLabel: string | null = null;
+	for (const raw of times) {
+		const trimmed = raw?.trim();
+		if (!trimmed) continue;
+		const minutes = parseTimeToMinutesFromMidnight(trimmed);
+		if (minutes == null) continue;
+		if (bestMinutes == null || minutes > bestMinutes) {
+			bestMinutes = minutes;
+			bestLabel = trimmed;
+		}
+	}
+	return bestLabel;
+}
+
+/** Per-trip schedule shown on driver availability (GET /mobile/driver/available). */
+export type TripAvailabilitySchedule = {
+	scheduled_date: string | null;
+	/** Last time driver can mark available (trip_start − availability_time). */
+	mark_available_until: string | null;
+	/** First pickup / PICKUP phase start (HH:MM). */
+	trip_pickup_starts_at: string | null;
+	/** Push reminder at trip_start − remaining_start_time (HH:MM). */
+	trip_start_reminder_at: string | null;
+	/** DROP phase start — office pick-up time from route (HH:MM). */
+	drop_phase_starts_at: string | null;
+	/** Planned end — latest passenger dropoff_time on the route (HH:MM). */
+	trip_completes_at: string | null;
+};
+
 export type AvailabilityUiStatus =
 	| "NO_UPCOMING_TRIP"
 	| "ALREADY_AVAILABLE"
@@ -75,6 +107,7 @@ export function computeAvailabilityUi(params: {
 		phase: "PICKUP";
 		trip_start_time: string;
 	} | null;
+	trip_schedule: TripAvailabilitySchedule | null;
 } {
 	const { is_available, config, nextPickup } = params;
 	const now = params.now ?? new Date();
@@ -101,6 +134,7 @@ export function computeAvailabilityUi(params: {
 			phase: "PICKUP";
 			trip_start_time: string;
 		} | null,
+		trip_schedule: null as TripAvailabilitySchedule | null,
 	};
 
 	if (!nextPickup?.trip_start_time?.trim()) {
@@ -134,6 +168,16 @@ export function computeAvailabilityUi(params: {
 			tripStartMinutes - remainingMinutes,
 		);
 	}
+
+	const tripSchedule: TripAvailabilitySchedule = {
+		scheduled_date: null,
+		mark_available_until: deadlineLabel,
+		trip_pickup_starts_at: tripStartLabel,
+		trip_start_reminder_at: base.trip_start_reminder_at,
+		drop_phase_starts_at: null,
+		trip_completes_at: null,
+	};
+	base.trip_schedule = tripSchedule;
 
 	if (is_available) {
 		return {

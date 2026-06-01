@@ -4,8 +4,10 @@ import { ResponseHandler } from "../utils/responses/ResponseHandler";
 import {
 	computeAvailabilityUi,
 	hasReachedAvailabilityDeadline,
+	maxClockTimeLabel,
 	type AvailabilityPhaseContext,
 	type DriverAvailabilityConfig,
+	type TripAvailabilitySchedule,
 } from "../utils/driverAvailability";
 import { parseLocalYmd, getLocalDateOnly } from "../utils/recurringPlan";
 import {
@@ -65,7 +67,47 @@ export class DriverAvailabilityService {
 		};
 	}
 
-	buildAvailabilityPayload(
+	/** DB-backed trip times for availability UI (drop phase, last dropoff). */
+	async enrichTripSchedule(
+		routeDailyPlanId: number,
+		schedule: TripAvailabilitySchedule,
+	): Promise<TripAvailabilitySchedule> {
+		const plan = await db.routeDailyPlan.findUnique({
+			where: { id: routeDailyPlanId },
+			select: { scheduled_date: true, definition_route_id: true },
+		});
+		if (!plan) return schedule;
+
+		const [dropPhase, legs] = await Promise.all([
+			db.routeDailyPlanPhaseDriver.findFirst({
+				where: { route_daily_plan_id: routeDailyPlanId, phase: "DROP" },
+				select: { trip_start_time: true },
+			}),
+			db.routeLeg.findMany({
+				where: { route_id: plan.definition_route_id },
+				select: { dropoff_time: true },
+			}),
+		]);
+
+		const dropoffTimes = legs
+			.map((l) => l.dropoff_time?.trim())
+			.filter((t): t is string => Boolean(t));
+
+		const scheduled = plan.scheduled_date;
+		const scheduledDate =
+			scheduled instanceof Date
+				? scheduled.toISOString().slice(0, 10)
+				: String(scheduled).slice(0, 10);
+
+		return {
+			...schedule,
+			scheduled_date: scheduledDate,
+			drop_phase_starts_at: dropPhase?.trip_start_time?.trim() ?? null,
+			trip_completes_at: maxClockTimeLabel(dropoffTimes),
+		};
+	}
+
+	async buildAvailabilityPayload(
 		driver: {
 			id: number;
 			is_available: boolean;
@@ -79,6 +121,17 @@ export class DriverAvailabilityService {
 			config,
 			nextPickup,
 		});
+
+		if (
+			nextPickup &&
+			availability_ui.trip_schedule &&
+			nextPickup.route_daily_plan_id
+		) {
+			availability_ui.trip_schedule = await this.enrichTripSchedule(
+				nextPickup.route_daily_plan_id,
+				availability_ui.trip_schedule,
+			);
+		}
 
 		return {
 			driver: {

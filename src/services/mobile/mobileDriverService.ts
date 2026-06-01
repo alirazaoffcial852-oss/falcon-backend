@@ -733,10 +733,12 @@ export const MobileDriverService = {
 
 		const nextPickup =
 			await driverAvailabilityService.findNextPickupPhaseForDriver(driver.id);
-		const ui = driverAvailabilityService.buildAvailabilityPayload(
-			driver,
-			config,
-			nextPickup,
+		const ui = (
+			await driverAvailabilityService.buildAvailabilityPayload(
+				driver,
+				config,
+				nextPickup,
+			)
 		).availability_ui;
 		driverAvailabilityService.assertCanMarkAvailable(ui);
 
@@ -791,7 +793,7 @@ export const MobileDriverService = {
 			config,
 		);
 
-		return driverAvailabilityService.buildAvailabilityPayload(
+		return await driverAvailabilityService.buildAvailabilityPayload(
 			updatedDriver,
 			config,
 			await driverAvailabilityService.findNextPickupPhaseForDriver(
@@ -822,7 +824,7 @@ export const MobileDriverService = {
 
 		const nextPickup =
 			await driverAvailabilityService.findNextPickupPhaseForDriver(driver.id);
-		return driverAvailabilityService.buildAvailabilityPayload(
+		return await driverAvailabilityService.buildAvailabilityPayload(
 			driver,
 			config,
 			nextPickup,
@@ -935,8 +937,8 @@ export const MobileDriverService = {
 			legByRoutePassenger.set(`${l.route_id}:${l.passenger_id}`, l);
 		}
 
-		let availabilityPayload: ReturnType<
-			typeof driverAvailabilityService.buildAvailabilityPayload
+		let availabilityPayload: Awaited<
+			ReturnType<typeof driverAvailabilityService.buildAvailabilityPayload>
 		> | null = null;
 		const waitingConfig: DriverWaitingConfig | null = config
 			? {
@@ -964,7 +966,7 @@ export const MobileDriverService = {
 					driver.id,
 				);
 			availabilityPayload =
-				driverAvailabilityService.buildAvailabilityPayload(
+				await driverAvailabilityService.buildAvailabilityPayload(
 					driver,
 					config,
 					nextPickup,

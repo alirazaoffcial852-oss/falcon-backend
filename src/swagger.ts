@@ -2178,7 +2178,7 @@ const swaggerDocument = {
 				responses: {
 					"200": {
 						description:
-							"driver, config, availability_ui (show_availability_button, must_mark_available_before, etc.)",
+							"driver, config, availability_ui (show_availability_button, must_mark_available_before, trip_schedule with mark_available_until, trip_pickup_starts_at, drop_phase_starts_at, trip_completes_at, etc.)",
 					},
 					"401": { description: "Unauthorized" },
 				},
