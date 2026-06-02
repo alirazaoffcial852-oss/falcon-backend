@@ -2004,20 +2004,36 @@ export const MobileDriverService = {
 		const isDropAction = isDropRecordAction;
 		let dropRecordedAtResponse: string | null = null;
 		if (isDropAction) {
-			if (ppRow.dropped_at != null) {
-				throw ResponseHandler.badRequest(
-					"This passenger has already been dropped.",
-				);
+			const recordedAt = options?.dropRecordedAt ?? new Date();
+			if (action === "DROPPED") {
+				if (ppRow.dropped_at != null || ppRow.status === "DROPPED") {
+					throw ResponseHandler.badRequest(
+						"This passenger has already been dropped.",
+					);
+				}
+				dropRecordedAtResponse = recordedAt.toISOString();
+				await db.routeDailyPlanPhasePassenger.update({
+					where: { id: phasePassengerId },
+					data: {
+						status: "DROPPED",
+						dropped_at: recordedAt,
+					},
+				});
+			} else {
+				// PICKED on DROP phase row — office pickup before home drop
+				if (ppRow.dropped_at != null || ppRow.status === "DROPPED") {
+					throw ResponseHandler.badRequest(
+						"This passenger has already been dropped.",
+					);
+				}
+				await db.routeDailyPlanPhasePassenger.update({
+					where: { id: phasePassengerId },
+					data: {
+						status: "PICKED",
+						picked_at: recordedAt,
+					},
+				});
 			}
-			const droppedAt = options?.dropRecordedAt ?? new Date();
-			dropRecordedAtResponse = droppedAt.toISOString();
-			await db.routeDailyPlanPhasePassenger.update({
-				where: { id: phasePassengerId },
-				data: {
-					status: "DROPPED",
-					picked_at: droppedAt,
-				},
-			});
 		} else if (action === "STILL_WAITING") {
 			await updatePhasePassengerRow(db, routePlanId, "DROP", passengerId, {
 				status: "STILL_WAITING",
@@ -2041,13 +2057,22 @@ export const MobileDriverService = {
 			phase: "DROP",
 			action: String(action),
 		};
-		if (isDropAction) {
+		if (action === "DROPPED") {
 			void notificationService.sendToPassengerIds([passengerId], {
 				title: "Dropped off",
 				body: "You have been dropped off. Your trip for today is complete.",
 				data: {
 					...dropDataBase,
 					type: "passenger_dropped",
+				},
+			});
+		} else if (isDropAction) {
+			void notificationService.sendToPassengerIds([passengerId], {
+				title: "Picked up",
+				body: "You have been picked up from the office.",
+				data: {
+					...dropDataBase,
+					type: "passenger_leg_action",
 				},
 			});
 		} else if (action === "STILL_WAITING") {
