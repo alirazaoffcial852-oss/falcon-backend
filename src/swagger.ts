@@ -2173,12 +2173,12 @@ const swaggerDocument = {
 				tags: ["Mobile driver"],
 				summary: "Get driver availability status (read-only)",
 				description:
-					"Includes availability_ui: can mark available any time before must_mark_available_before (trip_start − availability_time). trip_start_reminder_at = trip_start − remaining_start_time (reminder only, does not block marking). status OPEN | DEADLINE_PASSED | ADMIN_OVERRIDE | ALREADY_AVAILABLE | NO_UPCOMING_TRIP.",
+					"Includes availability_ui for PICKUP and DROP: mark available before trip_start − availability_time. After pickup completes, DROP uses drop trip_start_time (same OPEN/ALREADY_AVAILABLE rules). active_trip set when a phase is ONGOING. status: OPEN | IN_TRIP | DEADLINE_PASSED | ADMIN_OVERRIDE | ALREADY_AVAILABLE | NO_UPCOMING_TRIP.",
 				security: [{ bearerAuth: [] }],
 				responses: {
 					"200": {
 						description:
-							"driver, config, availability_ui (show_availability_button, must_mark_available_before, etc.)",
+							"driver, config, availability_ui (show_availability_button, must_mark_available_before, trip_schedule with mark_available_until, trip_pickup_starts_at, drop_phase_starts_at, trip_completes_at, etc.)",
 					},
 					"401": { description: "Unauthorized" },
 				},

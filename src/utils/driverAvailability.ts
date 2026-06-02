@@ -28,8 +28,41 @@ export function formatMinutesToHHMM(totalMinutes: number): string {
 	return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }
 
+/** Latest HH:MM clock time from a list of route leg time strings. */
+export function maxClockTimeLabel(times: string[]): string | null {
+	let bestMinutes: number | null = null;
+	let bestLabel: string | null = null;
+	for (const raw of times) {
+		const trimmed = raw?.trim();
+		if (!trimmed) continue;
+		const minutes = parseTimeToMinutesFromMidnight(trimmed);
+		if (minutes == null) continue;
+		if (bestMinutes == null || minutes > bestMinutes) {
+			bestMinutes = minutes;
+			bestLabel = trimmed;
+		}
+	}
+	return bestLabel;
+}
+
+/** Per-trip schedule shown on driver availability (GET /mobile/driver/available). */
+export type TripAvailabilitySchedule = {
+	scheduled_date: string | null;
+	/** Last time driver can mark available (trip_start − availability_time). */
+	mark_available_until: string | null;
+	/** First pickup / PICKUP phase start (HH:MM). */
+	trip_pickup_starts_at: string | null;
+	/** Push reminder at trip_start − remaining_start_time (HH:MM). */
+	trip_start_reminder_at: string | null;
+	/** DROP phase start — office pick-up time from route (HH:MM). */
+	drop_phase_starts_at: string | null;
+	/** Planned end — latest passenger dropoff_time on the route (HH:MM). */
+	trip_completes_at: string | null;
+};
+
 export type AvailabilityUiStatus =
 	| "NO_UPCOMING_TRIP"
+	| "IN_TRIP"
 	| "ALREADY_AVAILABLE"
 	| "TOO_EARLY"
 	| "OPEN"
@@ -44,6 +77,8 @@ export type AvailabilityPhaseContext = {
 	availability_missed_at: Date | null;
 	availability_miss_notified_at: Date | null;
 	availability_admin_override_until: Date | null;
+	/** Set on DROP rows — pickup start time on the same daily plan. */
+	pickup_trip_start_time?: string | null;
 };
 
 export type DriverAvailabilityConfig = {
@@ -54,7 +89,13 @@ export type DriverAvailabilityConfig = {
 export function computeAvailabilityUi(params: {
 	is_available: boolean;
 	config: DriverAvailabilityConfig;
-	nextPickup: AvailabilityPhaseContext | null;
+	/** PICKUP or DROP — incomplete phase that may still need mark-available. */
+	nextPhase: AvailabilityPhaseContext | null;
+	/** ONGOING phase for resume (`active_trip`); does not block OPEN when drop still needs mark. */
+	activePhase?: (AvailabilityPhaseContext & {
+		plan_status?: string;
+		pickup_trip_start_time?: string | null;
+	}) | null;
 	now?: Date;
 }): {
 	show_availability_button: boolean;
@@ -72,11 +113,21 @@ export function computeAvailabilityUi(params: {
 	next_trip: {
 		phase_driver_id: number;
 		route_daily_plan_id: number;
-		phase: "PICKUP";
+		phase: "PICKUP" | "DROP";
 		trip_start_time: string;
 	} | null;
+	/** Same as `next_trip` when a phase is ONGOING — use for resume routing after login. */
+	active_trip: {
+		phase_driver_id: number;
+		route_daily_plan_id: number;
+		phase: "PICKUP" | "DROP";
+		trip_start_time: string;
+		plan_status: string;
+	} | null;
+	trip_schedule: TripAvailabilitySchedule | null;
 } {
-	const { is_available, config, nextPickup } = params;
+	const { is_available, config, nextPhase } = params;
+	const activePhase = params.activePhase ?? null;
 	const now = params.now ?? new Date();
 	const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -98,17 +149,41 @@ export function computeAvailabilityUi(params: {
 		next_trip: null as {
 			phase_driver_id: number;
 			route_daily_plan_id: number;
-			phase: "PICKUP";
+			phase: "PICKUP" | "DROP";
 			trip_start_time: string;
 		} | null,
+		active_trip: null as {
+			phase_driver_id: number;
+			route_daily_plan_id: number;
+			phase: "PICKUP" | "DROP";
+			trip_start_time: string;
+			plan_status: string;
+		} | null,
+		trip_schedule: null as TripAvailabilitySchedule | null,
 	};
 
-	if (!nextPickup?.trip_start_time?.trim()) {
+	if (!nextPhase?.trip_start_time?.trim()) {
+		if (activePhase?.trip_start_time?.trim()) {
+			const phaseLabel = activePhase.trip_start_time.trim();
+			const activeTrip = {
+				phase_driver_id: activePhase.phase_driver_id,
+				route_daily_plan_id: activePhase.route_daily_plan_id,
+				phase: activePhase.phase,
+				trip_start_time: phaseLabel,
+				plan_status: activePhase.plan_status ?? "ONGOING",
+			};
+			return {
+				...base,
+				status: "IN_TRIP",
+				trip_start_time: phaseLabel,
+				active_trip: activeTrip,
+			};
+		}
 		return base;
 	}
 
 	const tripStartMinutes = parseTimeToMinutesFromMidnight(
-		nextPickup.trip_start_time,
+		nextPhase.trip_start_time,
 	);
 	if (tripStartMinutes == null || leadMinutes == null) {
 		return base;
@@ -116,23 +191,49 @@ export function computeAvailabilityUi(params: {
 
 	const deadlineMinutes = tripStartMinutes - leadMinutes;
 
-	const tripStartLabel = nextPickup.trip_start_time.trim();
+	const tripStartLabel = nextPhase.trip_start_time.trim();
 	const deadlineLabel = formatMinutesToHHMM(deadlineMinutes);
+	const pickupStart =
+		nextPhase.phase === "PICKUP"
+			? tripStartLabel
+			: (nextPhase.pickup_trip_start_time?.trim() ?? null);
+	const dropStart =
+		nextPhase.phase === "DROP" ? tripStartLabel : null;
 
-	base.next_trip = {
-		phase_driver_id: nextPickup.phase_driver_id,
-		route_daily_plan_id: nextPickup.route_daily_plan_id,
-		phase: "PICKUP",
+	const upcomingTrip = {
+		phase_driver_id: nextPhase.phase_driver_id,
+		route_daily_plan_id: nextPhase.route_daily_plan_id,
+		phase: nextPhase.phase,
 		trip_start_time: tripStartLabel,
 	};
+	base.next_trip = upcomingTrip;
 	base.trip_start_time = tripStartLabel;
 	base.must_mark_available_before = deadlineLabel;
-	/** No early lockout — driver may mark any time before `must_mark_available_before`. */
 	base.window_opens_at = null;
 	if (remainingMinutes != null) {
 		base.trip_start_reminder_at = formatMinutesToHHMM(
 			tripStartMinutes - remainingMinutes,
 		);
+	}
+
+	base.trip_schedule = {
+		scheduled_date: null,
+		mark_available_until: deadlineLabel,
+		trip_pickup_starts_at: pickupStart,
+		trip_start_reminder_at: base.trip_start_reminder_at,
+		drop_phase_starts_at: dropStart,
+		trip_completes_at: null,
+	};
+
+	if (activePhase?.trip_start_time?.trim()) {
+		const phaseLabel = activePhase.trip_start_time.trim();
+		base.active_trip = {
+			phase_driver_id: activePhase.phase_driver_id,
+			route_daily_plan_id: activePhase.route_daily_plan_id,
+			phase: activePhase.phase,
+			trip_start_time: phaseLabel,
+			plan_status: activePhase.plan_status ?? "ONGOING",
+		};
 	}
 
 	if (is_available) {
@@ -142,7 +243,7 @@ export function computeAvailabilityUi(params: {
 		};
 	}
 
-	const overrideUntil = nextPickup.availability_admin_override_until;
+	const overrideUntil = nextPhase.availability_admin_override_until;
 	if (overrideUntil && overrideUntil.getTime() > now.getTime()) {
 		const remainingSec = Math.max(
 			0,
