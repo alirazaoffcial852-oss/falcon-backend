@@ -15,6 +15,7 @@ import {
 	phaseDriverScheduledDateWhere,
 } from "../utils/routeDayScope";
 import { notificationService } from "./notificationService";
+import { log } from "node:console";
 
 const db = DatabaseService.getInstance().getPrisma();
 
@@ -67,6 +68,132 @@ export class DriverAvailabilityService {
 		};
 	}
 
+	/**
+	 * Next phase that still needs the availability flow (mark before trip_start − availability_time).
+	 * PICKUP if not completed; else DROP when pickup on the same plan is completed.
+	 */
+	async findNextPhaseForAvailability(
+		driverId: number,
+	): Promise<
+		| (AvailabilityPhaseContext & {
+				pickup_trip_start_time: string | null;
+		  })
+		| null
+	> {
+		const rows = await db.routeDailyPlanPhaseDriver.findMany({
+			where: {
+				driver_id: driverId,
+				status: { not: "COMPLETED" },
+				scheduled_date: phaseDriverScheduledDateWhere(),
+				trip_start_time: { not: null },
+			},
+			select: {
+				id: true,
+				route_daily_plan_id: true,
+				phase: true,
+				trip_start_time: true,
+				status: true,
+				availability_missed_at: true,
+				availability_miss_notified_at: true,
+				availability_admin_override_until: true,
+			},
+			orderBy: [{ trip_start_time: "asc" }, { id: "asc" }],
+		});
+
+		const mapRow = (
+			row: (typeof rows)[number],
+			pickupTripStart: string | null,
+		): AvailabilityPhaseContext & { pickup_trip_start_time: string | null } => ({
+			phase_driver_id: row.id,
+			route_daily_plan_id: row.route_daily_plan_id,
+			phase: row.phase,
+			trip_start_time: row.trip_start_time!.trim(),
+			availability_missed_at: row.availability_missed_at,
+			availability_miss_notified_at: row.availability_miss_notified_at,
+			availability_admin_override_until: row.availability_admin_override_until,
+			pickup_trip_start_time: pickupTripStart,
+		});
+
+		for (const row of rows) {
+			if (!row.trip_start_time?.trim()) continue;
+
+			if (row.phase === "PICKUP") {
+				return mapRow(row, row.trip_start_time.trim());
+			}
+
+			if (row.phase === "DROP") {
+				const pickupRow = await db.routeDailyPlanPhaseDriver.findFirst({
+					where: {
+						route_daily_plan_id: row.route_daily_plan_id,
+						phase: "PICKUP",
+					},
+					select: { status: true, trip_start_time: true },
+				});
+				if (pickupRow?.status !== "COMPLETED") continue;
+				return mapRow(
+					row,
+					pickupRow.trip_start_time?.trim() ?? null,
+				);
+			}
+		}
+
+		return null;
+	}
+
+	/** ONGOING PICKUP or DROP today (e.g. drop after pickup complete). */
+	async findActiveOngoingPhaseForDriver(driverId: number): Promise<
+		| (AvailabilityPhaseContext & {
+				plan_status: string;
+				pickup_trip_start_time: string | null;
+		  })
+		| null
+	> {
+		const rows = await db.routeDailyPlanPhaseDriver.findMany({
+			where: {
+				driver_id: driverId,
+				status: "ONGOING",
+				scheduled_date: phaseDriverScheduledDateWhere(),
+				trip_start_time: { not: null },
+				route_daily_plan: { status: { in: ["PENDING", "ONGOING"] } },
+			},
+			select: {
+				id: true,
+				route_daily_plan_id: true,
+				phase: true,
+				trip_start_time: true,
+				availability_missed_at: true,
+				availability_miss_notified_at: true,
+				availability_admin_override_until: true,
+				route_daily_plan: { select: { status: true } },
+			},
+			orderBy: [{ phase: "desc" }, { trip_start_time: "asc" }, { id: "asc" }],
+		});
+
+		const active = rows.find((r) => r.trip_start_time?.trim());
+		if (!active?.trip_start_time) return null;
+
+		const pickupRow = await db.routeDailyPlanPhaseDriver.findFirst({
+			where: {
+				route_daily_plan_id: active.route_daily_plan_id,
+				phase: "PICKUP",
+			},
+			select: { trip_start_time: true },
+		});
+
+		return {
+			phase_driver_id: active.id,
+			route_daily_plan_id: active.route_daily_plan_id,
+			phase: active.phase,
+			trip_start_time: active.trip_start_time.trim(),
+			availability_missed_at: active.availability_missed_at,
+			availability_miss_notified_at: active.availability_miss_notified_at,
+			availability_admin_override_until:
+				active.availability_admin_override_until,
+			plan_status: active.route_daily_plan.status,
+			pickup_trip_start_time: pickupRow?.trip_start_time?.trim() ?? null,
+		};
+	}
+
 	/** DB-backed trip times for availability UI (drop phase, last dropoff). */
 	async enrichTripSchedule(
 		routeDailyPlanId: number,
@@ -114,23 +241,36 @@ export class DriverAvailabilityService {
 			available_at: Date | null;
 		},
 		config: DriverAvailabilityConfig,
-		nextPickup: AvailabilityPhaseContext | null,
+		nextPhase: AvailabilityPhaseContext | null = null,
 	) {
+		const phaseForAvailability =
+			nextPhase ?? (await this.findNextPhaseForAvailability(driver.id));
+		const activePhase = await this.findActiveOngoingPhaseForDriver(driver.id);
+
 		const availability_ui = computeAvailabilityUi({
 			is_available: driver.is_available,
 			config,
-			nextPickup,
+			nextPhase: phaseForAvailability,
+			activePhase,
 		});
 
-		if (
-			nextPickup &&
-			availability_ui.trip_schedule &&
-			nextPickup.route_daily_plan_id
-		) {
+		const planIdForSchedule =
+			activePhase?.route_daily_plan_id ??
+			phaseForAvailability?.route_daily_plan_id;
+		if (availability_ui.trip_schedule && planIdForSchedule) {
 			availability_ui.trip_schedule = await this.enrichTripSchedule(
-				nextPickup.route_daily_plan_id,
+				planIdForSchedule,
 				availability_ui.trip_schedule,
 			);
+			const pickupStart =
+				phaseForAvailability?.phase === "PICKUP"
+					? phaseForAvailability.trip_start_time
+					: (phaseForAvailability?.pickup_trip_start_time ??
+						activePhase?.pickup_trip_start_time);
+			if (pickupStart && availability_ui.trip_schedule) {
+				availability_ui.trip_schedule.trip_pickup_starts_at =
+					pickupStart.trim();
+			}
 		}
 
 		return {
@@ -291,7 +431,6 @@ export class DriverAvailabilityService {
 			where: {
 				id: phaseDriverId,
 				driver_id: driverId,
-				phase: "PICKUP",
 			},
 			include: {
 				driver: { select: { id: true, name: true, is_available: true } },
@@ -369,5 +508,9 @@ export class DriverAvailabilityService {
 		};
 	}
 }
+
+export type DriverAvailabilityPayload = Awaited<
+	ReturnType<DriverAvailabilityService["buildAvailabilityPayload"]>
+>;
 
 export const driverAvailabilityService = new DriverAvailabilityService();
