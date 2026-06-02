@@ -1048,6 +1048,11 @@ export const MobileDriverService = {
 		selectedCarId?: number,
 	) {
 		const driver = await resolveDriver(userId);
+		console.log("[startTrip] request", {
+			userId,
+			phaseDriverId,
+			selectedCarId,
+		});
 
 		const phaseDriver = await db.routeDailyPlanPhaseDriver.findFirst({
 			where: {
@@ -1140,8 +1145,36 @@ export const MobileDriverService = {
 			);
 		}
 		const fuelPricePerLiterSnapshot = await getCurrentFuelPricePerLiter();
+		console.log("[startTrip] resolved context", {
+			phase: phaseDriver.phase,
+			phaseStatus: phaseDriver.status,
+			planStatus: plan.status,
+			routeId,
+			selectedAssignmentCarId: selectedAssignment.car_id,
+			kmPerLiter,
+			fuelPricePerLiterSnapshot,
+		});
 
 		if (phaseDriver.status === "ONGOING") {
+			console.log("[startTrip] phase already ONGOING", {
+				phaseDriverId: phaseDriver.id,
+				selectedCarIdProvided: selectedCarId != null,
+			});
+			if (selectedCarId != null) {
+				console.log("[startTrip] applying ONGOING snapshot update", {
+					phaseDriverId: phaseDriver.id,
+					selected_car_id: selectedAssignment.car_id,
+				});
+				await db.routeDailyPlanPhaseDriver.update({
+					where: { id: phaseDriver.id },
+					data: {
+						selected_car_id: selectedAssignment.car_id,
+						trip_km: phaseDriver.trip_km ?? 0,
+						km_per_liter_snapshot: kmPerLiter,
+						fuel_price_per_liter_snapshot: fuelPricePerLiterSnapshot,
+					},
+				});
+			}
 			return this.getSession(userId, phaseDriver.id);
 		}
 
@@ -1667,6 +1700,12 @@ export const MobileDriverService = {
 
 		const legId = leg.id;
 		const passengerId = ppRow.passenger_id;
+		const legActionPhaseMeta = {
+			phase: phaseDriver.phase,
+			phase_driver_id: phaseDriver.id,
+			phase_passenger_id: ppRow.id,
+			route_id: routeId,
+		};
 		const skipWaitingGateForNotComing =
 			action === "MOVE_TO_NEXT" && ppRow.passenger_ack === "NOT_COMING";
 
@@ -1814,7 +1853,7 @@ export const MobileDriverService = {
 									data: {
 										trip_start_time: plannedDropTime,
 										trip_started_at: new Date(),
-										status: "ONGOING",
+										// status: "ONGOING",
 									},
 								});
 
@@ -1879,6 +1918,7 @@ export const MobileDriverService = {
 							});
 						}
 						return {
+							...legActionPhaseMeta,
 							action,
 							next_passenger: null,
 							next_office: routeOffice
@@ -1896,6 +1936,7 @@ export const MobileDriverService = {
 
 					// No next segment -> let client finalize.
 					return {
+						...legActionPhaseMeta,
 						action,
 						next_passenger: null,
 						navigate_to_office: true,
@@ -1904,6 +1945,7 @@ export const MobileDriverService = {
 					};
 				}
 				return {
+					...legActionPhaseMeta,
 					action,
 					next_passenger: null,
 					navigate_to_office: false,
@@ -1939,6 +1981,7 @@ export const MobileDriverService = {
 			});
 
 			return {
+				...legActionPhaseMeta,
 				action,
 				next_passenger: nextLeg
 					? {
@@ -1971,7 +2014,7 @@ export const MobileDriverService = {
 			await db.routeDailyPlanPhasePassenger.update({
 				where: { id: phasePassengerId },
 				data: {
-					status: "PICKED",
+					status: "DROPPED",
 					picked_at: droppedAt,
 				},
 			});
@@ -2068,6 +2111,7 @@ export const MobileDriverService = {
 						data: { status: "ONGOING" },
 					});
 					return {
+						...legActionPhaseMeta,
 						action,
 						...dropActionMeta,
 						next_passenger: null,
@@ -2127,6 +2171,7 @@ export const MobileDriverService = {
 				}
 
 				return {
+					...legActionPhaseMeta,
 					action,
 					...dropActionMeta,
 					next_passenger: null,
@@ -2167,6 +2212,7 @@ export const MobileDriverService = {
 		}
 
 		return {
+			...legActionPhaseMeta,
 			action,
 			...dropActionMeta,
 			next_passenger: nextDrop
@@ -2459,7 +2505,10 @@ export const MobileDriverService = {
 					status: "PICKED",
 					dropped_at: null,
 				},
-				data: { dropped_at: completedAt },
+				data: { 
+					dropped_at: completedAt,
+					status: "DROPPED"
+				 },
 			});
 		}
 
@@ -2476,17 +2525,17 @@ export const MobileDriverService = {
 		
 		// DROP phase complete: mark dropped_at for passengers still PICKED on this leg
 		if (pd.phase === "DROP") {
-			await db.routeDailyPlanPhasePassenger.updateMany({
-				where: {
-					route_daily_plan_phase_driver_id: pd.id,
-					status: "PICKED",
-					dropped_at: null,
-				},
-				data: { 
-					status: "DROPPED",
-					dropped_at: completedAt
-				},
-			});
+			// await db.routeDailyPlanPhasePassenger.updateMany({
+			// 	where: {
+			// 		route_daily_plan_phase_driver_id: pd.id,
+			// 		status: "PICKED",
+			// 		dropped_at: null,
+			// 	},
+			// 	data: { 
+			// 		status: "DROPPED",
+			// 		dropped_at: completedAt
+			// 	},
+			// });
 			await db.routeDailyPlan.update({
 				where: { id: plan.id },
 				data: { status: "COMPLETED", completed_at: completedAt },

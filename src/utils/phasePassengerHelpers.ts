@@ -220,7 +220,7 @@ export async function findNextDropLegInBatch(
 			where: {
 				route_daily_plan_phase_driver_id: dropPdId,
 				passenger_id: l.passenger_id,
-				status: { in: ["PENDING", "ARRIVED", "STILL_WAITING"] },
+				status: { in: ["PENDING", "ARRIVED", "STILL_WAITING", "PICKED"] },
 			},
 		});
 		if (pp) return l;
@@ -251,7 +251,10 @@ export async function countBlockingPhasePassengersOnRoute(
 		where: {
 			route_daily_plan_phase_driver_id: pdId,
 			passenger_id: { in: ids },
-			status: { in: ["PENDING", "ARRIVED", "STILL_WAITING"] },
+			status:
+				phase === "DROP"
+					? { in: ["PENDING", "ARRIVED", "STILL_WAITING", "PICKED"] }
+					: { in: ["PENDING", "ARRIVED", "STILL_WAITING"] },
 		},
 	});
 }
@@ -274,7 +277,7 @@ export async function countDropPendingOrArrivedInBatch(
 		where: {
 			route_daily_plan_phase_driver_id: dropPdId,
 			passenger_id: { in: ids },
-			status: { in: ["PENDING", "ARRIVED", "STILL_WAITING"] },
+			status: { in: ["PENDING", "ARRIVED", "STILL_WAITING", "PICKED"] },
 		},
 	});
 }
