@@ -28,12 +28,34 @@ function formatDateOnly(d: Date): string {
 	return `${y}-${mo}-${day}`;
 }
 
-function isPickedUp(status: PhasePassengerStatus): boolean {
-	return status === "PICKED";
+function toIso(d: Date | null | undefined): string | null {
+	return d != null ? d.toISOString() : null;
 }
 
-function isDropped(status: PhasePassengerStatus): boolean {
-	return status === "DROPPED";
+function isPickedUp(snap: PhasePassengerSnapshot | null): boolean {
+	if (!snap) return false;
+	if (snap.status === "SKIPPED" || snap.status === "MOVE_TO_NEXT") return false;
+	if (snap.passenger_ack === "NOT_COMING") return false;
+	return snap.status === "PICKED" || snap.picked_at != null;
+}
+
+function isDroppedOff(snap: PhasePassengerSnapshot | null): boolean {
+	if (!snap) return false;
+	return snap.status === "DROPPED";
+}
+
+/** Evening office pick-up: manual routes prefer `passengers.office_pick_up_time`. */
+function resolveDropOfficePickUpTime(
+	waypointMode: "auto" | "manual",
+	passengerOfficePickUp: string | null,
+	legOfficePickUp: string | null,
+): string | null {
+	const fromPassenger = passengerOfficePickUp?.trim() || null;
+	const fromLeg = legOfficePickUp?.trim() || null;
+	if (waypointMode === "manual") {
+		return fromPassenger ?? fromLeg;
+	}
+	return fromLeg ?? fromPassenger;
 }
 
 type PhasePassengerSnapshot = {
@@ -44,6 +66,15 @@ type PhasePassengerSnapshot = {
 	picked_at: Date | null;
 	dropoff_arrived_at: Date | null;
 	dropped_at: Date | null;
+};
+
+type PassengerSlot = {
+	passenger_id: number;
+	name: string;
+	phone_no: string | null;
+	office_pick_up_time: string | null;
+	pickup: PhasePassengerSnapshot | null;
+	drop: PhasePassengerSnapshot | null;
 };
 
 export class RouteHistoryService {
@@ -66,6 +97,7 @@ export class RouteHistoryService {
 				definition_route: {
 					select: {
 						id: true,
+						waypointMode: true,
 						office_address: true,
 						route_price: true,
 						company: { select: { id: true, name: true } },
@@ -83,7 +115,12 @@ export class RouteHistoryService {
 						route_daily_plan_phase_passengers: {
 							include: {
 								passenger: {
-									select: { id: true, name: true, phone_no: true },
+									select: {
+										id: true,
+										name: true,
+										phone_no: true,
+										office_pick_up_time: true,
+									},
 								},
 							},
 						},
@@ -109,32 +146,31 @@ export class RouteHistoryService {
 							route_id: true,
 							passenger_id: true,
 							pickup_time: true,
+							office_pick_up_time: true,
 						},
 					});
 		const legPickupTimeByRoutePassenger = new Map<string, string>();
+		const legOfficePickUpTimeByRoutePassenger = new Map<string, string>();
 		for (const leg of routeLegs) {
-			legPickupTimeByRoutePassenger.set(
-				`${leg.route_id}:${leg.passenger_id}`,
-				leg.pickup_time,
-			);
+			const key = `${leg.route_id}:${leg.passenger_id}`;
+			legPickupTimeByRoutePassenger.set(key, leg.pickup_time);
+			if (leg.office_pick_up_time?.trim()) {
+				legOfficePickUpTimeByRoutePassenger.set(
+					key,
+					leg.office_pick_up_time.trim(),
+				);
+			}
 		}
 
 		const routes = plans.map((plan) => {
 			const executionRouteId = plan.execution_route?.id ?? null;
+			const waypointMode =
+				plan.definition_route.waypointMode === "manual" ? "manual" : "auto";
 			const pickupPd = plan.phase_drivers.find((pd) => pd.phase === "PICKUP");
 			const dropPd = plan.phase_drivers.find((pd) => pd.phase === "DROP");
 			const driver = pickupPd?.driver ?? dropPd?.driver ?? plan.definition_route.driver;
 
-			const byPassenger = new Map<
-				number,
-				{
-					passenger_id: number;
-					name: string;
-					phone_no: string | null;
-					pickup: PhasePassengerSnapshot | null;
-					drop: PhasePassengerSnapshot | null;
-				}
-			>();
+			const byPassenger = new Map<number, PassengerSlot>();
 
 			const ingestPhase = (
 				pd: (typeof plan.phase_drivers)[number] | undefined,
@@ -146,6 +182,7 @@ export class RouteHistoryService {
 						passenger_id: pp.passenger_id,
 						name: pp.passenger.name,
 						phone_no: pp.passenger.phone_no,
+						office_pick_up_time: pp.passenger.office_pick_up_time,
 						pickup: null,
 						drop: null,
 					};
@@ -168,17 +205,26 @@ export class RouteHistoryService {
 			ingestPhase(dropPd, "DROP");
 
 			const passengers = [...byPassenger.values()].map((p) => {
-				const pickupStatus = p.pickup?.status ?? "PENDING";
-				const dropStatus = p.drop?.status ?? "PENDING";
-				const picked_up = isPickedUp(pickupStatus);
-				const dropped_off = isDropped(dropStatus);
+				const picked_up = isPickedUp(p.pickup);
+				const dropped_off = isDroppedOff(p.drop);
 
-				const legPickupTime =
+				const legKey =
 					executionRouteId != null
-						? (legPickupTimeByRoutePassenger.get(
-								`${executionRouteId}:${p.passenger_id}`,
-							) ?? null)
+						? `${executionRouteId}:${p.passenger_id}`
 						: null;
+				const legPickupTime =
+					legKey != null
+						? (legPickupTimeByRoutePassenger.get(legKey) ?? null)
+						: null;
+				const legOfficePickUpTime =
+					legKey != null
+						? (legOfficePickUpTimeByRoutePassenger.get(legKey) ?? null)
+						: null;
+				const dropOfficePickUpTime = resolveDropOfficePickUpTime(
+					waypointMode,
+					p.office_pick_up_time,
+					legOfficePickUpTime,
+				);
 
 				return {
 					passenger_id: p.passenger_id,
@@ -190,10 +236,10 @@ export class RouteHistoryService {
 								status: p.pickup.status,
 								picked_up,
 								actual_pickup_time: legPickupTime,
-								driver_arrived_at: p.pickup.driver_arrived_at,
+								driver_arrived_at: toIso(p.pickup.driver_arrived_at),
 								passenger_ack: p.pickup.passenger_ack,
-								picked_at: p.pickup.picked_at,
-								dropped_at: p.pickup.dropped_at,
+								picked_at: toIso(p.pickup.picked_at),
+								dropped_at: toIso(p.pickup.dropped_at),
 							}
 						: null,
 					drop: p.drop
@@ -201,11 +247,14 @@ export class RouteHistoryService {
 								phase_passenger_id: p.drop.phase_passenger_id,
 								status: p.drop.status,
 								dropped_off,
-								actual_pickup_time: legPickupTime,
-								driver_arrived_at: p.drop.driver_arrived_at,
+								actual_pickup_time: dropOfficePickUpTime,
+								driver_arrived_at: toIso(p.drop.driver_arrived_at),
 								passenger_ack: p.drop.passenger_ack,
-								picked_at: p.drop.picked_at,
-								dropped_at: p.drop.dropped_at,
+								picked_at: toIso(p.drop.picked_at),
+								dropoff_arrived_at: toIso(
+									p.drop.dropoff_arrived_at ?? p.drop.driver_arrived_at,
+								),
+								dropped_at: toIso(p.drop.dropped_at),
 							}
 						: null,
 					summary: {
@@ -246,6 +295,7 @@ export class RouteHistoryService {
 				trip_completed: plan.status === "COMPLETED",
 				completed_at: plan.completed_at,
 				definition_route_id: plan.definition_route_id,
+				waypoint_mode: waypointMode,
 				execution_route_id: plan.execution_route?.id ?? null,
 				office_address: plan.definition_route.office_address,
 				route_price: plan.definition_route.route_price,
