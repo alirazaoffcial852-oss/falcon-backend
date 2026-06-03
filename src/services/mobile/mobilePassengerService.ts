@@ -143,6 +143,7 @@ function passengerStillInActiveTrip(
 	pickupStatus: string,
 	dropStatus: string,
 	passengerAck?: string | null,
+	hasPickupRow = true,
 ): boolean {
 	// Drop complete → session must use PASSENGER_DROPPED branch, not active-trip UI.
 	if (dropStatus === "DROPPED") return false;
@@ -152,10 +153,20 @@ function passengerStillInActiveTrip(
 		return true;
 	}
 
+	const dropInProgress = [
+		"PENDING",
+		"ARRIVED",
+		"STILL_WAITING",
+		"PICKED",
+		"MOVE_TO_NEXT",
+	].includes(dropStatus);
+
+	// Pickup phase driver COMPLETED — only DROP row may be in the active query.
+	if (!hasPickupRow && dropInProgress) return true;
+
 	return (
 		["PENDING", "ARRIVED", "STILL_WAITING"].includes(pickupStatus) ||
-		(pickupStatus === "PICKED" &&
-			["PENDING", "ARRIVED", "STILL_WAITING"].includes(dropStatus))
+		(pickupStatus === "PICKED" && dropInProgress)
 	);
 }
 
@@ -394,7 +405,14 @@ export const MobilePassengerService = {
 			const pickupStatus = phases.pickup?.status ?? "PENDING";
 			const dropStatus = phases.drop?.status ?? "PENDING";
 			const pickupAck = phases.pickup?.passenger_ack ?? null;
-			if (!passengerStillInActiveTrip(pickupStatus, dropStatus, pickupAck)) {
+			if (
+				!passengerStillInActiveTrip(
+					pickupStatus,
+					dropStatus,
+					pickupAck,
+					Boolean(phases.pickup),
+				)
+			) {
 				continue;
 			}
 
@@ -431,10 +449,78 @@ export const MobilePassengerService = {
 			return { session: null, message: "No active trip today" };
 		}
 		const planId = chosen.plan.id;
-		const pickupPp = chosen.pickupPp;
+		let pickupPp = chosen.pickupPp;
 		const dropPp = chosen.dropPp;
-		const pickupStatus = chosen.pickupStatus;
+		let pickupStatus = chosen.pickupStatus;
 		const dropStatus = chosen.dropStatus;
+
+		// Pickup phase driver may be COMPLETED (excluded from active query) while DROP is ongoing.
+		let completedPickupPhasePassengerId: number | null = null;
+		let completedPickupAck: PpRow["passenger_ack"] = null;
+		let completedPickupDriverArrivedAt: Date | null = null;
+		let completedPickupPd: PpRow["route_daily_plan_phase_driver"] | undefined;
+
+		if (!pickupPp && dropPp) {
+			const completedPickupPp = await db.routeDailyPlanPhasePassenger.findFirst({
+				where: {
+					passenger_id: passenger.id,
+					route_daily_plan_phase_driver: {
+						route_daily_plan_id: planId,
+						phase: "PICKUP",
+					},
+				},
+				select: {
+					id: true,
+					status: true,
+					passenger_ack: true,
+					driver_arrived_at: true,
+					route_daily_plan_phase_driver: {
+						select: {
+							id: true,
+							status: true,
+							trip_start_time: true,
+							selected_car: {
+								select: {
+									id: true,
+									name: true,
+									model: true,
+									car_no: true,
+									car_color: true,
+									car_front_image_url: true,
+								},
+							},
+						},
+					},
+				},
+			});
+			if (completedPickupPp) {
+				pickupStatus = completedPickupPp.status;
+				completedPickupPhasePassengerId = completedPickupPp.id;
+				completedPickupAck = completedPickupPp.passenger_ack;
+				completedPickupDriverArrivedAt = completedPickupPp.driver_arrived_at;
+				completedPickupPd =
+					completedPickupPp.route_daily_plan_phase_driver as PpRow["route_daily_plan_phase_driver"];
+			}
+		}
+
+		const pickupPd =
+			pickupPp?.route_daily_plan_phase_driver ?? completedPickupPd;
+		const dropPd = dropPp?.route_daily_plan_phase_driver;
+
+		const pickupPhaseDone =
+			Boolean(dropPp && !chosen.pickupPp) ||
+			pickupStatus === "PICKED" ||
+			pickupPd?.status === "COMPLETED";
+
+		const dropLegActive = [
+			"PENDING",
+			"ARRIVED",
+			"STILL_WAITING",
+			"PICKED",
+			"MOVE_TO_NEXT",
+		].includes(dropStatus);
+
+		const isDropPhaseActive = Boolean(dropPp) && dropLegActive && pickupPhaseDone;
 
 		const planStatus = chosen.plan.status;
 		const driver = route.driver;
@@ -442,7 +528,7 @@ export const MobilePassengerService = {
 		const driverLive = getDriverLiveLocation(driver.id);
 
 		const activeDropSegment =
-			pickupStatus === "PICKED" &&
+			pickupPhaseDone &&
 			(dropStatus === "PENDING" ||
 				dropStatus === "ARRIVED" ||
 				dropStatus === "STILL_WAITING")
@@ -455,12 +541,36 @@ export const MobilePassengerService = {
 					})
 				: null;
 
-		const pickupNotComplete = pickupStatus !== "PICKED";
-		const passengerDeclinedTrip = pickupPp?.passenger_ack === "NOT_COMING";
+		const pickupNotComplete = !pickupPhaseDone;
+		const passengerDeclinedTrip =
+			pickupPp?.passenger_ack === "NOT_COMING" ||
+			completedPickupAck === "NOT_COMING" ||
+			dropPp?.passenger_ack === "NOT_COMING";
 
 		let state: string;
 		if (passengerDeclinedTrip) {
 			state = "PASSENGER_NOT_COMING";
+		} else if (isDropPhaseActive) {
+			if (dropStatus === "ARRIVED" || dropStatus === "STILL_WAITING") {
+				state =
+					dropStatus === "STILL_WAITING"
+						? "STILL_WAITING_AT_DROP"
+						: "DRIVER_ARRIVED_HOME";
+			} else if (dropStatus === "PICKED") {
+				state = "DRIVER_ON_WAY_HOME";
+			} else if (
+				dropStatus === "PENDING" &&
+				planStatus === "ONGOING" &&
+				activeDropSegment
+			) {
+				state = "DRIVER_ON_WAY_HOME";
+			} else if (dropStatus === "PENDING" && planStatus === "ONGOING") {
+				state = "AT_OFFICE_OR_WAITING_DROP";
+			} else if (dropStatus === "MOVE_TO_NEXT") {
+				state = "STILL_WAITING_AT_DROP";
+			} else {
+				state = "AT_OFFICE_OR_WAITING_DROP";
+			}
 		} else if (!driver.is_available && pickupNotComplete) {
 			state = "DRIVER_NOT_AVAILABLE";
 		} else if (planStatus === "PENDING" && driver.is_available) {
@@ -494,9 +604,6 @@ export const MobilePassengerService = {
 			state = "UNKNOWN";
 		}
 
-		const pickupPd = pickupPp?.route_daily_plan_phase_driver;
-		const dropPd = dropPp?.route_daily_plan_phase_driver;
-
 		const vehicle = resolveTripCarForPassengerUi({
 			pickupPd: pickupPd
 				? {
@@ -513,8 +620,10 @@ export const MobilePassengerService = {
 			fallbackCar,
 		});
 
-		/** Before pickup complete: office destination; after PICKED: home (return leg). */
-		const dropIsReturnHome = pickupStatus === "PICKED";
+		/** Evening drop: office until picked at office, then home. Morning pickup done => office first. */
+		const dropIsReturnHome =
+			pickupPhaseDone &&
+			(dropStatus === "PICKED" || dropStatus === "DROPPED");
 		const dropoffAddress = dropIsReturnHome
 			? passenger.home_address
 			: passenger.office_address;
@@ -526,18 +635,26 @@ export const MobilePassengerService = {
 			: passenger.office_long;
 
 		const scheduledDate = chosen.plan.scheduled_date;
-		const tripStartHHMM =
-			pickupPd?.trip_start_time?.trim() ||
-			passenger.pick_up_time?.trim() ||
-			null;
+		const tripStartHHMM = isDropPhaseActive
+			? dropPd?.trip_start_time?.trim() ||
+				pickupPd?.trip_start_time?.trim() ||
+				passenger.pick_up_time?.trim() ||
+				null
+			: pickupPd?.trip_start_time?.trim() ||
+				passenger.pick_up_time?.trim() ||
+				null;
 
-		const dropLegActive = ["PENDING", "ARRIVED", "STILL_WAITING"].includes(
-			dropStatus,
-		);
-		const active_trip_phase: "PICKUP" | "DROP" =
-			pickupStatus !== "PICKED" || !dropLegActive ? "PICKUP" : "DROP";
+		const active_trip_phase: "PICKUP" | "DROP" = isDropPhaseActive
+			? "DROP"
+			: "PICKUP";
 		const active_phase_driver_id =
 			active_trip_phase === "PICKUP" ? pickupPd?.id ?? null : dropPd?.id ?? null;
+
+		const pickupStatusForUi = pickupPp
+			? pickupStatus
+			: pickupPhaseDone
+				? "PICKED"
+				: pickupStatus;
 
 		const hideDriverAndVehicle =
 			passengerDeclinedTrip || (!driver.is_available && pickupNotComplete);
@@ -563,11 +680,19 @@ export const MobilePassengerService = {
 				plan_id: planId,
 				pickup_phase_driver_id: pickupPd?.id ?? null,
 				drop_phase_driver_id: dropPd?.id ?? null,
-				pickup_phase_passenger_id: pickupPp?.id ?? null,
+				pickup_phase_passenger_id:
+					pickupPp?.id ?? completedPickupPhasePassengerId,
 				drop_phase_passenger_id: dropPp?.id ?? null,
-				pickup_status: pickupStatus,
-				passenger_ack: pickupPp?.passenger_ack ?? null,
-				driver_arrived_at: pickupPp?.driver_arrived_at ?? null,
+				pickup_status: pickupStatusForUi,
+				passenger_ack:
+					pickupPp?.passenger_ack ??
+					completedPickupAck ??
+					dropPp?.passenger_ack ??
+					null,
+				driver_arrived_at: isDropPhaseActive
+					? (dropPp?.dropoff_arrived_at ?? dropPp?.driver_arrived_at ?? null)
+					: (pickupPp?.driver_arrived_at ?? completedPickupDriverArrivedAt),
+				dropoff_arrived_at: dropPp?.dropoff_arrived_at ?? null,
 				pickup_address: passenger.home_address,
 				pickup_lat: passenger.home_lat,
 				pickup_long: passenger.home_long,
@@ -874,19 +999,6 @@ export const MobilePassengerService = {
 		const canAckPickup =
 			pickupPp.driver_arrived_at != null &&
 			["ARRIVED", "STILL_WAITING"].includes(pickupPp.status);
-		if (!canAckPickup) {
-			throw ResponseHandler.badRequest(
-				pickupPp.status === "PICKED"
-					? "Pickup already completed — acknowledgement is no longer required"
-					: "Driver has not arrived at pickup yet — wait for DRIVER_ARRIVED",
-			);
-		}
-
-		if (pickupPp.passenger_ack != null) {
-			throw ResponseHandler.badRequest(
-				"Passenger acknowledgement was already recorded",
-			);
-		}
 
 		const route = await db.route.findFirst({
 			where: { id: executionRouteId },
@@ -899,8 +1011,102 @@ export const MobilePassengerService = {
 			select: { id: true },
 		});
 
+		if (canAckPickup) {
+			if (pickupPp.passenger_ack != null) {
+				throw ResponseHandler.badRequest(
+					"Passenger acknowledgement was already recorded",
+				);
+			}
+
+			await db.routeDailyPlanPhasePassenger.update({
+				where: { id: pickupPp.id },
+				data: {
+					passenger_ack: ack,
+					...(ack === "NOT_COMING" ? { status: "SKIPPED" } : {}),
+				},
+			});
+
+			emitToDriver(route.driver_id, "passenger:ack", {
+				legId: leg?.id ?? null,
+				phase_passenger_id: pickupPp.id,
+				passengerId: passenger.id,
+				passengerName: passenger.name,
+				ack,
+				routeId: executionRouteId,
+				phase: "PICKUP",
+			});
+			void notificationService.sendToDriverId(route.driver_id, {
+				title: "Passenger Response",
+				body:
+					ack === "COMING"
+						? `${passenger.name} is coming`
+						: `${passenger.name} is not coming`,
+				data: {
+					routeId: String(executionRouteId),
+					legId: leg?.id != null ? String(leg.id) : "",
+					phase_passenger_id: String(pickupPp.id),
+					ack,
+					type: "passenger_ack",
+					phase: "PICKUP",
+				},
+			});
+
+			return {
+				phase: "PICKUP" as const,
+				phase_passenger_id: pickupPp.id,
+				route_id: executionRouteId,
+				leg_id: leg?.id ?? null,
+				ack,
+				message:
+					ack === "COMING"
+						? "Great! Driver is waiting for you."
+						: "Acknowledged. You will be skipped.",
+			};
+		}
+
+		// DROP phase — same acknowledgement rules as pickup (evening office pick-up leg).
+		const dropPdId = await getPhaseDriverId(db, planId, "DROP");
+		if (!dropPdId) {
+			throw ResponseHandler.badRequest(
+				pickupPp.status === "PICKED"
+					? "Pickup already completed — acknowledgement is no longer required"
+					: "Driver has not arrived at pickup yet — wait for DRIVER_ARRIVED",
+			);
+		}
+
+		const dropPp = await db.routeDailyPlanPhasePassenger.findFirst({
+			where: {
+				route_daily_plan_phase_driver_id: dropPdId,
+				passenger_id: passenger.id,
+			},
+		});
+		if (!dropPp) {
+			throw ResponseHandler.notFound(
+				"No drop phase passenger row found for this route",
+			);
+		}
+
+		const dropArrivedAt =
+			dropPp.dropoff_arrived_at ?? dropPp.driver_arrived_at;
+		const canAckDrop =
+			dropArrivedAt != null &&
+			["ARRIVED", "STILL_WAITING"].includes(dropPp.status);
+		if (!canAckDrop) {
+			throw ResponseHandler.badRequest(
+				["PICKED", "DROPPED", "SKIPPED", "MOVE_TO_NEXT"].includes(dropPp.status)
+					? "Drop pickup already completed — acknowledgement is no longer required"
+					: "Driver has not arrived yet — wait for DRIVER_ARRIVED_HOME",
+			);
+		}
+
+		if (dropPp.passenger_ack != null) {
+			throw ResponseHandler.badRequest(
+				"Passenger acknowledgement was already recorded",
+			);
+		}
+
 		await db.routeDailyPlanPhasePassenger.update({
-			where: { id: pickupPp.id },
+			where: { id: dropPp.id },
 			data: {
 				passenger_ack: ack,
 				...(ack === "NOT_COMING" ? { status: "SKIPPED" } : {}),
@@ -909,11 +1115,12 @@ export const MobilePassengerService = {
 
 		emitToDriver(route.driver_id, "passenger:ack", {
 			legId: leg?.id ?? null,
-			phase_passenger_id: pickupPp.id,
+			phase_passenger_id: dropPp.id,
 			passengerId: passenger.id,
 			passengerName: passenger.name,
 			ack,
 			routeId: executionRouteId,
+			phase: "DROP",
 		});
 		void notificationService.sendToDriverId(route.driver_id, {
 			title: "Passenger Response",
@@ -924,14 +1131,16 @@ export const MobilePassengerService = {
 			data: {
 				routeId: String(executionRouteId),
 				legId: leg?.id != null ? String(leg.id) : "",
-				phase_passenger_id: String(pickupPp.id),
+				phase_passenger_id: String(dropPp.id),
 				ack,
 				type: "passenger_ack",
+				phase: "DROP",
 			},
 		});
 
 		return {
-			phase_passenger_id: pickupPp.id,
+			phase: "DROP" as const,
+			phase_passenger_id: dropPp.id,
 			route_id: executionRouteId,
 			leg_id: leg?.id ?? null,
 			ack,
