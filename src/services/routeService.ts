@@ -25,6 +25,11 @@ import {
 	parseTimeToMinutesFromMidnight,
 } from "../utils/pickupSchedule";
 import { getFirstRouteLegInPickupOrder } from "../utils/routeFirstPickupLeg";
+import {
+	buildPassengerReportFromRouteLegs,
+	fetchPassengerReportsByPlanIds,
+	type RoutePassengerReportBundle,
+} from "./routePassengerReport";
 
 type SortOriginMode = "driver_home" | "office";
 
@@ -710,6 +715,7 @@ export class RouteService {
 									select: {
 										id: true,
 										name: true,
+										phone_no: true,
 										home_address: true,
 										pick_up_time: true,
 										drop_off_time: true,
@@ -730,6 +736,7 @@ export class RouteService {
 							select: {
 								id: true,
 								name: true,
+								phone_no: true,
 								home_address: true,
 								pick_up_time: true,
 								drop_off_time: true,
@@ -833,6 +840,57 @@ export class RouteService {
 				);
 			}
 		}
+	}
+
+	private mergePassengerReportIntoRoute<
+		R extends {
+			route_daily_plan_id: number | null;
+			waypointMode: RouteWaypointMode;
+			legs: Array<{
+				passenger_id: number;
+				pickup_time: string;
+				office_pick_up_time: string | null;
+				passenger: {
+					id: number;
+					name: string;
+					phone_no?: string | null;
+					office_pick_up_time?: string | null;
+				};
+				pickup_phase?: {
+					driver_arrived_at?: string | null;
+					picked_at?: string | null;
+					dropoff_arrived_at?: string | null;
+					dropped_at?: string | null;
+				} | null;
+				drop_phase?: {
+					driver_arrived_at?: string | null;
+					picked_at?: string | null;
+					dropoff_arrived_at?: string | null;
+					dropped_at?: string | null;
+				} | null;
+			}>;
+		},
+	>(route: R, reports: Map<number, RoutePassengerReportBundle>) {
+		const planId = route.route_daily_plan_id;
+		if (planId != null) {
+			const report = reports.get(planId);
+			if (report) {
+				return {
+					...route,
+					passengers: report.passengers,
+					passenger_summary: report.passenger_summary,
+				};
+			}
+		}
+		const fromLegs = buildPassengerReportFromRouteLegs(
+			route.waypointMode,
+			route.legs,
+		);
+		return {
+			...route,
+			passengers: fromLegs.passengers,
+			passenger_summary: fromLegs.passenger_summary,
+		};
 	}
 
 	/** Stable API shape: always `waypointMode` + ordered `legs` (from batches when present). */
@@ -983,6 +1041,7 @@ export class RouteService {
 									select: {
 										id: true,
 										name: true,
+										phone_no: true,
 										home_address: true,
 										pick_up_time: true,
 										drop_off_time: true,
@@ -1012,8 +1071,18 @@ export class RouteService {
 		});
 		await this.attachPhasePassengerTimingToRoutes(data);
 
+		const planIds = data
+			.map((r) => r.route_daily_plan_id)
+			.filter((id): id is number => id != null);
+		const passengerReports = await fetchPassengerReportsByPlanIds(planIds);
+
 		return {
-			data: data.map((route) => this.formatRouteForApi(route)),
+			data: data.map((route) =>
+				this.mergePassengerReportIntoRoute(
+					this.formatRouteForApi(route),
+					passengerReports,
+				),
+			),
 			pagination: {
 				total,
 				page: params.page,
@@ -1026,7 +1095,14 @@ export class RouteService {
 	async getById(id: number) {
 		const route = await this.findRouteById(id);
 		await this.attachPhasePassengerTimingToRoutes([route]);
-		return this.formatRouteForApi(route);
+		const planId = route.route_daily_plan_id;
+		const passengerReports = await fetchPassengerReportsByPlanIds(
+			planId != null ? [planId] : [],
+		);
+		return this.mergePassengerReportIntoRoute(
+			this.formatRouteForApi(route),
+			passengerReports,
+		);
 	}
 
 	async create(data: CreateRouteInput & { legs?: RouteBatchInput["legs"] }) {
