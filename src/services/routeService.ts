@@ -849,6 +849,7 @@ export class RouteService {
 			legs: Array<{
 				passenger_id: number;
 				pickup_time: string;
+				dropoff_time: string;
 				office_pick_up_time: string | null;
 				passenger: {
 					id: number;

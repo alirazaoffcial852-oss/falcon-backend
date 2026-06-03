@@ -2,7 +2,10 @@ import { DatabaseService } from "../config/database";
 import { ResponseHandler } from "../utils/responses/ResponseHandler";
 import { getLocalDateOnly, parseLocalYmd } from "../utils/recurringPlan";
 import { getLocalDayRange } from "../utils/routeDayScope";
-import { buildPassengerReportBundle } from "./routePassengerReport";
+import {
+	buildPassengerReportBundle,
+	indexRouteLegTimes,
+} from "./routePassengerReport";
 
 const db = DatabaseService.getInstance().getPrisma();
 
@@ -97,21 +100,15 @@ export class RouteHistoryService {
 							route_id: true,
 							passenger_id: true,
 							pickup_time: true,
+							dropoff_time: true,
 							office_pick_up_time: true,
 						},
 					});
-		const legPickupTimeByRoutePassenger = new Map<string, string>();
-		const legOfficePickUpTimeByRoutePassenger = new Map<string, string>();
-		for (const leg of routeLegs) {
-			const key = `${leg.route_id}:${leg.passenger_id}`;
-			legPickupTimeByRoutePassenger.set(key, leg.pickup_time);
-			if (leg.office_pick_up_time?.trim()) {
-				legOfficePickUpTimeByRoutePassenger.set(
-					key,
-					leg.office_pick_up_time.trim(),
-				);
-			}
-		}
+		const {
+			legPickupTimeByRoutePassenger,
+			legOfficePickUpTimeByRoutePassenger,
+			legDropoffTimeByRoutePassenger,
+		} = indexRouteLegTimes(routeLegs);
 
 		const routes = plans.map((plan) => {
 			const executionRouteId = plan.execution_route?.id ?? null;
@@ -127,6 +124,7 @@ export class RouteHistoryService {
 				waypointMode,
 				legPickupTimeByRoutePassenger,
 				legOfficePickUpTimeByRoutePassenger,
+				legDropoffTimeByRoutePassenger,
 			});
 
 			const tripStarted =

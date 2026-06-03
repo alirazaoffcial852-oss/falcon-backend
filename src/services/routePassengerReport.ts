@@ -19,17 +19,55 @@ function isDroppedOff(snap: PhasePassengerSnapshot | null): boolean {
 	return snap.status === "DROPPED";
 }
 
-function resolveDropOfficePickUpTime(
+/** DROP `actual_pickup_time`: manual = office pick-up; auto = leg `dropoff_time`. */
+function resolveDropActualPickupTime(
 	waypointMode: "auto" | "manual",
 	passengerOfficePickUp: string | null,
 	legOfficePickUp: string | null,
+	legDropoffTime: string | null,
 ): string | null {
+	if (waypointMode === "auto") {
+		return legDropoffTime?.trim() || null;
+	}
 	const fromPassenger = passengerOfficePickUp?.trim() || null;
 	const fromLeg = legOfficePickUp?.trim() || null;
-	if (waypointMode === "manual") {
-		return fromPassenger ?? fromLeg;
+	return fromPassenger ?? fromLeg;
+}
+
+export type RouteLegTimeIndex = {
+	legPickupTimeByRoutePassenger: Map<string, string>;
+	legOfficePickUpTimeByRoutePassenger: Map<string, string>;
+	legDropoffTimeByRoutePassenger: Map<string, string>;
+};
+
+export function indexRouteLegTimes(
+	legs: Array<{
+		route_id: number;
+		passenger_id: number;
+		pickup_time: string;
+		dropoff_time: string;
+		office_pick_up_time: string | null;
+	}>,
+): RouteLegTimeIndex {
+	const legPickupTimeByRoutePassenger = new Map<string, string>();
+	const legOfficePickUpTimeByRoutePassenger = new Map<string, string>();
+	const legDropoffTimeByRoutePassenger = new Map<string, string>();
+	for (const leg of legs) {
+		const key = `${leg.route_id}:${leg.passenger_id}`;
+		legPickupTimeByRoutePassenger.set(key, leg.pickup_time);
+		legDropoffTimeByRoutePassenger.set(key, leg.dropoff_time);
+		if (leg.office_pick_up_time?.trim()) {
+			legOfficePickUpTimeByRoutePassenger.set(
+				key,
+				leg.office_pick_up_time.trim(),
+			);
+		}
 	}
-	return fromLeg ?? fromPassenger;
+	return {
+		legPickupTimeByRoutePassenger,
+		legOfficePickUpTimeByRoutePassenger,
+		legDropoffTimeByRoutePassenger,
+	};
 }
 
 type PhasePassengerSnapshot = {
@@ -125,6 +163,7 @@ type RouteLegPhaseTiming = {
 export type RouteLegForPassengerReport = {
 	passenger_id: number;
 	pickup_time: string;
+	dropoff_time: string;
 	office_pick_up_time: string | null;
 	passenger: {
 		id: number;
@@ -149,6 +188,7 @@ export function buildPassengerReportFromRouteLegs(
 			phone_no: string | null;
 			office_pick_up_time: string | null;
 			pickup_time: string;
+			dropoff_time: string;
 			leg_office_pick_up: string | null;
 			pickup_phase: RouteLegPhaseTiming | null;
 			drop_phase: RouteLegPhaseTiming | null;
@@ -163,6 +203,7 @@ export function buildPassengerReportFromRouteLegs(
 			phone_no: leg.passenger.phone_no ?? null,
 			office_pick_up_time: officeFromPassenger,
 			pickup_time: leg.pickup_time,
+			dropoff_time: leg.dropoff_time,
 			leg_office_pick_up: leg.office_pick_up_time?.trim() || null,
 			pickup_phase: leg.pickup_phase ?? null,
 			drop_phase: leg.drop_phase ?? null,
@@ -170,10 +211,11 @@ export function buildPassengerReportFromRouteLegs(
 	}
 
 	const passengers = [...byPassenger.values()].map((p) => {
-		const dropOfficeTime = resolveDropOfficePickUpTime(
+		const dropActualTime = resolveDropActualPickupTime(
 			waypointMode,
 			p.office_pick_up_time,
 			p.leg_office_pick_up,
+			p.dropoff_time,
 		);
 		const picked_up = !!p.pickup_phase?.picked_at;
 		const dropped_off = !!p.drop_phase?.dropped_at;
@@ -183,8 +225,8 @@ export function buildPassengerReportFromRouteLegs(
 			name: p.name,
 			phone_no: p.phone_no,
 			pickup: {
-				phase_passenger_id: null as unknown as number,
-				status: null as unknown as PhasePassengerStatus,
+				phase_passenger_id: null,
+				status: null,
 				picked_up,
 				actual_pickup_time: p.pickup_time,
 				driver_arrived_at: p.pickup_phase?.driver_arrived_at ?? null,
@@ -196,7 +238,7 @@ export function buildPassengerReportFromRouteLegs(
 				phase_passenger_id: null,
 				status: null,
 				dropped_off,
-				actual_pickup_time: dropOfficeTime,
+				actual_pickup_time: dropActualTime,
 				driver_arrived_at: p.drop_phase?.driver_arrived_at ?? null,
 				passenger_ack: null,
 				picked_at: p.drop_phase?.picked_at ?? null,
@@ -241,6 +283,7 @@ export function buildPassengerReportBundle(input: {
 	waypointMode: "auto" | "manual";
 	legPickupTimeByRoutePassenger: Map<string, string>;
 	legOfficePickUpTimeByRoutePassenger: Map<string, string>;
+	legDropoffTimeByRoutePassenger: Map<string, string>;
 }): RoutePassengerReportBundle {
 	const pickupPd = input.phaseDrivers.find((pd) => pd.phase === "PICKUP");
 	const dropPd = input.phaseDrivers.find((pd) => pd.phase === "DROP");
@@ -294,10 +337,15 @@ export function buildPassengerReportBundle(input: {
 			legKey != null
 				? (input.legOfficePickUpTimeByRoutePassenger.get(legKey) ?? null)
 				: null;
-		const dropOfficePickUpTime = resolveDropOfficePickUpTime(
+		const legDropoffTime =
+			legKey != null
+				? (input.legDropoffTimeByRoutePassenger.get(legKey) ?? null)
+				: null;
+		const dropActualPickupTime = resolveDropActualPickupTime(
 			input.waypointMode,
 			p.office_pick_up_time,
 			legOfficePickUpTime,
+			legDropoffTime,
 		);
 
 		return {
@@ -321,7 +369,7 @@ export function buildPassengerReportBundle(input: {
 						phase_passenger_id: p.drop.phase_passenger_id,
 						status: p.drop.status,
 						dropped_off,
-						actual_pickup_time: dropOfficePickUpTime,
+						actual_pickup_time: dropActualPickupTime,
 						driver_arrived_at: toIso(p.drop.driver_arrived_at),
 						passenger_ack: p.drop.passenger_ack,
 						picked_at: toIso(p.drop.picked_at),
@@ -409,21 +457,15 @@ export async function fetchPassengerReportsByPlanIds(
 						route_id: true,
 						passenger_id: true,
 						pickup_time: true,
+						dropoff_time: true,
 						office_pick_up_time: true,
 					},
 				});
-	const legPickupTimeByRoutePassenger = new Map<string, string>();
-	const legOfficePickUpTimeByRoutePassenger = new Map<string, string>();
-	for (const leg of routeLegs) {
-		const key = `${leg.route_id}:${leg.passenger_id}`;
-		legPickupTimeByRoutePassenger.set(key, leg.pickup_time);
-		if (leg.office_pick_up_time?.trim()) {
-			legOfficePickUpTimeByRoutePassenger.set(
-				key,
-				leg.office_pick_up_time.trim(),
-			);
-		}
-	}
+	const {
+		legPickupTimeByRoutePassenger,
+		legOfficePickUpTimeByRoutePassenger,
+		legDropoffTimeByRoutePassenger,
+	} = indexRouteLegTimes(routeLegs);
 
 	for (const plan of plans) {
 		const executionRouteId = plan.execution_route?.id ?? null;
@@ -437,6 +479,7 @@ export async function fetchPassengerReportsByPlanIds(
 				waypointMode,
 				legPickupTimeByRoutePassenger,
 				legOfficePickUpTimeByRoutePassenger,
+				legDropoffTimeByRoutePassenger,
 			}),
 		);
 	}
