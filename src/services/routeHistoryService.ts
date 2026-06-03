@@ -193,6 +193,7 @@ export class RouteHistoryService {
 								driver_arrived_at: p.pickup.driver_arrived_at,
 								passenger_ack: p.pickup.passenger_ack,
 								picked_at: p.pickup.picked_at,
+								dropped_at: p.pickup.dropped_at,
 							}
 						: null,
 					drop: p.drop
@@ -200,7 +201,10 @@ export class RouteHistoryService {
 								phase_passenger_id: p.drop.phase_passenger_id,
 								status: p.drop.status,
 								dropped_off,
-								dropoff_arrived_at: p.drop.dropoff_arrived_at,
+								actual_pickup_time: legPickupTime,
+								driver_arrived_at: p.drop.driver_arrived_at,
+								passenger_ack: p.drop.passenger_ack,
+								picked_at: p.drop.picked_at,
 								dropped_at: p.drop.dropped_at,
 							}
 						: null,
