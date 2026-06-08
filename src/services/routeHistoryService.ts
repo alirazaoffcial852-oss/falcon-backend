@@ -100,14 +100,12 @@ export class RouteHistoryService {
 							route_id: true,
 							passenger_id: true,
 							pickup_time: true,
-							dropoff_time: true,
 							office_pick_up_time: true,
 						},
 					});
 		const {
 			legPickupTimeByRoutePassenger,
 			legOfficePickUpTimeByRoutePassenger,
-			legDropoffTimeByRoutePassenger,
 		} = indexRouteLegTimes(routeLegs);
 
 		const routes = plans.map((plan) => {
@@ -124,7 +122,6 @@ export class RouteHistoryService {
 				waypointMode,
 				legPickupTimeByRoutePassenger,
 				legOfficePickUpTimeByRoutePassenger,
-				legDropoffTimeByRoutePassenger,
 			});
 
 			const tripStarted =

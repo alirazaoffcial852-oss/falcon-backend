@@ -2581,6 +2581,7 @@ export const MobileDriverService = {
 			phase_driver_id: pd.id,
 			phase_completed: pd.phase,
 			plan_status: routeDailyPlan?.status,
+			trip_km: tripKm,
 			driver: {
 				id: driver.id,
 				name: driver.name,
