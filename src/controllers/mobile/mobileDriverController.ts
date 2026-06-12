@@ -145,7 +145,12 @@ export const MobileDriverController = {
 	/** POST /f1/mobile/driver/session/phase-passengers/:phasePassengerId/action — body { action } */
 	legAction: catchAsync(async (req: AuthRequest, res: Response) => {
 		const phasePassengerId = parseInt(req.params.phasePassengerId as string);
-		const body = req.body as { action?: string; dropped_at?: string };
+		const body = req.body as {
+			action?: string;
+			lat?: number;
+			long?: number;
+			dropped_at?: string;
+		};
 		const action = body.action as LegAction;
 		if (isNaN(phasePassengerId))
 			throw ResponseHandler.badRequest("Invalid phasePassengerId");
@@ -157,6 +162,16 @@ export const MobileDriverController = {
 			throw ResponseHandler.badRequest(
 				"action must be PICKED, STILL_WAITING, MOVE_TO_NEXT, or DROPPED",
 			);
+		}
+		let pickCoords: { lat: number; long: number } | undefined;
+		if (action === "PICKED") {
+			const { lat, long } = body;
+			if (typeof lat !== "number" || typeof long !== "number") {
+				throw ResponseHandler.badRequest(
+					"lat and long are required numbers when action is PICKED",
+				);
+			}
+			pickCoords = { lat, long };
 		}
 		let dropRecordedAt: Date | undefined;
 		if (body.dropped_at != null && String(body.dropped_at).trim() !== "") {
@@ -170,7 +185,10 @@ export const MobileDriverController = {
 			getUserId(req),
 			phasePassengerId,
 			action,
-			dropRecordedAt ? { dropRecordedAt } : undefined,
+			{
+				...(dropRecordedAt ? { dropRecordedAt } : {}),
+				...(pickCoords ? { pickCoords } : {}),
+			},
 		);
 		ResponseHandler.success(res, result, "Action processed");
 	}),

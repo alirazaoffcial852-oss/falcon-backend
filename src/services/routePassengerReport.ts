@@ -70,8 +70,16 @@ type PhasePassengerSnapshot = {
 	driver_arrived_at: Date | null;
 	passenger_ack: string | null;
 	picked_at: Date | null;
+	picked_lat: number | null;
+	picked_long: number | null;
 	dropoff_arrived_at: Date | null;
 	dropped_at: Date | null;
+};
+
+type PassengerHomeLocation = {
+	home_address?: string | null;
+	home_lat?: number | null;
+	home_long?: number | null;
 };
 
 type PassengerSlot = {
@@ -79,6 +87,9 @@ type PassengerSlot = {
 	name: string;
 	phone_no: string | null;
 	office_pick_up_time: string | null;
+	home_address: string | null;
+	home_lat: number | null;
+	home_long: number | null;
 	pickup: PhasePassengerSnapshot | null;
 	drop: PhasePassengerSnapshot | null;
 };
@@ -92,6 +103,8 @@ type PhaseDriverWithPassengers = {
 		driver_arrived_at: Date | null;
 		passenger_ack: string | null;
 		picked_at: Date | null;
+		picked_lat: number | null;
+		picked_long: number | null;
 		dropoff_arrived_at: Date | null;
 		dropped_at: Date | null;
 		passenger: {
@@ -99,15 +112,35 @@ type PhaseDriverWithPassengers = {
 			name: string;
 			phone_no: string | null;
 			office_pick_up_time: string | null;
+			home_address: string | null;
+			home_lat: number | null;
+			home_long: number | null;
 		};
 	}>;
 };
+
+const passengerHomeSelect = {
+	home_address: true,
+	home_lat: true,
+	home_long: true,
+} as const;
+
+function passengerHomeFromProfile(p: PassengerHomeLocation) {
+	return {
+		home_address: p.home_address?.trim() || null,
+		home_lat: p.home_lat ?? null,
+		home_long: p.home_long ?? null,
+	};
+}
 
 export type RoutePassengerReportBundle = {
 	passengers: Array<{
 		passenger_id: number;
 		name: string;
 		phone_no: string | null;
+		home_address: string | null;
+		home_lat: number | null;
+		home_long: number | null;
 		pickup: {
 			phase_passenger_id: number | null;
 			status: PhasePassengerStatus | null;
@@ -116,6 +149,8 @@ export type RoutePassengerReportBundle = {
 			driver_arrived_at: string | null;
 			passenger_ack: string | null;
 			picked_at: string | null;
+			picked_lat: number | null;
+			picked_long: number | null;
 			dropped_at: string | null;
 		} | null;
 		drop: {
@@ -126,6 +161,8 @@ export type RoutePassengerReportBundle = {
 			driver_arrived_at: string | null;
 			passenger_ack: string | null;
 			picked_at: string | null;
+			picked_lat: number | null;
+			picked_long: number | null;
 			dropoff_arrived_at: string | null;
 			dropped_at: string | null;
 		} | null;
@@ -150,6 +187,8 @@ export type RoutePassengerReportBundle = {
 type RouteLegPhaseTiming = {
 	driver_arrived_at?: string | null;
 	picked_at?: string | null;
+	picked_lat?: number | null;
+	picked_long?: number | null;
 	dropoff_arrived_at?: string | null;
 	dropped_at?: string | null;
 };
@@ -163,6 +202,9 @@ export type RouteLegForPassengerReport = {
 		name: string;
 		phone_no?: string | null;
 		office_pick_up_time?: string | null;
+		home_address?: string | null;
+		home_lat?: number | null;
+		home_long?: number | null;
 	};
 	pickup_phase?: RouteLegPhaseTiming | null;
 	drop_phase?: RouteLegPhaseTiming | null;
@@ -180,6 +222,9 @@ export function buildPassengerReportFromRouteLegs(
 			name: string;
 			phone_no: string | null;
 			office_pick_up_time: string | null;
+			home_address: string | null;
+			home_lat: number | null;
+			home_long: number | null;
 			pickup_time: string;
 			leg_office_pick_up: string | null;
 			pickup_phase: RouteLegPhaseTiming | null;
@@ -189,11 +234,15 @@ export function buildPassengerReportFromRouteLegs(
 
 	for (const leg of legs) {
 		const officeFromPassenger = leg.passenger.office_pick_up_time?.trim() || null;
+		const home = passengerHomeFromProfile(leg.passenger);
 		byPassenger.set(leg.passenger_id, {
 			passenger_id: leg.passenger_id,
 			name: leg.passenger.name,
 			phone_no: leg.passenger.phone_no ?? null,
 			office_pick_up_time: officeFromPassenger,
+			home_address: home.home_address,
+			home_lat: home.home_lat,
+			home_long: home.home_long,
 			pickup_time: leg.pickup_time,
 			leg_office_pick_up: leg.office_pick_up_time?.trim() || null,
 			pickup_phase: leg.pickup_phase ?? null,
@@ -214,6 +263,9 @@ export function buildPassengerReportFromRouteLegs(
 			passenger_id: p.passenger_id,
 			name: p.name,
 			phone_no: p.phone_no,
+			home_address: p.home_address,
+			home_lat: p.home_lat,
+			home_long: p.home_long,
 			pickup: {
 				phase_passenger_id: null,
 				status: null,
@@ -222,6 +274,8 @@ export function buildPassengerReportFromRouteLegs(
 				driver_arrived_at: p.pickup_phase?.driver_arrived_at ?? null,
 				passenger_ack: null,
 				picked_at: p.pickup_phase?.picked_at ?? null,
+				picked_lat: p.pickup_phase?.picked_lat ?? null,
+				picked_long: p.pickup_phase?.picked_long ?? null,
 				dropped_at: p.pickup_phase?.dropped_at ?? null,
 			},
 			drop: {
@@ -232,6 +286,8 @@ export function buildPassengerReportFromRouteLegs(
 				driver_arrived_at: p.drop_phase?.driver_arrived_at ?? null,
 				passenger_ack: null,
 				picked_at: p.drop_phase?.picked_at ?? null,
+				picked_lat: p.drop_phase?.picked_lat ?? null,
+				picked_long: p.drop_phase?.picked_long ?? null,
 				dropoff_arrived_at:
 					p.drop_phase?.dropoff_arrived_at ??
 					p.drop_phase?.driver_arrived_at ??
@@ -284,11 +340,15 @@ export function buildPassengerReportBundle(input: {
 	) => {
 		if (!pd) return;
 		for (const pp of pd.route_daily_plan_phase_passengers) {
+			const home = passengerHomeFromProfile(pp.passenger);
 			const slot = byPassenger.get(pp.passenger_id) ?? {
 				passenger_id: pp.passenger_id,
 				name: pp.passenger.name,
 				phone_no: pp.passenger.phone_no,
 				office_pick_up_time: pp.passenger.office_pick_up_time,
+				home_address: home.home_address,
+				home_lat: home.home_lat,
+				home_long: home.home_long,
 				pickup: null,
 				drop: null,
 			};
@@ -298,6 +358,8 @@ export function buildPassengerReportBundle(input: {
 				driver_arrived_at: pp.driver_arrived_at,
 				passenger_ack: pp.passenger_ack,
 				picked_at: pp.picked_at,
+				picked_lat: pp.picked_lat ?? null,
+				picked_long: pp.picked_long ?? null,
 				dropoff_arrived_at: pp.dropoff_arrived_at,
 				dropped_at: pp.dropped_at,
 			};
@@ -336,6 +398,9 @@ export function buildPassengerReportBundle(input: {
 			passenger_id: p.passenger_id,
 			name: p.name,
 			phone_no: p.phone_no,
+			home_address: p.home_address,
+			home_lat: p.home_lat,
+			home_long: p.home_long,
 			pickup: p.pickup
 				? {
 						phase_passenger_id: p.pickup.phase_passenger_id,
@@ -345,6 +410,8 @@ export function buildPassengerReportBundle(input: {
 						driver_arrived_at: toIso(p.pickup.driver_arrived_at),
 						passenger_ack: p.pickup.passenger_ack,
 						picked_at: toIso(p.pickup.picked_at),
+						picked_lat: p.pickup.picked_lat,
+						picked_long: p.pickup.picked_long,
 						dropped_at: toIso(p.pickup.dropped_at),
 					}
 				: null,
@@ -357,6 +424,8 @@ export function buildPassengerReportBundle(input: {
 						driver_arrived_at: toIso(p.drop.driver_arrived_at),
 						passenger_ack: p.drop.passenger_ack,
 						picked_at: toIso(p.drop.picked_at),
+						picked_lat: p.drop.picked_lat,
+						picked_long: p.drop.picked_long,
 						dropoff_arrived_at: toIso(
 							p.drop.dropoff_arrived_at ?? p.drop.driver_arrived_at,
 						),
@@ -416,6 +485,7 @@ export async function fetchPassengerReportsByPlanIds(
 									name: true,
 									phone_no: true,
 									office_pick_up_time: true,
+									...passengerHomeSelect,
 								},
 							},
 						},

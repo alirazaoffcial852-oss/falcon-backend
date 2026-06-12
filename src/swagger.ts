@@ -637,14 +637,24 @@ const swaggerDocument = {
 						type: "string",
 						enum: ["PICKED", "STILL_WAITING", "MOVE_TO_NEXT", "DROPPED"],
 						description:
-							"PICKUP segment: PICKED | STILL_WAITING | MOVE_TO_NEXT. DROP segment: DROPPED (preferred) or PICKED to record drop with dropped_at.",
+							"PICKUP segment: PICKED | STILL_WAITING | MOVE_TO_NEXT. DROP segment: DROPPED (preferred) or PICKED to record office pick with picked_at.",
+					},
+					lat: {
+						type: "number",
+						description:
+							"Required when action is PICKED — driver GPS latitude at pick time.",
+					},
+					long: {
+						type: "number",
+						description:
+							"Required when action is PICKED — driver GPS longitude at pick time.",
 					},
 					dropped_at: {
 						type: "string",
 						format: "date-time",
 						nullable: true,
 						description:
-							"Optional ISO 8601 when action is DROPPED (or PICKED on DROP); default server time.",
+							"Optional ISO 8601 when action is DROPPED; default server time.",
 					},
 				},
 			},
