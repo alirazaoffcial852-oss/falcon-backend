@@ -717,6 +717,8 @@ export class RouteService {
 										name: true,
 										phone_no: true,
 										home_address: true,
+										home_lat: true,
+										home_long: true,
 										pick_up_time: true,
 										drop_off_time: true,
 										office_pick_up_time: true,
@@ -738,6 +740,8 @@ export class RouteService {
 								name: true,
 								phone_no: true,
 								home_address: true,
+								home_lat: true,
+								home_long: true,
 								pick_up_time: true,
 								drop_off_time: true,
 								office_pick_up_time: true,
@@ -779,6 +783,8 @@ export class RouteService {
 				passenger_id: true,
 				driver_arrived_at: true,
 				picked_at: true,
+				picked_lat: true,
+				picked_long: true,
 				dropoff_arrived_at: true,
 				dropped_at: true,
 				route_daily_plan_phase_driver: {
@@ -790,6 +796,8 @@ export class RouteService {
 		type PhaseSnap = {
 			driver_arrived_at: string | null;
 			picked_at: string | null;
+			picked_lat: number | null;
+			picked_long: number | null;
 			dropoff_arrived_at: string | null;
 			dropped_at: string | null;
 		};
@@ -804,6 +812,8 @@ export class RouteService {
 			const snap: PhaseSnap = {
 				driver_arrived_at: row.driver_arrived_at?.toISOString() ?? null,
 				picked_at: row.picked_at?.toISOString() ?? null,
+				picked_lat: row.picked_lat ?? null,
+				picked_long: row.picked_long ?? null,
 				dropoff_arrived_at: row.dropoff_arrived_at?.toISOString() ?? null,
 				dropped_at: row.dropped_at?.toISOString() ?? null,
 			};
@@ -859,12 +869,16 @@ export class RouteService {
 				pickup_phase?: {
 					driver_arrived_at?: string | null;
 					picked_at?: string | null;
+					picked_lat?: number | null;
+					picked_long?: number | null;
 					dropoff_arrived_at?: string | null;
 					dropped_at?: string | null;
 				} | null;
 				drop_phase?: {
 					driver_arrived_at?: string | null;
 					picked_at?: string | null;
+					picked_lat?: number | null;
+					picked_long?: number | null;
 					dropoff_arrived_at?: string | null;
 					dropped_at?: string | null;
 				} | null;
@@ -1043,6 +1057,8 @@ export class RouteService {
 										name: true,
 										phone_no: true,
 										home_address: true,
+										home_lat: true,
+										home_long: true,
 										pick_up_time: true,
 										drop_off_time: true,
 										office_pick_up_time: true,
@@ -1060,6 +1076,8 @@ export class RouteService {
 								id: true,
 								name: true,
 								home_address: true,
+								home_lat: true,
+								home_long: true,
 								pick_up_time: true,
 								drop_off_time: true,
 								office_pick_up_time: true,
@@ -1604,6 +1622,8 @@ export class RouteService {
 						driver_arrived_at: null,
 						passenger_ack: null,
 						picked_at: null,
+						picked_lat: null,
+						picked_long: null,
 						dropoff_arrived_at: null,
 						dropped_at: null,
 					},

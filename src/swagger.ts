@@ -637,14 +637,24 @@ const swaggerDocument = {
 						type: "string",
 						enum: ["PICKED", "STILL_WAITING", "MOVE_TO_NEXT", "DROPPED"],
 						description:
-							"PICKUP segment: PICKED | STILL_WAITING | MOVE_TO_NEXT. DROP segment: DROPPED (preferred) or PICKED to record drop with dropped_at.",
+							"PICKUP segment: PICKED | STILL_WAITING | MOVE_TO_NEXT. DROP segment: DROPPED (preferred) or PICKED to record office pick with picked_at.",
+					},
+					lat: {
+						type: "number",
+						description:
+							"Required when action is PICKED — driver GPS latitude at pick time.",
+					},
+					long: {
+						type: "number",
+						description:
+							"Required when action is PICKED — driver GPS longitude at pick time.",
 					},
 					dropped_at: {
 						type: "string",
 						format: "date-time",
 						nullable: true,
 						description:
-							"Optional ISO 8601 when action is DROPPED (or PICKED on DROP); default server time.",
+							"Optional ISO 8601 when action is DROPPED; default server time.",
 					},
 				},
 			},
@@ -1704,6 +1714,54 @@ const swaggerDocument = {
 				],
 				responses: {
 					"200": { description: "Aggregated payroll preview" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/payroll/history": {
+			get: {
+				tags: ["Payroll"],
+				summary:
+					"Payment history — grouped salary/fuel events (default: trips in date range; dateFilter=paid_at for payment date)",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "from",
+						in: "query",
+						required: true,
+						schema: { type: "string", example: "2026-06-01" },
+						description: "Payment date range start (YYYY-MM-DD)",
+					},
+					{
+						name: "to",
+						in: "query",
+						required: true,
+						schema: { type: "string", example: "2026-06-30" },
+						description: "Payment date range end (YYYY-MM-DD)",
+					},
+					{
+						name: "driverId",
+						in: "query",
+						required: false,
+						schema: { type: "integer", minimum: 1 },
+					},
+					{
+						name: "dateFilter",
+						in: "query",
+						required: false,
+						schema: {
+							type: "string",
+							enum: ["trip", "paid_at"],
+							default: "trip",
+						},
+						description:
+							"trip = same as preview (scheduled_date); paid_at = when payment was marked",
+					},
+				],
+				responses: {
+					"200": { description: "Grouped salary/fuel payment events" },
 					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },

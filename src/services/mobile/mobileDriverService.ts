@@ -1562,7 +1562,7 @@ export const MobileDriverService = {
 		userId: number,
 		phasePassengerId: number,
 		action: LegAction,
-		options?: { dropRecordedAt?: Date },
+		options?: { dropRecordedAt?: Date; pickCoords?: { lat: number; long: number } },
 	) {
 		const driver = await resolveDriver(userId);
 
@@ -1742,9 +1742,17 @@ export const MobileDriverService = {
 				);
 			}
 			if (action === "PICKED") {
+				const pickCoords = options?.pickCoords;
+				if (!pickCoords) {
+					throw ResponseHandler.badRequest(
+						"lat and long are required when action is PICKED",
+					);
+				}
 				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
 					status: "PICKED",
 					picked_at: new Date(),
+					picked_lat: pickCoords.lat,
+					picked_long: pickCoords.long,
 				});
 			} else if (action === "STILL_WAITING") {
 				await updatePhasePassengerRow(db, routePlanId, "PICKUP", passengerId, {
@@ -2026,11 +2034,19 @@ export const MobileDriverService = {
 						"This passenger has already been dropped.",
 					);
 				}
+				const pickCoords = options?.pickCoords;
+				if (!pickCoords) {
+					throw ResponseHandler.badRequest(
+						"lat and long are required when action is PICKED",
+					);
+				}
 				await db.routeDailyPlanPhasePassenger.update({
 					where: { id: phasePassengerId },
 					data: {
 						status: "PICKED",
 						picked_at: recordedAt,
+						picked_lat: pickCoords.lat,
+						picked_long: pickCoords.long,
 					},
 				});
 			}

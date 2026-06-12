@@ -442,6 +442,8 @@ model RouteDailyPlanPhasePassenger {
   move_next_notified_at            DateTime?
   passenger_ack                    PassengerAck?
   picked_at                        DateTime?
+  picked_lat                       Float?
+  picked_long                      Float?
   dropoff_arrived_at               DateTime?
   dropped_at                       DateTime?
   created_at                       DateTime                  @default(now())
