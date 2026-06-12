@@ -9,21 +9,157 @@ function parseYmdToDate(ymd: string): Date {
 	return new Date(Date.UTC(y, m - 1, d));
 }
 
+function assertFromToOrder(from: string, to: string): {
+	fromDate: Date;
+	toDate: Date;
+} {
+	const fromDate = parseYmdToDate(from);
+	const toDate = parseYmdToDate(to);
+	if (fromDate.getTime() > toDate.getTime()) {
+		throw ResponseHandler.badRequest("from must be before or equal to to");
+	}
+	return { fromDate, toDate };
+}
+
+/** Inclusive calendar-day range for DateTime payment timestamps. */
+function paymentTimestampRange(from: string, to: string): { gte: Date; lt: Date } {
+	const { fromDate, toDate } = assertFromToOrder(from, to);
+	const lt = new Date(toDate);
+	lt.setUTCDate(lt.getUTCDate() + 1);
+	return { gte: fromDate, lt };
+}
+
 type PayrollComponents = Array<"SALARY" | "FUEL">;
 
+type PhaseDriverPayRow = {
+	id: number;
+	driver_id: number;
+	phase: string;
+	scheduled_date: Date;
+	trip_price: number | null;
+	fuel_cost: number | null;
+	salary_payment_status: string;
+	fuel_payment_status: string;
+	salary_paid_at: Date | null;
+	fuel_paid_at: Date | null;
+	driver: { name: string };
+};
+
+type PaymentEventBucket = {
+	type: "SALARY" | "FUEL";
+	paid_at: Date;
+	driver_id: number;
+	driver_name: string;
+	amount: number;
+	trips_count: number;
+};
+
+function buildPaymentEvents(rows: PhaseDriverPayRow[]) {
+	const events = new Map<string, PaymentEventBucket>();
+
+	const ingest = (
+		type: "SALARY" | "FUEL",
+		row: PhaseDriverPayRow,
+		paidAt: Date,
+		amount: number,
+	) => {
+		if (amount <= 0) return;
+		const key = `${type}:${row.driver_id}:${paidAt.toISOString()}`;
+		const bucket = events.get(key) ?? {
+			type,
+			paid_at: paidAt,
+			driver_id: row.driver_id,
+			driver_name: row.driver.name,
+			amount: 0,
+			trips_count: 0,
+		};
+		bucket.amount += amount;
+		bucket.trips_count += 1;
+		events.set(key, bucket);
+	};
+
+	for (const r of rows) {
+		if (r.salary_payment_status === "PAID" && r.salary_paid_at != null) {
+			ingest("SALARY", r, r.salary_paid_at, Number(r.trip_price ?? 0));
+		}
+		if (r.fuel_payment_status === "PAID" && r.fuel_paid_at != null) {
+			ingest("FUEL", r, r.fuel_paid_at, Number(r.fuel_cost ?? 0));
+		}
+	}
+
+	const payments = [...events.values()]
+		.sort((a, b) => b.paid_at.getTime() - a.paid_at.getTime())
+		.map((e) => ({
+			type: e.type,
+			paid_at: e.paid_at.toISOString(),
+			driver_id: e.driver_id,
+			driver_name: e.driver_name,
+			amount: e.amount,
+			trips_count: e.trips_count,
+		}));
+
+	const salaryPayments = payments.filter((p) => p.type === "SALARY");
+	const fuelPayments = payments.filter((p) => p.type === "FUEL");
+
+	return {
+		payments,
+		payment_summary: {
+			salary_paid_total: salaryPayments.reduce((s, x) => s + x.amount, 0),
+			fuel_paid_total: fuelPayments.reduce((s, x) => s + x.amount, 0),
+			salary_events: salaryPayments.length,
+			fuel_events: fuelPayments.length,
+		},
+	};
+}
+
 export class PayrollService {
-	async preview(from: string, to: string, driverId?: number) {
-		const fromDate = parseYmdToDate(from);
-		const toDate = parseYmdToDate(to);
-		if (fromDate.getTime() > toDate.getTime()) {
-			throw ResponseHandler.badRequest("from must be before or equal to to");
+	private async loadCompletedPhaseRows(
+		from: string,
+		to: string,
+		driverId: number | undefined,
+		mode: "trip" | "paid_at",
+	) {
+		const { fromDate, toDate } = assertFromToOrder(from, to);
+		const paidRange = paymentTimestampRange(from, to);
+
+		if (mode === "trip") {
+			return db.routeDailyPlanPhaseDriver.findMany({
+				where: {
+					status: "COMPLETED",
+					scheduled_date: { gte: fromDate, lte: toDate },
+					...(driverId ? { driver_id: driverId } : {}),
+				},
+				select: {
+					id: true,
+					driver_id: true,
+					phase: true,
+					scheduled_date: true,
+					trip_price: true,
+					fuel_cost: true,
+					salary_payment_status: true,
+					fuel_payment_status: true,
+					salary_paid_at: true,
+					fuel_paid_at: true,
+					driver: { select: { name: true } },
+				},
+				orderBy: [{ driver_id: "asc" }, { scheduled_date: "asc" }, { id: "asc" }],
+			});
 		}
 
-		const rows = await db.routeDailyPlanPhaseDriver.findMany({
+		return db.routeDailyPlanPhaseDriver.findMany({
 			where: {
 				status: "COMPLETED",
-				scheduled_date: { gte: fromDate, lte: toDate },
 				...(driverId ? { driver_id: driverId } : {}),
+				OR: [
+					{
+						salary_payment_status: "PAID",
+						salary_paid_at: paidRange,
+					},
+					{
+						fuel_payment_status: "PAID",
+						fuel_paid_at: paidRange,
+					},
+				],
 			},
 			select: {
 				id: true,
@@ -34,14 +170,22 @@ export class PayrollService {
 				fuel_cost: true,
 				salary_payment_status: true,
 				fuel_payment_status: true,
+				salary_paid_at: true,
+				fuel_paid_at: true,
+				driver: { select: { name: true } },
 			},
 			orderBy: [{ driver_id: "asc" }, { scheduled_date: "asc" }, { id: "asc" }],
 		});
+	}
+
+	async preview(from: string, to: string, driverId?: number) {
+		const rows = await this.loadCompletedPhaseRows(from, to, driverId, "trip");
 
 		const byDriver = new Map<
 			number,
 			{
 				driver_id: number;
+				driver_name: string;
 				trips_count: number;
 				salary_unpaid_total: number;
 				fuel_unpaid_total: number;
@@ -53,6 +197,7 @@ export class PayrollService {
 		for (const r of rows) {
 			const bucket = byDriver.get(r.driver_id) ?? {
 				driver_id: r.driver_id,
+				driver_name: r.driver.name,
 				trips_count: 0,
 				salary_unpaid_total: 0,
 				fuel_unpaid_total: 0,
@@ -76,6 +221,8 @@ export class PayrollService {
 		}
 
 		const items = [...byDriver.values()];
+		const { payments, payment_summary } = buildPaymentEvents(rows);
+
 		return {
 			from,
 			to,
@@ -89,6 +236,31 @@ export class PayrollService {
 				fuel_paid_total: items.reduce((s, x) => s + x.fuel_paid_total, 0),
 			},
 			items,
+			payment_summary,
+			payments,
+		};
+	}
+
+	/**
+	 * Payment history. Default `dateFilter=trip` (same as preview).
+	 * Use `dateFilter=paid_at` to filter by when salary/fuel was marked PAID.
+	 */
+	async paymentHistory(
+		from: string,
+		to: string,
+		driverId?: number,
+		dateFilter: "trip" | "paid_at" = "trip",
+	) {
+		const rows = await this.loadCompletedPhaseRows(from, to, driverId, dateFilter);
+		const { payments, payment_summary } = buildPaymentEvents(rows);
+
+		return {
+			from,
+			to,
+			driver_id: driverId ?? null,
+			date_filter: dateFilter,
+			summary: payment_summary,
+			payments,
 		};
 	}
 
@@ -98,11 +270,7 @@ export class PayrollService {
 		components: PayrollComponents,
 		driverId?: number,
 	) {
-		const fromDate = parseYmdToDate(from);
-		const toDate = parseYmdToDate(to);
-		if (fromDate.getTime() > toDate.getTime()) {
-			throw ResponseHandler.badRequest("from must be before or equal to to");
-		}
+		const { fromDate, toDate } = assertFromToOrder(from, to);
 		const paySalary = components.includes("SALARY");
 		const payFuel = components.includes("FUEL");
 		if (!paySalary && !payFuel) {

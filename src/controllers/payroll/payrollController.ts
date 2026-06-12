@@ -14,6 +14,24 @@ export const PayrollController = {
 		ResponseHandler.success(res, result, "Payroll preview");
 	}),
 
+	history: catchAsync(async (req: Request, res: Response) => {
+		const from = String(req.query.from ?? "");
+		const to = String(req.query.to ?? "");
+		const driverIdRaw = req.query.driverId as string | undefined;
+		const driverId =
+			driverIdRaw && driverIdRaw.trim() !== "" ? Number(driverIdRaw) : undefined;
+		const dateFilterRaw = String(req.query.dateFilter ?? "trip");
+		const dateFilter =
+			dateFilterRaw === "paid_at" ? ("paid_at" as const) : ("trip" as const);
+		const result = await payrollService.paymentHistory(
+			from,
+			to,
+			driverId,
+			dateFilter,
+		);
+		ResponseHandler.success(res, result, "Payroll payment history");
+	}),
+
 	settle: catchAsync(async (req: Request, res: Response) => {
 		const body = req.body as {
 			from: string;
