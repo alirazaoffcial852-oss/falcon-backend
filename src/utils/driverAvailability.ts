@@ -1,4 +1,11 @@
 import { parseTimeToMinutesFromMidnight } from "./pickupSchedule";
+import {
+	formatUtcDateToHHMM,
+	isOfficePickupNextDay,
+	resolveDropPhaseDateYmd,
+	resolvePhaseStartAt,
+	type PassengerTripTimes,
+} from "./tripPhaseSchedule";
 
 /** Parse HH:mm:ss duration to minutes (e.g. 01:10:00 → 70). */
 export function parseHmsDurationToMinutes(
@@ -56,6 +63,10 @@ export type TripAvailabilitySchedule = {
 	trip_start_reminder_at: string | null;
 	/** DROP phase start — office pick-up time from route (HH:MM). */
 	drop_phase_starts_at: string | null;
+	/** Calendar date for DROP phase when office pick is next day (YYYY-MM-DD). */
+	drop_phase_date: string | null;
+	/** True when office pick is on the calendar day after plan scheduled_date. */
+	office_pickup_is_next_day: boolean;
 	/** Planned end — latest passenger dropoff_time on the route (HH:MM). */
 	trip_completes_at: string | null;
 };
@@ -79,6 +90,10 @@ export type AvailabilityPhaseContext = {
 	availability_admin_override_until: Date | null;
 	/** Set on DROP rows — pickup start time on the same daily plan. */
 	pickup_trip_start_time?: string | null;
+	/** Plan anchor date (pickup night) for absolute phase scheduling. */
+	plan_scheduled_date?: Date | null;
+	/** First-leg times for overnight DROP detection. */
+	trip_times?: PassengerTripTimes | null;
 };
 
 export type DriverAvailabilityConfig = {
@@ -115,6 +130,8 @@ export function computeAvailabilityUi(params: {
 		route_daily_plan_id: number;
 		phase: "PICKUP" | "DROP";
 		trip_start_time: string;
+		trip_start_at: string | null;
+		office_pickup_is_next_day: boolean;
 	} | null;
 	/** Same as `next_trip` when a phase is ONGOING — use for resume routing after login. */
 	active_trip: {
@@ -122,9 +139,12 @@ export function computeAvailabilityUi(params: {
 		route_daily_plan_id: number;
 		phase: "PICKUP" | "DROP";
 		trip_start_time: string;
+		trip_start_at: string | null;
 		plan_status: string;
 	} | null;
 	trip_schedule: TripAvailabilitySchedule | null;
+	trip_start_at: string | null;
+	office_pickup_is_next_day: boolean;
 } {
 	const { is_available, config, nextPhase } = params;
 	const activePhase = params.activePhase ?? null;
@@ -151,48 +171,91 @@ export function computeAvailabilityUi(params: {
 			route_daily_plan_id: number;
 			phase: "PICKUP" | "DROP";
 			trip_start_time: string;
+			trip_start_at: string | null;
+			office_pickup_is_next_day: boolean;
 		} | null,
 		active_trip: null as {
 			phase_driver_id: number;
 			route_daily_plan_id: number;
 			phase: "PICKUP" | "DROP";
 			trip_start_time: string;
+			trip_start_at: string | null;
 			plan_status: string;
 		} | null,
 		trip_schedule: null as TripAvailabilitySchedule | null,
+		trip_start_at: null as string | null,
+		office_pickup_is_next_day: false,
 	};
 
 	if (!nextPhase?.trip_start_time?.trim()) {
 		if (activePhase?.trip_start_time?.trim()) {
 			const phaseLabel = activePhase.trip_start_time.trim();
+			const activeStartAt =
+				activePhase.plan_scheduled_date && activePhase.trip_times
+					? resolvePhaseStartAt(
+							activePhase.plan_scheduled_date,
+							activePhase.phase,
+							phaseLabel,
+							activePhase.trip_times,
+						)
+					: null;
 			const activeTrip = {
 				phase_driver_id: activePhase.phase_driver_id,
 				route_daily_plan_id: activePhase.route_daily_plan_id,
 				phase: activePhase.phase,
 				trip_start_time: phaseLabel,
+				trip_start_at: activeStartAt?.toISOString() ?? null,
 				plan_status: activePhase.plan_status ?? "ONGOING",
 			};
 			return {
 				...base,
 				status: "IN_TRIP",
 				trip_start_time: phaseLabel,
+				trip_start_at: activeStartAt?.toISOString() ?? null,
 				active_trip: activeTrip,
 			};
 		}
 		return base;
 	}
 
+	const tripTimes = nextPhase.trip_times ?? {
+		homePickupTime: null,
+		dropOffTime: null,
+		officePickUpTime: null,
+	};
+	const tripStartAt =
+		nextPhase.plan_scheduled_date != null
+			? resolvePhaseStartAt(
+					nextPhase.plan_scheduled_date,
+					nextPhase.phase,
+					nextPhase.trip_start_time,
+					tripTimes,
+				)
+			: null;
+	const officePickupIsNextDay =
+		nextPhase.phase === "DROP" && isOfficePickupNextDay(tripTimes);
+
 	const tripStartMinutes = parseTimeToMinutesFromMidnight(
 		nextPhase.trip_start_time,
 	);
-	if (tripStartMinutes == null || leadMinutes == null) {
+	if ((tripStartAt == null && tripStartMinutes == null) || leadMinutes == null) {
 		return base;
 	}
 
-	const deadlineMinutes = tripStartMinutes - leadMinutes;
+	const deadlineAt =
+		tripStartAt != null
+			? new Date(tripStartAt.getTime() - leadMinutes * 60 * 1000)
+			: null;
+	const deadlineMinutes =
+		tripStartMinutes != null ? tripStartMinutes - leadMinutes : null;
 
 	const tripStartLabel = nextPhase.trip_start_time.trim();
-	const deadlineLabel = formatMinutesToHHMM(deadlineMinutes);
+	const deadlineLabel =
+		deadlineAt != null
+			? formatUtcDateToHHMM(deadlineAt)
+			: deadlineMinutes != null
+				? formatMinutesToHHMM(deadlineMinutes)
+				: null;
 	const pickupStart =
 		nextPhase.phase === "PICKUP"
 			? tripStartLabel
@@ -205,16 +268,34 @@ export function computeAvailabilityUi(params: {
 		route_daily_plan_id: nextPhase.route_daily_plan_id,
 		phase: nextPhase.phase,
 		trip_start_time: tripStartLabel,
+		trip_start_at: tripStartAt?.toISOString() ?? null,
+		office_pickup_is_next_day: officePickupIsNextDay,
 	};
 	base.next_trip = upcomingTrip;
 	base.trip_start_time = tripStartLabel;
+	base.trip_start_at = tripStartAt?.toISOString() ?? null;
+	base.office_pickup_is_next_day = officePickupIsNextDay;
 	base.must_mark_available_before = deadlineLabel;
 	base.window_opens_at = null;
 	if (remainingMinutes != null) {
-		base.trip_start_reminder_at = formatMinutesToHHMM(
-			tripStartMinutes - remainingMinutes,
-		);
+		const remindAt =
+			tripStartAt != null
+				? new Date(tripStartAt.getTime() - remainingMinutes * 60 * 1000)
+				: null;
+		base.trip_start_reminder_at =
+			remindAt != null
+				? formatUtcDateToHHMM(remindAt)
+				: tripStartMinutes != null
+					? formatMinutesToHHMM(tripStartMinutes - remainingMinutes)
+					: null;
 	}
+
+	const dropPhaseDate =
+		nextPhase.plan_scheduled_date != null && officePickupIsNextDay
+			? resolveDropPhaseDateYmd(nextPhase.plan_scheduled_date, tripTimes)
+			: nextPhase.plan_scheduled_date != null
+				? nextPhase.plan_scheduled_date.toISOString().slice(0, 10)
+				: null;
 
 	base.trip_schedule = {
 		scheduled_date: null,
@@ -222,16 +303,28 @@ export function computeAvailabilityUi(params: {
 		trip_pickup_starts_at: pickupStart,
 		trip_start_reminder_at: base.trip_start_reminder_at,
 		drop_phase_starts_at: dropStart,
+		drop_phase_date: nextPhase.phase === "DROP" ? dropPhaseDate : null,
+		office_pickup_is_next_day: officePickupIsNextDay,
 		trip_completes_at: null,
 	};
 
 	if (activePhase?.trip_start_time?.trim()) {
 		const phaseLabel = activePhase.trip_start_time.trim();
+		const activeStartAt =
+			activePhase.plan_scheduled_date && activePhase.trip_times
+				? resolvePhaseStartAt(
+						activePhase.plan_scheduled_date,
+						activePhase.phase,
+						phaseLabel,
+						activePhase.trip_times,
+					)
+				: null;
 		base.active_trip = {
 			phase_driver_id: activePhase.phase_driver_id,
 			route_daily_plan_id: activePhase.route_daily_plan_id,
 			phase: activePhase.phase,
 			trip_start_time: phaseLabel,
+			trip_start_at: activeStartAt?.toISOString() ?? null,
 			plan_status: activePhase.plan_status ?? "ONGOING",
 		};
 	}
@@ -259,7 +352,12 @@ export function computeAvailabilityUi(params: {
 		};
 	}
 
-	if (nowMinutes < deadlineMinutes) {
+	const beforeDeadline =
+		deadlineAt != null
+			? now.getTime() < deadlineAt.getTime()
+			: deadlineMinutes != null && nowMinutes < deadlineMinutes;
+
+	if (beforeDeadline) {
 		return {
 			...base,
 			show_availability_button: true,
@@ -274,17 +372,38 @@ export function computeAvailabilityUi(params: {
 	};
 }
 
-/** True when local clock has reached the availability deadline for this pickup row. */
+/** True when clock has reached the availability deadline for a phase row. */
 export function hasReachedAvailabilityDeadline(
 	tripStartTime: string,
 	availabilityTimeHms: string,
 	now?: Date,
+	schedule?: {
+		planScheduledDate: Date;
+		phase: "PICKUP" | "DROP";
+		tripTimes: PassengerTripTimes;
+	},
 ): boolean {
-	const tripMin = parseTimeToMinutesFromMidnight(tripStartTime);
 	const leadMin = parseHmsDurationToMinutes(availabilityTimeHms);
-	if (tripMin == null || leadMin == null) return false;
-	const deadlineMin = tripMin - leadMin;
+	if (leadMin == null) return false;
+
 	const n = now ?? new Date();
+
+	if (schedule?.planScheduledDate) {
+		const tripStartAt = resolvePhaseStartAt(
+			schedule.planScheduledDate,
+			schedule.phase,
+			tripStartTime,
+			schedule.tripTimes,
+		);
+		if (tripStartAt) {
+			const deadlineAt = new Date(tripStartAt.getTime() - leadMin * 60 * 1000);
+			return n.getTime() >= deadlineAt.getTime();
+		}
+	}
+
+	const tripMin = parseTimeToMinutesFromMidnight(tripStartTime);
+	if (tripMin == null) return false;
+	const deadlineMin = tripMin - leadMin;
 	const nowMin = n.getHours() * 60 + n.getMinutes();
 	return nowMin >= deadlineMin;
 }
@@ -305,12 +424,35 @@ export function hasReachedTripStartReminderTime(
 	tripStartTime: string,
 	remainingStartTimeHms: string,
 	now?: Date,
+	schedule?: {
+		planScheduledDate: Date;
+		phase: "PICKUP" | "DROP";
+		tripTimes: PassengerTripTimes;
+	},
 ): boolean {
-	const tripMin = parseTimeToMinutesFromMidnight(tripStartTime);
 	const remainingMin = parseHmsDurationToMinutes(remainingStartTimeHms);
-	if (tripMin == null || remainingMin == null) return false;
-	const remindAtMin = tripMin - remainingMin;
+	if (remainingMin == null) return false;
+
 	const n = now ?? new Date();
+
+	if (schedule?.planScheduledDate) {
+		const tripStartAt = resolvePhaseStartAt(
+			schedule.planScheduledDate,
+			schedule.phase,
+			tripStartTime,
+			schedule.tripTimes,
+		);
+		if (tripStartAt) {
+			const remindAt = new Date(
+				tripStartAt.getTime() - remainingMin * 60 * 1000,
+			);
+			return n.getTime() >= remindAt.getTime();
+		}
+	}
+
+	const tripMin = parseTimeToMinutesFromMidnight(tripStartTime);
+	if (tripMin == null) return false;
+	const remindAtMin = tripMin - remainingMin;
 	const nowMin = n.getHours() * 60 + n.getMinutes();
 	return nowMin >= remindAtMin;
 }

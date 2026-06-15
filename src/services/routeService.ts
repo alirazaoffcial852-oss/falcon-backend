@@ -348,9 +348,10 @@ export class RouteService {
 			return;
 		}
 
+		/** Leg `dropoff_*` is office (morning arrival); DROP segment ends at `pickup_*` (home). */
 		const orderedHomes = reloaded.legs.map((leg) => ({
-			lat: leg.dropoff_lat,
-			lng: leg.dropoff_long,
+			lat: leg.pickup_lat,
+			lng: leg.pickup_long,
 		}));
 
 		const origin = office;

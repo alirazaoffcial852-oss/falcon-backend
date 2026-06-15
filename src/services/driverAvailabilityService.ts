@@ -12,16 +12,121 @@ import {
 import { parseLocalYmd, getLocalDateOnly } from "../utils/recurringPlan";
 import {
 	getLocalDayRange,
+	phaseDriverActiveScheduledDateWhere,
 	phaseDriverScheduledDateWhere,
 } from "../utils/routeDayScope";
+import {
+	getPlanPassengerTripTimes,
+	isOfficePickupNextDay,
+	resolveDropPhaseDateYmd,
+	resolvePhaseStartAt,
+	type PassengerTripTimes,
+} from "../utils/tripPhaseSchedule";
 import { notificationService } from "./notificationService";
-import { log } from "node:console";
 
 const db = DatabaseService.getInstance().getPrisma();
 
 const DEFAULT_ADMIN_OVERRIDE_MINUTES = 10;
 
+type PhaseRowWithSchedule = AvailabilityPhaseContext & {
+	pickup_trip_start_time: string | null;
+	plan_scheduled_date: Date;
+	trip_times: PassengerTripTimes;
+};
+
 export class DriverAvailabilityService {
+	private async loadPhaseScheduleContext(
+		routeDailyPlanId: number,
+		rowScheduledDate: Date,
+	): Promise<{ plan_scheduled_date: Date; trip_times: PassengerTripTimes }> {
+		const fromPlan = await getPlanPassengerTripTimes(db, routeDailyPlanId);
+		return {
+			plan_scheduled_date: fromPlan?.planScheduledDate ?? rowScheduledDate,
+			trip_times:
+				fromPlan?.times ?? {
+					homePickupTime: null,
+					dropOffTime: null,
+					officePickUpTime: null,
+				},
+		};
+	}
+
+	private isYesterdayPlanRow(rowScheduledDate: Date, forDay = new Date()): boolean {
+		const rowDate = getLocalDateOnly(rowScheduledDate);
+		const todayStart = getLocalDayRange(forDay).start;
+		return rowDate.getTime() < todayStart.getTime();
+	}
+
+	/** Skip stale yesterday PICKUP rows; keep overnight DROP spill. */
+	private isActivePhaseRow(
+		row: {
+			phase: "PICKUP" | "DROP";
+			status: string;
+			scheduled_date: Date;
+		},
+		forDay = new Date(),
+	): boolean {
+		if (!this.isYesterdayPlanRow(row.scheduled_date, forDay)) return true;
+		if (row.phase === "PICKUP") {
+			return row.status === "ONGOING";
+		}
+		return row.status !== "COMPLETED";
+	}
+
+	private async mapPhaseRow(
+		row: {
+			id: number;
+			route_daily_plan_id: number;
+			phase: "PICKUP" | "DROP";
+			trip_start_time: string;
+			scheduled_date: Date;
+			availability_missed_at: Date | null;
+			availability_miss_notified_at: Date | null;
+			availability_admin_override_until: Date | null;
+		},
+		pickupTripStart: string | null,
+	): Promise<PhaseRowWithSchedule> {
+		const schedule = await this.loadPhaseScheduleContext(
+			row.route_daily_plan_id,
+			row.scheduled_date,
+		);
+		return {
+			phase_driver_id: row.id,
+			route_daily_plan_id: row.route_daily_plan_id,
+			phase: row.phase,
+			trip_start_time: row.trip_start_time.trim(),
+			availability_missed_at: row.availability_missed_at,
+			availability_miss_notified_at: row.availability_miss_notified_at,
+			availability_admin_override_until: row.availability_admin_override_until,
+			pickup_trip_start_time: pickupTripStart,
+			plan_scheduled_date: schedule.plan_scheduled_date,
+			trip_times: schedule.trip_times,
+		};
+	}
+
+	private async pickEarliestPhaseCandidate(
+		candidates: PhaseRowWithSchedule[],
+	): Promise<PhaseRowWithSchedule | null> {
+		if (candidates.length === 0) return null;
+		const withStart = candidates.map((c) => ({
+			c,
+			startAt: resolvePhaseStartAt(
+				c.plan_scheduled_date,
+				c.phase,
+				c.trip_start_time,
+				c.trip_times,
+			),
+		}));
+		withStart.sort((a, b) => {
+			const ta = a.startAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+			const tb = b.startAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+			if (ta !== tb) return ta - tb;
+			if (a.c.phase === "PICKUP" && b.c.phase === "DROP") return -1;
+			if (a.c.phase === "DROP" && b.c.phase === "PICKUP") return 1;
+			return a.c.phase_driver_id - b.c.phase_driver_id;
+		});
+		return withStart[0]?.c ?? null;
+	}
 	async getAdminUserIds(): Promise<number[]> {
 		const users = await db.user.findMany({
 			where: { role: { is_admin_role: true } },
@@ -74,17 +179,12 @@ export class DriverAvailabilityService {
 	 */
 	async findNextPhaseForAvailability(
 		driverId: number,
-	): Promise<
-		| (AvailabilityPhaseContext & {
-				pickup_trip_start_time: string | null;
-		  })
-		| null
-	> {
+	): Promise<PhaseRowWithSchedule | null> {
 		const rows = await db.routeDailyPlanPhaseDriver.findMany({
 			where: {
 				driver_id: driverId,
 				status: { not: "COMPLETED" },
-				scheduled_date: phaseDriverScheduledDateWhere(),
+				scheduled_date: phaseDriverActiveScheduledDateWhere(),
 				trip_start_time: { not: null },
 			},
 			select: {
@@ -93,32 +193,29 @@ export class DriverAvailabilityService {
 				phase: true,
 				trip_start_time: true,
 				status: true,
+				scheduled_date: true,
 				availability_missed_at: true,
 				availability_miss_notified_at: true,
 				availability_admin_override_until: true,
 			},
-			orderBy: [{ trip_start_time: "asc" }, { id: "asc" }],
+			orderBy: [{ scheduled_date: "asc" }, { phase: "asc" }, { id: "asc" }],
 		});
 
-		const mapRow = (
-			row: (typeof rows)[number],
-			pickupTripStart: string | null,
-		): AvailabilityPhaseContext & { pickup_trip_start_time: string | null } => ({
-			phase_driver_id: row.id,
-			route_daily_plan_id: row.route_daily_plan_id,
-			phase: row.phase,
-			trip_start_time: row.trip_start_time!.trim(),
-			availability_missed_at: row.availability_missed_at,
-			availability_miss_notified_at: row.availability_miss_notified_at,
-			availability_admin_override_until: row.availability_admin_override_until,
-			pickup_trip_start_time: pickupTripStart,
-		});
+		const pickupCandidates: PhaseRowWithSchedule[] = [];
+		const dropCandidates: PhaseRowWithSchedule[] = [];
 
 		for (const row of rows) {
 			if (!row.trip_start_time?.trim()) continue;
+			if (!this.isActivePhaseRow(row)) continue;
 
-			if (row.phase === "PICKUP") {
-				return mapRow(row, row.trip_start_time.trim());
+			if (row.phase === "PICKUP" && row.status !== "COMPLETED") {
+				pickupCandidates.push(
+					await this.mapPhaseRow(
+						{ ...row, trip_start_time: row.trip_start_time.trim() },
+						row.trip_start_time.trim(),
+					),
+				);
+				continue;
 			}
 
 			if (row.phase === "DROP") {
@@ -130,14 +227,18 @@ export class DriverAvailabilityService {
 					select: { status: true, trip_start_time: true },
 				});
 				if (pickupRow?.status !== "COMPLETED") continue;
-				return mapRow(
-					row,
-					pickupRow.trip_start_time?.trim() ?? null,
+				dropCandidates.push(
+					await this.mapPhaseRow(
+						{ ...row, trip_start_time: row.trip_start_time.trim() },
+						pickupRow.trip_start_time?.trim() ?? null,
+					),
 				);
 			}
 		}
 
-		return null;
+		const pickupNext = await this.pickEarliestPhaseCandidate(pickupCandidates);
+		if (pickupNext) return pickupNext;
+		return this.pickEarliestPhaseCandidate(dropCandidates);
 	}
 
 	/** ONGOING PICKUP or DROP today (e.g. drop after pickup complete). */
@@ -152,7 +253,7 @@ export class DriverAvailabilityService {
 			where: {
 				driver_id: driverId,
 				status: "ONGOING",
-				scheduled_date: phaseDriverScheduledDateWhere(),
+				scheduled_date: phaseDriverActiveScheduledDateWhere(),
 				trip_start_time: { not: null },
 				route_daily_plan: { status: { in: ["PENDING", "ONGOING"] } },
 			},
@@ -161,6 +262,8 @@ export class DriverAvailabilityService {
 				route_daily_plan_id: true,
 				phase: true,
 				trip_start_time: true,
+				status: true,
+				scheduled_date: true,
 				availability_missed_at: true,
 				availability_miss_notified_at: true,
 				availability_admin_override_until: true,
@@ -169,7 +272,9 @@ export class DriverAvailabilityService {
 			orderBy: [{ phase: "desc" }, { trip_start_time: "asc" }, { id: "asc" }],
 		});
 
-		const active = rows.find((r) => r.trip_start_time?.trim());
+		const active = rows.find(
+			(r) => r.trip_start_time?.trim() && this.isActivePhaseRow(r),
+		);
 		if (!active?.trip_start_time) return null;
 
 		const pickupRow = await db.routeDailyPlanPhaseDriver.findFirst({
@@ -179,6 +284,11 @@ export class DriverAvailabilityService {
 			},
 			select: { trip_start_time: true },
 		});
+
+		const schedule = await this.loadPhaseScheduleContext(
+			active.route_daily_plan_id,
+			active.scheduled_date,
+		);
 
 		return {
 			phase_driver_id: active.id,
@@ -191,6 +301,8 @@ export class DriverAvailabilityService {
 				active.availability_admin_override_until,
 			plan_status: active.route_daily_plan.status,
 			pickup_trip_start_time: pickupRow?.trip_start_time?.trim() ?? null,
+			plan_scheduled_date: schedule.plan_scheduled_date,
+			trip_times: schedule.trip_times,
 		};
 	}
 
@@ -226,10 +338,22 @@ export class DriverAvailabilityService {
 				? scheduled.toISOString().slice(0, 10)
 				: String(scheduled).slice(0, 10);
 
+		const tripMeta = await getPlanPassengerTripTimes(db, routeDailyPlanId);
+		const times = tripMeta?.times ?? {
+			homePickupTime: null,
+			dropOffTime: null,
+			officePickUpTime: null,
+		};
+		const officeNextDay = isOfficePickupNextDay(times);
+
 		return {
 			...schedule,
 			scheduled_date: scheduledDate,
 			drop_phase_starts_at: dropPhase?.trip_start_time?.trim() ?? null,
+			drop_phase_date: officeNextDay
+				? resolveDropPhaseDateYmd(plan.scheduled_date, times)
+				: scheduledDate,
+			office_pickup_is_next_day: officeNextDay,
 			trip_completes_at: maxClockTimeLabel(dropoffTimes),
 		};
 	}
@@ -303,10 +427,25 @@ export class DriverAvailabilityService {
 
 		if (phase.availability_miss_notified_at) return;
 
+		const phaseRow = await db.routeDailyPlanPhaseDriver.findUnique({
+			where: { id: phase.phase_driver_id },
+			select: { scheduled_date: true },
+		});
+		const schedule = await this.loadPhaseScheduleContext(
+			phase.route_daily_plan_id,
+			phaseRow?.scheduled_date ?? getLocalDateOnly(new Date()),
+		);
+
 		if (
 			!hasReachedAvailabilityDeadline(
 				phase.trip_start_time,
 				config.availability_time,
+				undefined,
+				{
+					planScheduledDate: schedule.plan_scheduled_date,
+					phase: "PICKUP",
+					tripTimes: schedule.trip_times,
+				},
 			)
 		) {
 			return;

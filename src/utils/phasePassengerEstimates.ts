@@ -376,9 +376,9 @@ function mapPhasePassengerWithEstimate(ctx: {
 					pickup_time: leg.pickup_time,
 				}
 			: {
-					lat: leg.dropoff_lat,
-					long: leg.dropoff_long,
-					dropoff_address: leg.dropoff_address,
+					lat: leg.pickup_lat,
+					long: leg.pickup_long,
+					dropoff_address: leg.pickup_address,
 					dropoff_time: leg.dropoff_time,
 				};
 
