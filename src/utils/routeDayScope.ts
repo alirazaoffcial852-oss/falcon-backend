@@ -1,14 +1,13 @@
 import type { Prisma } from "../generated/prisma/client";
+import { addLocalDays, getLocalDateOnly } from "./recurringPlan";
 
 /** UTC midnight range for the calendar day represented by `forDay`. */
 export function getLocalDayRange(forDay: Date = new Date()): {
 	start: Date;
 	end: Date;
 } {
-	const start = new Date(forDay);
-	start.setUTCHours(0, 0, 0, 0);
-	const end = new Date(start);
-	end.setUTCDate(end.getUTCDate() + 1);
+	const start = getLocalDateOnly(forDay);
+	const end = addLocalDays(start, 1);
 	return { start, end };
 }
 
@@ -28,4 +27,16 @@ export function phaseDriverScheduledDateWhere(
 ): Prisma.DateTimeFilter {
 	const { start, end } = getLocalDayRange(forDay);
 	return { gte: start, lt: end };
+}
+
+/**
+ * Yesterday + today plan dates — keeps overnight DROP phases visible after midnight
+ * (office pick next calendar day while plan `scheduled_date` stays on pickup night).
+ */
+export function phaseDriverActiveScheduledDateWhere(
+	forDay: Date = new Date(),
+): Prisma.DateTimeFilter {
+	const today = getLocalDayRange(forDay);
+	const yesterday = getLocalDayRange(addLocalDays(forDay, -1));
+	return { gte: yesterday.start, lt: today.end };
 }

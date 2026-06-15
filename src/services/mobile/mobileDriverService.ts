@@ -22,8 +22,16 @@ import { passengerWaitingService } from "../passengerWaitingService";
 import type { DriverWaitingConfig } from "../../utils/passengerWaitingSchedule";
 import {
 	dailyPlanForActiveDayWhere,
+	getLocalDayRange,
+	phaseDriverActiveScheduledDateWhere,
 	phaseDriverScheduledDateWhere,
 } from "../../utils/routeDayScope";
+import {
+	getPlanPassengerTripTimes,
+	isOfficePickupNextDay,
+	resolvePhaseStartAt,
+} from "../../utils/tripPhaseSchedule";
+import { getLocalDateOnly } from "../../utils/recurringPlan";
 import { getFirstRouteLegInPickupOrder } from "../../utils/routeFirstPickupLeg";
 import {
 	parseTimeToMinutesFromMidnight,
@@ -93,8 +101,8 @@ function distanceKmForLeg(
 	isPickup: boolean,
 ): string | null {
 	if (driver.current_lat === null || driver.current_long === null) return null;
-	const lat = isPickup ? leg.pickup_lat : leg.dropoff_lat;
-	const lng = isPickup ? leg.pickup_long : leg.dropoff_long;
+	const lat = leg.pickup_lat;
+	const lng = leg.pickup_long;
 	return haversineKm(driver.current_lat, driver.current_long, lat, lng).toFixed(
 		2,
 	);
@@ -426,14 +434,14 @@ function buildQueueItem(
 	}
 	return {
 		...base,
-		dropoff_address: leg.dropoff_address,
-		dropoff_lat: leg.dropoff_lat,
-		dropoff_long: leg.dropoff_long,
+		dropoff_address: leg.pickup_address,
+		dropoff_lat: leg.pickup_lat,
+		dropoff_long: leg.pickup_long,
 		dropoff_time: leg.dropoff_time,
 		dropoff_status: dropPhaseStatus,
-		stop_address: leg.dropoff_address,
-		stop_lat: leg.dropoff_lat,
-		stop_long: leg.dropoff_long,
+		stop_address: leg.pickup_address,
+		stop_lat: leg.pickup_lat,
+		stop_long: leg.pickup_long,
 		distance_km: distanceKmForLeg(driver, leg, false),
 	};
 }
@@ -594,9 +602,9 @@ async function buildStartTripResponse(params: {
 							id: firstLeg.passenger.id,
 							name: firstLeg.passenger.name,
 						},
-						dropoff_address: firstLeg.dropoff_address,
-						dropoff_lat: firstLeg.dropoff_lat,
-						dropoff_long: firstLeg.dropoff_long,
+						dropoff_address: firstLeg.pickup_address,
+						dropoff_lat: firstLeg.pickup_lat,
+						dropoff_long: firstLeg.pickup_long,
 					}
 			: null,
 		config,
@@ -830,11 +838,11 @@ export const MobileDriverService = {
 		const driverLive = getDriverLocationSnapshot(driver.id);
 		const config = await db.driverConfiguration.findFirst();
 
-		const phaseRows = await db.routeDailyPlanPhaseDriver.findMany({
+		const phaseRowsRaw = await db.routeDailyPlanPhaseDriver.findMany({
 			where: {
 				driver_id: driver.id,
 				...(phaseDriverId != null ? { id: phaseDriverId } : {}),
-				scheduled_date: phaseDriverScheduledDateWhere(),
+				scheduled_date: phaseDriverActiveScheduledDateWhere(),
 				status: { not: "COMPLETED" },
 			},
 			include: {
@@ -883,20 +891,40 @@ export const MobileDriverService = {
 			},
 		});
 
+		const todayStart = getLocalDayRange().start;
+		const phaseRows = phaseRowsRaw.filter((pd) => {
+			const rowDate = getLocalDateOnly(pd.scheduled_date);
+			if (rowDate.getTime() >= todayStart.getTime()) return true;
+			if (pd.phase === "PICKUP") return pd.status === "ONGOING";
+			return pd.status !== "COMPLETED";
+		});
+
 		const sorted = [...phaseRows].sort((a, b) => {
+			if (a.route_daily_plan_id !== b.route_daily_plan_id) {
+				return a.route_daily_plan_id - b.route_daily_plan_id;
+			}
+			if (a.phase === "PICKUP" && b.phase === "DROP") return -1;
+			if (a.phase === "DROP" && b.phase === "PICKUP") return 1;
 			const ma = parseTimeToMinutesFromMidnight(a.trip_start_time);
 			const mb = parseTimeToMinutesFromMidnight(b.trip_start_time);
 			if (ma !== null && mb !== null && ma !== mb) return ma - mb;
 			if (ma === null && mb !== null) return 1;
 			if (mb === null && ma !== null) return -1;
-			if (a.route_daily_plan_id !== b.route_daily_plan_id) {
-				return a.route_daily_plan_id - b.route_daily_plan_id;
-			}
-			// Same daily plan: PICKUP row before DROP
-			if (a.phase === "PICKUP" && b.phase === "DROP") return -1;
-			if (a.phase === "DROP" && b.phase === "PICKUP") return 1;
 			return 0;
 		});
+
+		const planTripMeta = new Map<
+			number,
+			Awaited<ReturnType<typeof getPlanPassengerTripTimes>>
+		>();
+		for (const pd of sorted) {
+			if (!planTripMeta.has(pd.route_daily_plan_id)) {
+				planTripMeta.set(
+					pd.route_daily_plan_id,
+					await getPlanPassengerTripTimes(db, pd.route_daily_plan_id),
+				);
+			}
+		}
 
 		const executionRouteIds = [
 			...new Set(
@@ -965,6 +993,23 @@ export const MobileDriverService = {
 				const plan = pd.route_daily_plan;
 				const exec = plan.execution_route;
 				const routeIdForLegs = exec?.id ?? null;
+				const meta = planTripMeta.get(pd.route_daily_plan_id);
+				const tripTimes = meta?.times ?? {
+					homePickupTime: null,
+					dropOffTime: null,
+					officePickUpTime: null,
+				};
+				const planDate = meta?.planScheduledDate ?? plan.scheduled_date;
+				const tripStartLabel = pd.trip_start_time?.trim() ?? null;
+				const tripStartAt =
+					tripStartLabel != null
+						? resolvePhaseStartAt(
+								planDate,
+								pd.phase as "PICKUP" | "DROP",
+								tripStartLabel,
+								tripTimes,
+							)?.toISOString() ?? null
+						: null;
 				return {
 					phase_driver_id: pd.id,
 					phase: pd.phase,
@@ -973,6 +1018,9 @@ export const MobileDriverService = {
 					definition_route_id: plan.definition_route_id,
 					scheduled_date: plan.scheduled_date,
 					trip_start_time: pd.trip_start_time,
+					trip_start_at: tripStartAt,
+					office_pickup_is_next_day:
+						pd.phase === "DROP" && isOfficePickupNextDay(tripTimes),
 					trip_started_at: pd.trip_started_at,
 					status: pd.status,
 					plan_status: plan.status,
@@ -2234,16 +2282,16 @@ export const MobileDriverService = {
 							id: nextDrop.passenger.id,
 							name: nextDrop.passenger.name,
 						},
-						dropoff_address: nextDrop.dropoff_address,
-						dropoff_lat: nextDrop.dropoff_lat,
-						dropoff_long: nextDrop.dropoff_long,
+						dropoff_address: nextDrop.pickup_address,
+						dropoff_lat: nextDrop.pickup_lat,
+						dropoff_long: nextDrop.pickup_long,
 					}
 				: null,
 		);
 		if (nextDrop) {
 			void notificationService.sendToDriverId(driver.id, {
 				title: "Next Location",
-				body: `Next drop: ${nextDrop.dropoff_address}`,
+				body: `Next drop: ${nextDrop.pickup_address}`,
 				data: {
 					routeId: String(routeId),
 					legId: String(nextDrop.id),
@@ -2263,9 +2311,9 @@ export const MobileDriverService = {
 							id: nextDrop.passenger.id,
 							name: nextDrop.passenger.name,
 						},
-						dropoff_address: nextDrop.dropoff_address,
-						dropoff_lat: nextDrop.dropoff_lat,
-						dropoff_long: nextDrop.dropoff_long,
+						dropoff_address: nextDrop.pickup_address,
+						dropoff_lat: nextDrop.pickup_lat,
+						dropoff_long: nextDrop.pickup_long,
 					}
 				: null,
 			navigate_to_office: false,

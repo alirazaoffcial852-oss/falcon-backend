@@ -6,7 +6,12 @@ import {
 	getDriverLiveLocationHistory,
 } from "../../utils/liveLocationStore";
 import { notificationService } from "../notificationService";
-import { phaseDriverScheduledDateWhere } from "../../utils/routeDayScope";
+import {
+	getLocalDayRange,
+	phaseDriverActiveScheduledDateWhere,
+	phaseDriverScheduledDateWhere,
+} from "../../utils/routeDayScope";
+import { getLocalDateOnly } from "../../utils/recurringPlan";
 import {
 	getExecutionRouteIdForPlan,
 	getPhaseDriverId,
@@ -295,7 +300,7 @@ export const MobilePassengerService = {
 			where: {
 				passenger_id: passenger.id,
 				route_daily_plan_phase_driver: {
-					scheduled_date: phaseDriverScheduledDateWhere(),
+					scheduled_date: phaseDriverActiveScheduledDateWhere(),
 					status: { not: "COMPLETED" },
 					route_daily_plan: {
 						status: { in: ["PENDING", "ONGOING"] },
@@ -377,6 +382,12 @@ export const MobilePassengerService = {
 
 		for (const row of phasePassengerRows) {
 			const pd = row.route_daily_plan_phase_driver;
+			const rowDate = getLocalDateOnly(pd.scheduled_date);
+			const todayStart = getLocalDayRange().start;
+			if (rowDate.getTime() < todayStart.getTime()) {
+				if (pd.phase === "PICKUP" && pd.status !== "ONGOING") continue;
+				if (pd.phase === "DROP" && pd.status === "COMPLETED") continue;
+			}
 			const planId = pd.route_daily_plan_id;
 
 			const slot = byPlan.get(planId) ?? {};
@@ -739,7 +750,7 @@ export const MobilePassengerService = {
 			where: {
 				passenger_id: passenger.id,
 				route_daily_plan_phase_driver: {
-					scheduled_date: phaseDriverScheduledDateWhere(),
+					scheduled_date: phaseDriverActiveScheduledDateWhere(),
 					status: { not: "COMPLETED" },
 					route_daily_plan: {
 						status: "ONGOING",
