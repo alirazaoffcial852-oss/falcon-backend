@@ -47,4 +47,20 @@ export const PayrollController = {
 		);
 		ResponseHandler.success(res, result, "Payroll settled");
 	}),
+
+	unsettle: catchAsync(async (req: Request, res: Response) => {
+		const body = req.body as {
+			from: string;
+			to: string;
+			driver_id?: number;
+			components: Array<"SALARY" | "FUEL">;
+		};
+		const result = await payrollService.unsettle(
+			body.from,
+			body.to,
+			body.components,
+			body.driver_id,
+		);
+		ResponseHandler.success(res, result, "Payroll settlement reverted");
+	}),
 };

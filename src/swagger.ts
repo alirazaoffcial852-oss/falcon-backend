@@ -1791,6 +1791,29 @@ const swaggerDocument = {
 				},
 			},
 		},
+		"/f1/payroll/unsettle": {
+			post: {
+				tags: ["Payroll"],
+				summary: "Revert salary and/or fuel payment for trips in range",
+				description:
+					"Marks PAID phase rows back to UNPAID and clears paid_at timestamps. Same body as settle.",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/PayrollSettleBody" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Settlement reverted" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
 		// ----- Routes -----
 		"/f1/routes/history": {
 			get: {

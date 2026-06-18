@@ -336,6 +336,77 @@ export class PayrollService {
 			},
 		};
 	}
+
+	/** Reverse settle: mark PAID salary/fuel back to UNPAID for trips in range. */
+	async unsettle(
+		from: string,
+		to: string,
+		components: PayrollComponents,
+		driverId?: number,
+	) {
+		const { fromDate, toDate } = assertFromToOrder(from, to);
+		const revertSalary = components.includes("SALARY");
+		const revertFuel = components.includes("FUEL");
+		if (!revertSalary && !revertFuel) {
+			throw ResponseHandler.badRequest(
+				"components must include SALARY and/or FUEL",
+			);
+		}
+
+		const rows = await db.routeDailyPlanPhaseDriver.findMany({
+			where: {
+				status: "COMPLETED",
+				scheduled_date: { gte: fromDate, lte: toDate },
+				...(driverId ? { driver_id: driverId } : {}),
+			},
+			select: {
+				id: true,
+				trip_price: true,
+				fuel_cost: true,
+				salary_payment_status: true,
+				fuel_payment_status: true,
+			},
+		});
+
+		const salaryRows = rows.filter(
+			(r) => r.salary_payment_status === "PAID" && Number(r.trip_price ?? 0) > 0,
+		);
+		const fuelRows = rows.filter(
+			(r) => r.fuel_payment_status === "PAID" && Number(r.fuel_cost ?? 0) > 0,
+		);
+
+		if (revertSalary && salaryRows.length) {
+			await db.routeDailyPlanPhaseDriver.updateMany({
+				where: { id: { in: salaryRows.map((x) => x.id) } },
+				data: { salary_payment_status: "UNPAID", salary_paid_at: null },
+			});
+		}
+		if (revertFuel && fuelRows.length) {
+			await db.routeDailyPlanPhaseDriver.updateMany({
+				where: { id: { in: fuelRows.map((x) => x.id) } },
+				data: { fuel_payment_status: "UNPAID", fuel_paid_at: null },
+			});
+		}
+
+		return {
+			from,
+			to,
+			driver_id: driverId ?? null,
+			components,
+			salary: {
+				rows_reverted: revertSalary ? salaryRows.length : 0,
+				total: revertSalary
+					? salaryRows.reduce((s, x) => s + Number(x.trip_price ?? 0), 0)
+					: 0,
+			},
+			fuel: {
+				rows_reverted: revertFuel ? fuelRows.length : 0,
+				total: revertFuel
+					? fuelRows.reduce((s, x) => s + Number(x.fuel_cost ?? 0), 0)
+					: 0,
+			},
+		};
+	}
 }
 
 export const payrollService = new PayrollService();
