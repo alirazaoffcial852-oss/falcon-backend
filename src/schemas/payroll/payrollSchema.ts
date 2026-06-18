@@ -25,3 +25,6 @@ export const payrollSettleBodySchema = Joi.object({
 		.min(1)
 		.required(),
 });
+
+/** Same shape as settle — revert PAID → UNPAID for selected components. */
+export const payrollUnsettleBodySchema = payrollSettleBodySchema;
