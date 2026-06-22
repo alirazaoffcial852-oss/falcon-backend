@@ -1835,7 +1835,7 @@ const swaggerDocument = {
 			get: {
 				tags: ["Routes"],
 				summary:
-					"Daily route history report (default today): plan status, pickup/drop per passenger; pickup.actual_pickup_time from route_legs (scheduled pickup).",
+					"Daily route history report (default today): plan status, pickup/drop per passenger; pickup_phase and drop_phase include assigned driver (id, name, phone_no).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{

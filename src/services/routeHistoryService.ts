@@ -155,6 +155,13 @@ export class RouteHistoryService {
 							phase_driver_id: pickupPd.id,
 							status: pickupPd.status,
 							trip_started_at: pickupPd.trip_started_at,
+							driver: pickupPd.driver
+								? {
+										id: pickupPd.driver.id,
+										name: pickupPd.driver.name,
+										phone_no: pickupPd.driver.phone_no,
+									}
+								: null,
 						}
 					: null,
 				drop_phase: dropPd
@@ -162,6 +169,13 @@ export class RouteHistoryService {
 							phase_driver_id: dropPd.id,
 							status: dropPd.status,
 							trip_started_at: dropPd.trip_started_at,
+							driver: dropPd.driver
+								? {
+										id: dropPd.driver.id,
+										name: dropPd.driver.name,
+										phone_no: dropPd.driver.phone_no,
+									}
+								: null,
 						}
 					: null,
 				passenger_summary,
