@@ -5,14 +5,24 @@ import {
 	createRouteSchema,
 	updateRouteSchema,
 	routeIdParamSchema,
+	phaseDriverIdParamSchema,
+	reassignPhaseDriverBodySchema,
 	routeHistoryQuerySchema,
 	optionalDayBodySchema,
 	generateDailyBodySchema,
 	generateDailyPreviewQuerySchema,
+	routeActiveStatusBodySchema,
 	planStatsQuerySchema,
 } from "../../schemas/route/routeSchema";
 
 const router = express.Router();
+
+router.post(
+	"/phase-drivers/:phaseDriverId/reassign-driver",
+	validate.params(phaseDriverIdParamSchema),
+	validate.body(reassignPhaseDriverBodySchema),
+	RouteController.reassignPhaseDriver,
+);
 
 router.get(
 	"/history",
@@ -51,6 +61,11 @@ router.put(
 	"/:id",
 	validate.combined(updateRouteSchema, routeIdParamSchema),
 	RouteController.update,
+);
+router.patch(
+	"/:id/status",
+	validate.combined(routeActiveStatusBodySchema, routeIdParamSchema),
+	RouteController.setActiveStatus,
 );
 router.post(
 	"/:id/optimize",

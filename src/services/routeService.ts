@@ -1147,6 +1147,7 @@ export class RouteService {
 						recurring_plan_start: recurringPlan.start,
 						recurring_plan_end: recurringPlan.end,
 					}),
+					...(data.is_active !== undefined && { is_active: data.is_active }),
 				},
 			});
 
@@ -1213,6 +1214,7 @@ export class RouteService {
 		"recurring_plan_start",
 		"recurringPlanMonths",
 		"waypointMode",
+		"is_active",
 	]);
 
 	/** Strip nested GET-route payload; accept snake_case aliases from clients. */
@@ -1238,6 +1240,9 @@ export class RouteService {
 		}
 		if (o.waypointMode === undefined && o.waypoint_mode !== undefined) {
 			o.waypointMode = o.waypoint_mode;
+		}
+		if (o.is_active === undefined && o.isActive !== undefined) {
+			o.is_active = o.isActive;
 		}
 		return o;
 	}
@@ -1325,6 +1330,7 @@ export class RouteService {
 				...(data.route_price !== undefined && {
 					route_price: data.route_price,
 				}),
+				...(data.is_active !== undefined && { is_active: data.is_active }),
 			},
 		});
 
@@ -1469,6 +1475,9 @@ export class RouteService {
 		});
 		if (!definition)
 			throw ResponseHandler.notFound("Route definition", definitionRouteId);
+		if (!definition.is_active) {
+			throw ResponseHandler.badRequest("Route is inactive — daily plan not created");
+		}
 		if (definition.driver.status !== "APPROVED") {
 			throw ResponseHandler.badRequest(
 				"Driver is pending — daily plan not created",
@@ -1663,7 +1672,7 @@ export class RouteService {
 		const dayStart = new Date(forDay);
 		// dayStart.setHours(0, 0, 0, 0);
 
-		const where: Prisma.RouteWhereInput = {};
+		const where: Prisma.RouteWhereInput = { is_active: true };
 
 		if (options?.plannedOnly) {
 			// Every calendar day from start onward gets a plan for `forDay` — not only the start day.
@@ -1725,6 +1734,7 @@ export class RouteService {
 				id: true,
 				company_id: true,
 				driver_id: true,
+				is_active: true,
 				recurring_plan_start: true,
 				recurring_plan_end: true,
 				company: { select: { weekly_off_days: true } },
@@ -1735,10 +1745,12 @@ export class RouteService {
 			definition_route_id: number;
 			company_id: number;
 			driver_id: number;
+			is_active: boolean;
 			recurring_plan_start: Date | null;
 			recurring_plan_end: Date | null;
 			decision:
 				| "CAN_CREATE"
+				| "SKIP_INACTIVE"
 				| "SKIP_BEFORE_START"
 				| "SKIP_DUPLICATE"
 				| "SKIP_HOLIDAY"
@@ -1748,6 +1760,20 @@ export class RouteService {
 		}> = [];
 
 		for (const d of definitions) {
+			if (!d.is_active) {
+				preview.push({
+					definition_route_id: d.id,
+					company_id: d.company_id,
+					driver_id: d.driver_id,
+					is_active: d.is_active,
+					recurring_plan_start: d.recurring_plan_start,
+					recurring_plan_end: d.recurring_plan_end,
+					decision: "SKIP_INACTIVE",
+					reason: "Route is inactive",
+				});
+				continue;
+			}
+
 			if (
 				d.recurring_plan_start &&
 				new Date(dayStart).getTime() <
@@ -1757,6 +1783,7 @@ export class RouteService {
 					definition_route_id: d.id,
 					company_id: d.company_id,
 					driver_id: d.driver_id,
+					is_active: d.is_active,
 					recurring_plan_start: d.recurring_plan_start,
 					recurring_plan_end: d.recurring_plan_end,
 					decision: "SKIP_BEFORE_START",
@@ -1777,6 +1804,7 @@ export class RouteService {
 					definition_route_id: d.id,
 					company_id: d.company_id,
 					driver_id: d.driver_id,
+					is_active: d.is_active,
 					recurring_plan_start: d.recurring_plan_start,
 					recurring_plan_end: d.recurring_plan_end,
 					decision: "SKIP_DUPLICATE",
@@ -1799,6 +1827,7 @@ export class RouteService {
 					definition_route_id: d.id,
 					company_id: d.company_id,
 					driver_id: d.driver_id,
+					is_active: d.is_active,
 					recurring_plan_start: d.recurring_plan_start,
 					recurring_plan_end: d.recurring_plan_end,
 					decision: "SKIP_HOLIDAY",
@@ -1813,6 +1842,7 @@ export class RouteService {
 					definition_route_id: d.id,
 					company_id: d.company_id,
 					driver_id: d.driver_id,
+					is_active: d.is_active,
 					recurring_plan_start: d.recurring_plan_start,
 					recurring_plan_end: d.recurring_plan_end,
 					decision: "SKIP_WEEKLY_OFF",
@@ -1835,6 +1865,7 @@ export class RouteService {
 					definition_route_id: d.id,
 					company_id: d.company_id,
 					driver_id: d.driver_id,
+					is_active: d.is_active,
 					recurring_plan_start: d.recurring_plan_start,
 					recurring_plan_end: d.recurring_plan_end,
 					decision: "SKIP_DRIVER_LEAVE",
@@ -1847,6 +1878,7 @@ export class RouteService {
 				definition_route_id: d.id,
 				company_id: d.company_id,
 				driver_id: d.driver_id,
+				is_active: d.is_active,
 				recurring_plan_start: d.recurring_plan_start,
 				recurring_plan_end: d.recurring_plan_end,
 				decision: "CAN_CREATE",
@@ -1872,6 +1904,8 @@ export class RouteService {
 				skip_driver_leave: preview.filter(
 					(x) => x.decision === "SKIP_DRIVER_LEAVE",
 				).length,
+				skip_inactive: preview.filter((x) => x.decision === "SKIP_INACTIVE")
+					.length,
 			},
 			items: preview,
 		};
@@ -1914,6 +1948,135 @@ export class RouteService {
 				passenger_count: p.execution_route?._count.legs ?? 0,
 				status: p.status,
 			})),
+		};
+	}
+
+	async setActive(id: number, isActive: boolean) {
+		await this.getById(id);
+		await this.db.route.update({
+			where: { id },
+			data: { is_active: isActive },
+		});
+		return this.getById(id);
+	}
+
+	/** Reassign a daily-plan phase (PICKUP/DROP) to another approved driver. */
+	async reassignPhaseDriver(
+		phaseDriverId: number,
+		newDriverId: number,
+		resetPhase?: boolean,
+	) {
+		await this.assertDriverApproved(newDriverId);
+
+		const pd = await this.db.routeDailyPlanPhaseDriver.findUnique({
+			where: { id: phaseDriverId },
+			include: {
+				route_daily_plan: {
+					select: {
+						id: true,
+						status: true,
+						definition_route_id: true,
+					},
+				},
+			},
+		});
+		if (!pd) {
+			throw ResponseHandler.notFound("Phase driver not found");
+		}
+		if (pd.status === "COMPLETED") {
+			throw ResponseHandler.badRequest(
+				"Cannot reassign driver on a completed phase",
+			);
+		}
+		if (pd.driver_id === newDriverId) {
+			throw ResponseHandler.badRequest(
+				"Phase is already assigned to this driver",
+			);
+		}
+
+		const leave = await this.db.driverLeave.findUnique({
+			where: {
+				driver_id_date: {
+					driver_id: newDriverId,
+					date: pd.scheduled_date,
+				},
+			},
+		});
+		if (leave) {
+			throw ResponseHandler.badRequest(
+				"New driver is on leave on this date",
+			);
+		}
+
+		const shouldReset =
+			resetPhase === true ||
+			pd.status === "ONGOING" ||
+			pd.trip_started_at != null;
+
+		const definitionRouteId = pd.route_daily_plan.definition_route_id;
+		const previousDriverId = pd.driver_id;
+
+		await this.db.$transaction(async (tx) => {
+			await tx.routeDailyPlanPhaseDriver.update({
+				where: { id: phaseDriverId },
+				data: {
+					driver_id: newDriverId,
+					...(shouldReset
+						? {
+								status: "PENDING" as const,
+								trip_started_at: null,
+								selected_car_id: null,
+								trip_km: null,
+								km_per_liter_snapshot: null,
+								fuel_price_per_liter_snapshot: null,
+								fuel_cost: null,
+								availability_missed_at: null,
+								availability_miss_notified_at: null,
+								availability_admin_override_until: null,
+								trip_start_reminder_sent_at: null,
+							}
+						: {}),
+				},
+			});
+
+			if (shouldReset) {
+				const segmentKind =
+					pd.phase === "PICKUP" ? "PICKUP_TO_OFFICE" : "DROP_TO_HOMES";
+				await tx.routeSegment.updateMany({
+					where: {
+						route_id: definitionRouteId,
+						kind: segmentKind,
+						status: "ONGOING",
+					},
+					data: { status: "PENDING" },
+				});
+
+				if (pd.phase === "PICKUP") {
+					await tx.routeDailyPlan.update({
+						where: { id: pd.route_daily_plan_id },
+						data: { status: "PENDING", started_at: null },
+					});
+				}
+			}
+		});
+
+		const updated = await this.db.routeDailyPlanPhaseDriver.findUnique({
+			where: { id: phaseDriverId },
+			include: {
+				driver: { select: { id: true, name: true } },
+				route_daily_plan: {
+					select: { id: true, status: true, scheduled_date: true },
+				},
+			},
+		});
+
+		return {
+			phase_driver_id: phaseDriverId,
+			previous_driver_id: previousDriverId,
+			driver_id: newDriverId,
+			phase: pd.phase,
+			reset_applied: shouldReset,
+			phase_driver: updated,
 		};
 	}
 

@@ -454,6 +454,12 @@ const swaggerDocument = {
 						maximum: 36,
 						description: "Recurring window in months. 0 disables recurring.",
 					},
+					is_active: {
+						type: "boolean",
+						default: true,
+						description:
+							"When false, daily cron skips route_daily_plan creation for this route.",
+					},
 					batches: {
 						type: "array",
 						minItems: 1,
@@ -475,6 +481,11 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					is_active: {
+						type: "boolean",
+						description:
+							"Toggle route active state. Inactive routes are skipped by daily cron.",
+					},
 					waypointMode: {
 						type: "string",
 						enum: ["auto", "manual"],
@@ -1921,7 +1932,7 @@ const swaggerDocument = {
 				summary:
 					"Update route in place (driver, price, recurring only) or fork (office/company/batches/legs)",
 				description:
-					"Validated body is stripUnknown. Fork when company, office, or non-empty batches/legs change. In-place patch: driver, route_price, recurring, waypointMode (re-runs optimize when mode changes).",
+					"Validated body is stripUnknown. Fork when company, office, or non-empty batches/legs change. In-place patch: driver, route_price, recurring, is_active, waypointMode (re-runs optimize when mode changes).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1964,6 +1975,48 @@ const swaggerDocument = {
 				],
 				responses: {
 					"200": { description: "Route deleted" },
+					"404": { description: "Not found" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/routes/{id}/status": {
+			patch: {
+				tags: ["Routes"],
+				summary: "Activate or deactivate a route",
+				description:
+					"When is_active is false, the daily cron job skips route_daily_plan creation for this route. Existing daily plans are not cancelled.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["is_active"],
+								properties: {
+									is_active: {
+										type: "boolean",
+										example: false,
+										description: "true = active, false = inactive",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Route status updated" },
+					"400": { description: "Validation error" },
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },

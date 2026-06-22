@@ -40,6 +40,8 @@ export interface CreateRouteInput {
 	/** Alias for create API compatibility (YYYY-MM-DD). */
 	recurring_plan_start?: string;
 	recurringPlanMonths?: number;
+	/** When false, daily cron skips this route. Default true. */
+	is_active?: boolean;
 	/** One or more batches. Omit if using legacy `legs` (single batch). */
 	batches?: RouteBatchInput[];
 	/** @deprecated use batches: [{ legs }] */
@@ -60,6 +62,7 @@ export interface UpdateRouteInput {
 	recurringPlanStartDate?: string;
 	recurring_plan_start?: string;
 	recurringPlanMonths?: number;
+	is_active?: boolean;
 }
 
 export interface RouteListQuery {
