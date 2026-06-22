@@ -68,11 +68,16 @@ export const RouteController = {
 		const id = parseIdParam(req.params.id);
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
 		const result = await routeService.update(id, { ...req.body });
-		const message =
-			result.update_mode === "in_place"
-				? "Route updated in place"
-				: "New route created; previous route unchanged";
-		ResponseHandler.created(res, result, message);
+		ResponseHandler.success(res, result, "Route updated");
+	}),
+
+	setActiveStatus: catchAsync(async (req: Request, res: Response) => {
+		const id = parseIdParam(req.params.id);
+		if (id === null) throw ResponseHandler.badRequest("Invalid id");
+		const { is_active } = req.body as { is_active: boolean };
+		const route = await routeService.setActive(id, is_active);
+		const message = is_active ? "Route activated" : "Route deactivated";
+		ResponseHandler.success(res, route, message);
 	}),
 
 	optimize: catchAsync(async (req: Request, res: Response) => {
@@ -149,6 +154,29 @@ export const RouteController = {
 		);
 		const stats = await routeService.getTemplatePlanStats(id, from, to);
 		ResponseHandler.success(res, stats, "Template plan stats");
+	}),
+
+	/** POST /routes/phase-drivers/:phaseDriverId/reassign-driver */
+	reassignPhaseDriver: catchAsync(async (req: Request, res: Response) => {
+		const phaseDriverId = parseIdParam(req.params.phaseDriverId);
+		if (phaseDriverId === null) {
+			throw ResponseHandler.badRequest("Invalid phaseDriverId");
+		}
+		const body = req.body as {
+			driver_id?: number;
+			driverId?: number;
+			reset_phase?: boolean;
+		};
+		const newDriverId = body.driver_id ?? body.driverId;
+		if (!newDriverId) {
+			throw ResponseHandler.badRequest("driver_id is required");
+		}
+		const result = await routeService.reassignPhaseDriver(
+			phaseDriverId,
+			newDriverId,
+			body.reset_phase,
+		);
+		ResponseHandler.success(res, result, "Phase driver reassigned");
 	}),
 
 	/** Create one instance from a template for a calendar day. */

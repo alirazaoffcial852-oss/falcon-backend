@@ -454,6 +454,12 @@ const swaggerDocument = {
 						maximum: 36,
 						description: "Recurring window in months. 0 disables recurring.",
 					},
+					is_active: {
+						type: "boolean",
+						default: true,
+						description:
+							"When false, daily cron skips route_daily_plan creation for this route.",
+					},
 					batches: {
 						type: "array",
 						minItems: 1,
@@ -475,11 +481,16 @@ const swaggerDocument = {
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
+					is_active: {
+						type: "boolean",
+						description:
+							"Toggle route active state. Inactive routes are skipped by daily cron.",
+					},
 					waypointMode: {
 						type: "string",
 						enum: ["auto", "manual"],
 						description:
-							"When forking route (structural PUT), same semantics as create waypointMode.",
+							"Same semantics as create waypointMode; re-runs optimize when changed.",
 					},
 					waypoint_mode: {
 						type: "string",
@@ -1689,6 +1700,8 @@ const swaggerDocument = {
 			get: {
 				tags: ["Payroll"],
 				summary: "Preview unpaid/paid salary and fuel for completed trips",
+				description:
+					"Returns driver aggregates (items) for completed trips only, trips list (all phases in range with status PENDING/ONGOING/COMPLETED), and payment events.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1713,7 +1726,10 @@ const swaggerDocument = {
 					},
 				],
 				responses: {
-					"200": { description: "Aggregated payroll preview" },
+					"200": {
+						description:
+							"Payroll preview: items/summary from COMPLETED phases only; trips includes all phases with status and trip_km",
+					},
 					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -1918,10 +1934,9 @@ const swaggerDocument = {
 			},
 			put: {
 				tags: ["Routes"],
-				summary:
-					"Update route in place (driver, price, recurring only) or fork (office/company/batches/legs)",
+				summary: "Update route in place",
 				description:
-					"Validated body is stripUnknown. Fork when company, office, or non-empty batches/legs change. In-place patch: driver, route_price, recurring, waypointMode (re-runs optimize when mode changes).",
+					"Always updates the same route id (office, company, batches, driver, price, recurring, is_active, waypointMode). Returns 400 when route_daily_plan_id is set — use PATCH /routes/{id}/status or phase-driver reassign instead.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1940,11 +1955,11 @@ const swaggerDocument = {
 					},
 				},
 				responses: {
-					"201": {
+					"200": {
 						description:
-							"New route created; data.previous_route_id is the template id, data.route is the new route",
+							"Route updated in place; data.route is the same route id",
 					},
-					"400": { description: "Validation error" },
+					"400": { description: "Validation error or daily plan linked" },
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -1953,6 +1968,8 @@ const swaggerDocument = {
 			delete: {
 				tags: ["Routes"],
 				summary: "Delete route",
+				description:
+					"Returns 400 when route_daily_plan_id is set (daily plan spawned for this route).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1964,6 +1981,51 @@ const swaggerDocument = {
 				],
 				responses: {
 					"200": { description: "Route deleted" },
+					"400": {
+						description: "Daily plan linked — route cannot be deleted",
+					},
+					"404": { description: "Not found" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/routes/{id}/status": {
+			patch: {
+				tags: ["Routes"],
+				summary: "Activate or deactivate a route",
+				description:
+					"When is_active is false, the daily cron job skips route_daily_plan creation for this route. Existing daily plans are not cancelled.",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "integer" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["is_active"],
+								properties: {
+									is_active: {
+										type: "boolean",
+										example: false,
+										description: "true = active, false = inactive",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Route status updated" },
+					"400": { description: "Validation error" },
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -1975,7 +2037,7 @@ const swaggerDocument = {
 				tags: ["Routes"],
 				summary: "Optimize and cache route directions",
 				description:
-					"Calls Google Directions API once, stores optimized waypoint order and polyline in DB, and updates leg sequence.",
+					"Calls Google Directions API once, stores optimized waypoint order and polyline in DB, and updates leg sequence. Returns 400 when route_daily_plan_id is set.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{

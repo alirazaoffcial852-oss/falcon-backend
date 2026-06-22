@@ -82,6 +82,7 @@ export const createRouteSchema = Joi.object({
 			"string.pattern.base": "recurring_plan_start must be YYYY-MM-DD",
 		}),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
+	is_active: Joi.boolean().optional(),
 	waypointMode: Joi.string().valid("auto", "manual").messages({
 		"any.only": "waypointMode must be auto or manual",
 	}),
@@ -124,9 +125,14 @@ export const updateRouteSchema = Joi.object({
 		.pattern(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
 	recurringPlanMonths: Joi.number().integer().min(0).max(36).optional(),
+	is_active: Joi.boolean().optional(),
 	waypointMode: Joi.string().valid("auto", "manual").optional(),
 	waypoint_mode: Joi.string().valid("auto", "manual").optional(),
 }).min(0);
+
+export const routeActiveStatusBodySchema = Joi.object({
+	is_active: Joi.boolean().required(),
+});
 
 export const listRoutesQuerySchema = Joi.object({
 	page: Joi.number().integer().min(1).default(1),
@@ -200,3 +206,20 @@ export const routeIdParamSchema = Joi.object({
 		"number.min": "Route id must be greater than 0",
 	}),
 });
+
+export const phaseDriverIdParamSchema = Joi.object({
+	phaseDriverId: Joi.number().integer().min(1).required().messages({
+		"any.required": "phaseDriverId is required",
+		"number.min": "phaseDriverId must be greater than 0",
+	}),
+});
+
+export const reassignPhaseDriverBodySchema = Joi.object({
+	driver_id: Joi.number().integer().min(1),
+	driverId: Joi.number().integer().min(1),
+	reset_phase: Joi.boolean().optional(),
+})
+	.or("driver_id", "driverId")
+	.messages({
+		"object.missing": "driver_id is required",
+	});
