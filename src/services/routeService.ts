@@ -77,6 +77,20 @@ export class RouteService {
 		}
 	}
 
+	/** Option A: block template edits while `route_daily_plan_id` is set (daily trip spawned). */
+	private async assertRouteTemplateEditable(routeId: number): Promise<void> {
+		const row = await this.db.route.findUnique({
+			where: { id: routeId },
+			select: { route_daily_plan_id: true },
+		});
+		if (!row) throw ResponseHandler.notFound("Route not found");
+		if (row.route_daily_plan_id != null) {
+			throw ResponseHandler.badRequest(
+				"This route is locked because a daily plan exists. Update status or reassign the driver instead.",
+			);
+		}
+	}
+
 	private getWeekdayEnum(
 		day: Date,
 	):
@@ -163,6 +177,94 @@ export class RouteService {
 			dropoff_time: dropoffTime || "00:00",
 			toll_amount: leg.tollAmount ?? null,
 		};
+	}
+
+	private async insertBatchesAndSegmentsForRoute(
+		tx: Prisma.TransactionClient,
+		routeId: number,
+		batchInputs: RouteBatchInput[],
+	): Promise<void> {
+		const batchesOrdered = [];
+		for (let bi = 0; bi < batchInputs.length; bi++) {
+			const batch = batchInputs[bi];
+			const b = await tx.routeBatch.create({
+				data: {
+					route_id: routeId,
+					batch_order: bi + 1,
+					legs: {
+						create: batch.legs.map((leg) => ({
+							route_id: routeId,
+							...this.mapLegCreate(leg),
+						})),
+					},
+				},
+			});
+			batchesOrdered.push(b);
+		}
+
+		let segmentOrder = 0;
+		for (const b of batchesOrdered) {
+			await tx.routeSegment.create({
+				data: {
+					route_id: routeId,
+					segment_order: segmentOrder++,
+					batch_id: b.id,
+					kind: "PICKUP_TO_OFFICE",
+					status: "PENDING",
+				},
+			});
+		}
+		for (const b of batchesOrdered) {
+			await tx.routeSegment.create({
+				data: {
+					route_id: routeId,
+					segment_order: segmentOrder++,
+					batch_id: b.id,
+					kind: "DROP_TO_HOMES",
+					status: "PENDING",
+				},
+			});
+		}
+	}
+
+	private async applyRecurringFieldsFromUpdate(
+		id: number,
+		data: UpdateRouteInput,
+	): Promise<void> {
+		if (
+			data.recurring_plan_start === undefined &&
+			data.recurringPlanStartDate === undefined &&
+			data.recurringPlanMonths === undefined
+		) {
+			return;
+		}
+
+		const r = await this.db.route.findUnique({ where: { id } });
+		if (!r) throw ResponseHandler.notFound("Route not found");
+		const months = data.recurringPlanMonths ?? 1;
+		if (months <= 0) {
+			await this.db.route.update({
+				where: { id },
+				data: {
+					recurring_plan_start: null,
+					recurring_plan_end: null,
+				},
+			});
+		} else {
+			const startInput =
+				data.recurring_plan_start ?? data.recurringPlanStartDate;
+			const start = startInput
+				? parseLocalYmd(startInput)
+				: (r.recurring_plan_start ?? getTomorrowLocalDateOnly());
+			const end = computeInclusivePlanEnd(start, months);
+			await this.db.route.update({
+				where: { id },
+				data: {
+					recurring_plan_start: start,
+					recurring_plan_end: end,
+				},
+			});
+		}
 	}
 
 	/**
@@ -946,61 +1048,6 @@ export class RouteService {
 		return [];
 	}
 
-	private mergeRecurringForkPayload(
-		existing: NonNullable<Awaited<ReturnType<typeof this.getById>>>,
-		data: UpdateRouteInput,
-	): Partial<
-		Pick<
-			CreateRouteInput,
-			"recurringPlanStartDate" | "recurring_plan_start" | "recurringPlanMonths"
-		>
-	> {
-		if (
-			data.recurringPlanStartDate !== undefined ||
-			data.recurring_plan_start !== undefined ||
-			data.recurringPlanMonths !== undefined
-		) {
-			const out: Partial<
-				Pick<
-					CreateRouteInput,
-					| "recurringPlanStartDate"
-					| "recurring_plan_start"
-					| "recurringPlanMonths"
-				>
-			> = {};
-			if (data.recurringPlanStartDate !== undefined) {
-				out.recurringPlanStartDate = data.recurringPlanStartDate;
-			}
-			if (data.recurring_plan_start !== undefined) {
-				out.recurring_plan_start = data.recurring_plan_start;
-			}
-			if (data.recurringPlanMonths !== undefined) {
-				out.recurringPlanMonths = data.recurringPlanMonths;
-			}
-			return out;
-		}
-		if (existing.recurring_plan_start && existing.recurring_plan_end) {
-			return {
-				recurringPlanStartDate: this.formatDateOnlyYmd(
-					existing.recurring_plan_start,
-				),
-				recurringPlanMonths: this.inferRecurringMonthsFromWindow(
-					existing.recurring_plan_start,
-					existing.recurring_plan_end,
-				),
-			};
-		}
-		if (existing.recurring_plan_start) {
-			return {
-				recurringPlanStartDate: this.formatDateOnlyYmd(
-					existing.recurring_plan_start,
-				),
-				recurringPlanMonths: 1,
-			};
-		}
-		return {};
-	}
-
 	async list(params: RouteListQuery) {
 		const where = buildWhereCondition(
 			{
@@ -1151,47 +1198,7 @@ export class RouteService {
 				},
 			});
 
-			const batchesOrdered = [];
-			for (let bi = 0; bi < batchInputs.length; bi++) {
-				const batch = batchInputs[bi];
-				const b = await tx.routeBatch.create({
-					data: {
-						route_id: created.id,
-						batch_order: bi + 1,
-						legs: {
-							create: batch.legs.map((leg) => ({
-								route_id: created.id,
-								...this.mapLegCreate(leg),
-							})),
-						},
-					},
-				});
-				batchesOrdered.push(b);
-			}
-
-			let segmentOrder = 0;
-			for (const b of batchesOrdered) {
-				await tx.routeSegment.create({
-					data: {
-						route_id: created.id,
-						segment_order: segmentOrder++,
-						batch_id: b.id,
-						kind: "PICKUP_TO_OFFICE",
-						status: "PENDING",
-					},
-				});
-			}
-			for (const b of batchesOrdered) {
-				await tx.routeSegment.create({
-					data: {
-						route_id: created.id,
-						segment_order: segmentOrder++,
-						batch_id: b.id,
-						kind: "DROP_TO_HOMES",
-						status: "PENDING",
-					},
-				});
-			}
+			await this.insertBatchesAndSegmentsForRoute(tx, created.id, batchInputs);
 
 			return created;
 		});
@@ -1339,32 +1346,7 @@ export class RouteService {
 			data.recurringPlanStartDate !== undefined ||
 			data.recurringPlanMonths !== undefined
 		) {
-			const r = await this.db.route.findUnique({ where: { id } });
-			if (!r) throw ResponseHandler.notFound("Route not found");
-			const months = data.recurringPlanMonths ?? 1;
-			if (months <= 0) {
-				await this.db.route.update({
-					where: { id },
-					data: {
-						recurring_plan_start: null,
-						recurring_plan_end: null,
-					},
-				});
-			} else {
-				const startInput =
-					data.recurring_plan_start ?? data.recurringPlanStartDate;
-				const start = startInput
-					? parseLocalYmd(startInput)
-					: (r.recurring_plan_start ?? getTomorrowLocalDateOnly());
-				const end = computeInclusivePlanEnd(start, months);
-				await this.db.route.update({
-					where: { id },
-					data: {
-						recurring_plan_start: start,
-						recurring_plan_end: end,
-					},
-				});
-			}
+			await this.applyRecurringFieldsFromUpdate(id, data);
 		}
 
 		if (this.hasWaypointModeInBody(data)) {
@@ -1394,7 +1376,75 @@ export class RouteService {
 		};
 	}
 
+	/** Replace batches/legs/segments on the same route row (no fork). */
+	private async updateRouteStructuralInPlace(
+		id: number,
+		existing: NonNullable<Awaited<ReturnType<RouteService["getById"]>>>,
+		data: UpdateRouteInput,
+	): Promise<{
+		previous_route_id: number;
+		route: NonNullable<Awaited<ReturnType<RouteService["getById"]>>>;
+		update_mode: "in_place";
+	}> {
+		const dataLegs = (data as { legs?: RouteBatchInput["legs"] }).legs;
+		const batchInputs =
+			data.batches !== undefined && data.batches.length > 0
+				? data.batches
+				: dataLegs && dataLegs.length > 0
+					? [{ legs: dataLegs }]
+					: this.existingRouteToBatches(existing);
+
+		const driverId = data.driverId ?? existing.driver_id;
+		await this.assertDriverApproved(driverId);
+
+		const routePrice = data.route_price ?? existing.route_price;
+		if (routePrice == null || !Number.isFinite(Number(routePrice))) {
+			throw ResponseHandler.badRequest(
+				"route_price is required (set in body or ensure the route has route_price)",
+			);
+		}
+
+		const waypointMode = this.hasWaypointModeInBody(data)
+			? this.normalizeWaypointMode(
+					data as CreateRouteInput & { waypoint_mode?: unknown },
+				)
+			: this.waypointModeFromExisting(existing);
+
+		await this.db.$transaction(async (tx) => {
+			await tx.route.update({
+				where: { id },
+				data: {
+					company_id: data.companyId ?? existing.company_id,
+					driver_id: driverId,
+					office_address: (data.officeAddress ?? existing.office_address).trim(),
+					office_lat: data.officeLat ?? existing.office_lat,
+					office_long: data.officeLong ?? existing.office_long,
+					route_price: Number(routePrice),
+					waypointMode,
+					...(data.is_active !== undefined && { is_active: data.is_active }),
+				},
+			});
+
+			await tx.routeSegment.deleteMany({ where: { route_id: id } });
+			await tx.routeBatch.deleteMany({ where: { route_id: id } });
+
+			await this.insertBatchesAndSegmentsForRoute(tx, id, batchInputs);
+		});
+
+		await this.applyRecurringFieldsFromUpdate(id, data);
+		await this.optimizeAllBatches(id, waypointMode);
+		await this.applyPickupTimesForRoute(id, waypointMode);
+
+		const route = await this.getById(id);
+		return {
+			previous_route_id: id,
+			route,
+			update_mode: "in_place",
+		};
+	}
+
 	async update(id: number, rawBody: UpdateRouteInput) {
+		await this.assertRouteTemplateEditable(id);
 		const data = this.sanitizeRoutePutBody(rawBody);
 		const existing = await this.getById(id);
 
@@ -1402,46 +1452,11 @@ export class RouteService {
 			return this.updateRouteMetaInPlace(id, data);
 		}
 
-		const dataLegs = (data as { legs?: RouteBatchInput["legs"] }).legs;
-		const batches =
-			data.batches !== undefined && data.batches.length > 0
-				? data.batches
-				: dataLegs && dataLegs.length > 0
-					? [{ legs: dataLegs }]
-					: this.existingRouteToBatches(existing);
-
-		const routePrice = data.route_price ?? existing.route_price;
-		if (routePrice == null || !Number.isFinite(Number(routePrice))) {
-			throw ResponseHandler.badRequest(
-				"route_price is required for the new route (set in body or ensure the source route has route_price)",
-			);
-		}
-
-		const merged: CreateRouteInput = {
-			companyId: data.companyId ?? existing.company_id,
-			driverId: data.driverId ?? existing.driver_id,
-			officeAddress: (data.officeAddress ?? existing.office_address).trim(),
-			officeLat: data.officeLat ?? existing.office_lat,
-			officeLong: data.officeLong ?? existing.office_long,
-			route_price: Number(routePrice),
-			batches,
-			...this.mergeRecurringForkPayload(existing, data),
-			waypointMode: this.hasWaypointModeInBody(data)
-				? this.normalizeWaypointMode(
-						data as CreateRouteInput & { waypoint_mode?: unknown },
-					)
-				: this.waypointModeFromExisting(existing),
-		};
-
-		const created = await this.create(merged);
-		return {
-			previous_route_id: id,
-			route: created,
-			update_mode: "forked" as const,
-		};
+		return this.updateRouteStructuralInPlace(id, existing, data);
 	}
 
 	async optimizeById(id: number) {
+		await this.assertRouteTemplateEditable(id);
 		await this.getById(id);
 		const row = await this.db.route.findUnique({
 			where: { id },
@@ -2081,6 +2096,7 @@ export class RouteService {
 	}
 
 	async delete(id: number) {
+		await this.assertRouteTemplateEditable(id);
 		await this.getById(id);
 		await this.db.route.delete({ where: { id } });
 	}

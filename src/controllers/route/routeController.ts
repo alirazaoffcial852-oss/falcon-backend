@@ -68,11 +68,7 @@ export const RouteController = {
 		const id = parseIdParam(req.params.id);
 		if (id === null) throw ResponseHandler.badRequest("Invalid id");
 		const result = await routeService.update(id, { ...req.body });
-		const message =
-			result.update_mode === "in_place"
-				? "Route updated in place"
-				: "New route created; previous route unchanged";
-		ResponseHandler.created(res, result, message);
+		ResponseHandler.success(res, result, "Route updated");
 	}),
 
 	setActiveStatus: catchAsync(async (req: Request, res: Response) => {

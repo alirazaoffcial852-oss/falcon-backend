@@ -490,7 +490,7 @@ const swaggerDocument = {
 						type: "string",
 						enum: ["auto", "manual"],
 						description:
-							"When forking route (structural PUT), same semantics as create waypointMode.",
+							"Same semantics as create waypointMode; re-runs optimize when changed.",
 					},
 					waypoint_mode: {
 						type: "string",
@@ -1929,10 +1929,9 @@ const swaggerDocument = {
 			},
 			put: {
 				tags: ["Routes"],
-				summary:
-					"Update route in place (driver, price, recurring only) or fork (office/company/batches/legs)",
+				summary: "Update route in place",
 				description:
-					"Validated body is stripUnknown. Fork when company, office, or non-empty batches/legs change. In-place patch: driver, route_price, recurring, is_active, waypointMode (re-runs optimize when mode changes).",
+					"Always updates the same route id (office, company, batches, driver, price, recurring, is_active, waypointMode). Returns 400 when route_daily_plan_id is set — use PATCH /routes/{id}/status or phase-driver reassign instead.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1951,11 +1950,11 @@ const swaggerDocument = {
 					},
 				},
 				responses: {
-					"201": {
+					"200": {
 						description:
-							"New route created; data.previous_route_id is the template id, data.route is the new route",
+							"Route updated in place; data.route is the same route id",
 					},
-					"400": { description: "Validation error" },
+					"400": { description: "Validation error or daily plan linked" },
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -1964,6 +1963,8 @@ const swaggerDocument = {
 			delete: {
 				tags: ["Routes"],
 				summary: "Delete route",
+				description:
+					"Returns 400 when route_daily_plan_id is set (daily plan spawned for this route).",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1975,6 +1976,9 @@ const swaggerDocument = {
 				],
 				responses: {
 					"200": { description: "Route deleted" },
+					"400": {
+						description: "Daily plan linked — route cannot be deleted",
+					},
 					"404": { description: "Not found" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
@@ -2028,7 +2032,7 @@ const swaggerDocument = {
 				tags: ["Routes"],
 				summary: "Optimize and cache route directions",
 				description:
-					"Calls Google Directions API once, stores optimized waypoint order and polyline in DB, and updates leg sequence.",
+					"Calls Google Directions API once, stores optimized waypoint order and polyline in DB, and updates leg sequence. Returns 400 when route_daily_plan_id is set.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
