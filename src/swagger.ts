@@ -1700,6 +1700,8 @@ const swaggerDocument = {
 			get: {
 				tags: ["Payroll"],
 				summary: "Preview unpaid/paid salary and fuel for completed trips",
+				description:
+					"Returns driver aggregates (items) for completed trips only, trips list (all phases in range with status PENDING/ONGOING/COMPLETED), and payment events.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
@@ -1724,7 +1726,10 @@ const swaggerDocument = {
 					},
 				],
 				responses: {
-					"200": { description: "Aggregated payroll preview" },
+					"200": {
+						description:
+							"Payroll preview: items/summary from COMPLETED phases only; trips includes all phases with status and trip_km",
+					},
 					"400": { description: "Validation error" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },

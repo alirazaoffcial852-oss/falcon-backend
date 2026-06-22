@@ -35,7 +35,9 @@ type PhaseDriverPayRow = {
 	id: number;
 	driver_id: number;
 	phase: string;
+	status: string;
 	scheduled_date: Date;
+	trip_km: number | null;
 	trip_price: number | null;
 	fuel_cost: number | null;
 	salary_payment_status: string;
@@ -44,6 +46,47 @@ type PhaseDriverPayRow = {
 	fuel_paid_at: Date | null;
 	driver: { name: string };
 };
+
+const PHASE_PAY_ROW_SELECT = {
+	id: true,
+	driver_id: true,
+	phase: true,
+	status: true,
+	scheduled_date: true,
+	trip_km: true,
+	trip_price: true,
+	fuel_cost: true,
+	salary_payment_status: true,
+	fuel_payment_status: true,
+	salary_paid_at: true,
+	fuel_paid_at: true,
+	driver: { select: { name: true } },
+} as const;
+
+function formatScheduledDateYmd(d: Date): string {
+	const y = d.getUTCFullYear();
+	const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+	const day = String(d.getUTCDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
+function mapPhaseRowToPreviewTrip(r: PhaseDriverPayRow) {
+	return {
+		phase_driver_id: r.id,
+		driver_id: r.driver_id,
+		driver_name: r.driver.name,
+		scheduled_date: formatScheduledDateYmd(r.scheduled_date),
+		phase: r.phase,
+		status: r.status,
+		trip_km: r.trip_km != null ? Number(r.trip_km) : null,
+		trip_price: Number(r.trip_price ?? 0),
+		fuel_cost: Number(r.fuel_cost ?? 0),
+		salary_payment_status: r.salary_payment_status,
+		fuel_payment_status: r.fuel_payment_status,
+		salary_paid_at: r.salary_paid_at?.toISOString() ?? null,
+		fuel_paid_at: r.fuel_paid_at?.toISOString() ?? null,
+	};
+}
 
 type PaymentEventBucket = {
 	type: "SALARY" | "FUEL";
@@ -113,6 +156,23 @@ function buildPaymentEvents(rows: PhaseDriverPayRow[]) {
 }
 
 export class PayrollService {
+	/** All phase rows in trip date range (any status) — used for preview `trips` list. */
+	private async loadPhaseRowsInTripDateRange(
+		from: string,
+		to: string,
+		driverId?: number,
+	) {
+		const { fromDate, toDate } = assertFromToOrder(from, to);
+		return db.routeDailyPlanPhaseDriver.findMany({
+			where: {
+				scheduled_date: { gte: fromDate, lte: toDate },
+				...(driverId ? { driver_id: driverId } : {}),
+			},
+			select: PHASE_PAY_ROW_SELECT,
+			orderBy: [{ driver_id: "asc" }, { scheduled_date: "asc" }, { id: "asc" }],
+		});
+	}
+
 	private async loadCompletedPhaseRows(
 		from: string,
 		to: string,
@@ -129,19 +189,7 @@ export class PayrollService {
 					scheduled_date: { gte: fromDate, lte: toDate },
 					...(driverId ? { driver_id: driverId } : {}),
 				},
-				select: {
-					id: true,
-					driver_id: true,
-					phase: true,
-					scheduled_date: true,
-					trip_price: true,
-					fuel_cost: true,
-					salary_payment_status: true,
-					fuel_payment_status: true,
-					salary_paid_at: true,
-					fuel_paid_at: true,
-					driver: { select: { name: true } },
-				},
+				select: PHASE_PAY_ROW_SELECT,
 				orderBy: [{ driver_id: "asc" }, { scheduled_date: "asc" }, { id: "asc" }],
 			});
 		}
@@ -161,25 +209,14 @@ export class PayrollService {
 					},
 				],
 			},
-			select: {
-				id: true,
-				driver_id: true,
-				phase: true,
-				scheduled_date: true,
-				trip_price: true,
-				fuel_cost: true,
-				salary_payment_status: true,
-				fuel_payment_status: true,
-				salary_paid_at: true,
-				fuel_paid_at: true,
-				driver: { select: { name: true } },
-			},
+			select: PHASE_PAY_ROW_SELECT,
 			orderBy: [{ driver_id: "asc" }, { scheduled_date: "asc" }, { id: "asc" }],
 		});
 	}
 
 	async preview(from: string, to: string, driverId?: number) {
-		const rows = await this.loadCompletedPhaseRows(from, to, driverId, "trip");
+		const tripRows = await this.loadPhaseRowsInTripDateRange(from, to, driverId);
+		const rows = tripRows.filter((r) => r.status === "COMPLETED");
 
 		const byDriver = new Map<
 			number,
@@ -221,6 +258,7 @@ export class PayrollService {
 		}
 
 		const items = [...byDriver.values()];
+		const trips = tripRows.map(mapPhaseRowToPreviewTrip);
 		const { payments, payment_summary } = buildPaymentEvents(rows);
 
 		return {
@@ -236,6 +274,7 @@ export class PayrollService {
 				fuel_paid_total: items.reduce((s, x) => s + x.fuel_paid_total, 0),
 			},
 			items,
+			trips,
 			payment_summary,
 			payments,
 		};
