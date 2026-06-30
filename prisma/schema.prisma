@@ -234,6 +234,7 @@ model DriverConfiguration {
 
 model Route {
   id                   Int                @id @default(autoincrement())
+  route_name           String             @unique
   company_id           Int
   driver_id            Int
   office_address       String

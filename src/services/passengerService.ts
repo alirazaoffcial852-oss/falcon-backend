@@ -14,8 +14,46 @@ function resolveOptionalTime(
 	return trimmed || null;
 }
 
+type PassengerRouteDriverInfo = {
+	route_name: string | null;
+	driver_name: string | null;
+};
+
 export class PassengerService {
 	private db = DatabaseService.getInstance().getPrisma();
+
+	private async loadRouteDriverByPassengerId(
+		passengerIds: number[],
+	): Promise<Map<number, PassengerRouteDriverInfo>> {
+		if (passengerIds.length === 0) return new Map();
+
+		const legs = await this.db.routeLeg.findMany({
+			where: {
+				passenger_id: { in: passengerIds },
+			},
+			select: {
+				passenger_id: true,
+				route: {
+					select: {
+						route_name: true,
+						updated_at: true,
+						driver: { select: { name: true } },
+					},
+				},
+			},
+			orderBy: { route: { updated_at: "desc" } },
+		});
+
+		const byPassenger = new Map<number, PassengerRouteDriverInfo>();
+		for (const leg of legs) {
+			if (byPassenger.has(leg.passenger_id)) continue;
+			byPassenger.set(leg.passenger_id, {
+				route_name: leg.route.route_name,
+				driver_name: leg.route.driver.name,
+			});
+		}
+		return byPassenger;
+	}
 
 	private async getPassengerRoleId(): Promise<number> {
 		const passengerRole = await this.db.role.findUnique({
@@ -73,10 +111,16 @@ export class PassengerService {
 				user: { select: { email: true } },
 			},
 		});
+		const routeDriverByPassenger = await this.loadRouteDriverByPassengerId(
+			passengers.map((p) => p.id),
+		);
 		const data = passengers.map((passenger) => {
+			const routeDriver = routeDriverByPassenger.get(passenger.id);
 			return {
 				...passenger,
 				email: passenger.user?.email ?? null,
+				route_name: routeDriver?.route_name ?? null,
+				driver_name: routeDriver?.driver_name ?? null,
 			};
 		});
 		return {

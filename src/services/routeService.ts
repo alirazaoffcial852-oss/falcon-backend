@@ -91,6 +91,16 @@ export class RouteService {
 		}
 	}
 
+	private normalizeRouteName(
+		data: { route_name?: string; routeName?: string },
+	): string {
+		const raw = (data.route_name ?? data.routeName)?.trim();
+		if (!raw) {
+			throw ResponseHandler.badRequest("route_name is required");
+		}
+		return raw;
+	}
+
 	private getWeekdayEnum(
 		day: Date,
 	):
@@ -1055,7 +1065,7 @@ export class RouteService {
 				limit: params.limit,
 				search: params.search,
 			} as RouteListQuery,
-			["office_address", "company.name", "driver.name"],
+			["office_address", "route_name", "company.name", "driver.name"],
 			[],
 		);
 		if (params.companyId !== undefined) where.company_id = params.companyId;
@@ -1171,9 +1181,15 @@ export class RouteService {
 		);
 	}
 
-	async create(data: CreateRouteInput & { legs?: RouteBatchInput["legs"] }) {
+	async create(
+		data: CreateRouteInput & {
+			legs?: RouteBatchInput["legs"];
+			routeName?: string;
+		},
+	) {
 		const batchInputs = this.normalizeCreateBatches(data);
 		await this.assertDriverApproved(data.driverId);
+		const routeName = this.normalizeRouteName(data);
 
 		const recurringPlan = this.computeRecurringPlanForCreate(data);
 		const waypointMode = this.normalizeWaypointMode(
@@ -1183,6 +1199,7 @@ export class RouteService {
 		const route = await this.db.$transaction(async (tx) => {
 			const created = await tx.route.create({
 				data: {
+					route_name: routeName,
 					company_id: data.companyId,
 					driver_id: data.driverId,
 					office_address: data.officeAddress.trim(),
@@ -1209,6 +1226,7 @@ export class RouteService {
 	}
 
 	private static readonly ROUTE_PUT_SCHEMA_KEYS = new Set([
+		"route_name",
 		"companyId",
 		"driverId",
 		"officeAddress",
@@ -1250,6 +1268,9 @@ export class RouteService {
 		}
 		if (o.is_active === undefined && o.isActive !== undefined) {
 			o.is_active = o.isActive;
+		}
+		if (o.route_name === undefined && o.routeName !== undefined) {
+			o.route_name = o.routeName;
 		}
 		return o;
 	}
@@ -1333,6 +1354,11 @@ export class RouteService {
 		await this.db.route.update({
 			where: { id },
 			data: {
+				...(data.route_name !== undefined && {
+					route_name: this.normalizeRouteName({
+						route_name: data.route_name,
+					}),
+				}),
 				...(data.driverId !== undefined && { driver_id: data.driverId }),
 				...(data.route_price !== undefined && {
 					route_price: data.route_price,
@@ -1410,10 +1436,16 @@ export class RouteService {
 				)
 			: this.waypointModeFromExisting(existing);
 
+		const routeName =
+			data.route_name !== undefined
+				? this.normalizeRouteName({ route_name: data.route_name })
+				: existing.route_name;
+
 		await this.db.$transaction(async (tx) => {
 			await tx.route.update({
 				where: { id },
 				data: {
+					route_name: routeName,
 					company_id: data.companyId ?? existing.company_id,
 					driver_id: driverId,
 					office_address: (data.officeAddress ?? existing.office_address).trim(),

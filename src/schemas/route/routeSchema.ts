@@ -43,6 +43,8 @@ const batchSchema = Joi.object({
 });
 
 export const createRouteSchema = Joi.object({
+	route_name: Joi.string().trim().min(1).max(100),
+	routeName: Joi.string().trim().min(1).max(100),
 	companyId: Joi.number().integer().min(1).required().messages({
 		"any.required": "Company id is required",
 		"number.min": "Company id must be greater than 0",
@@ -92,12 +94,15 @@ export const createRouteSchema = Joi.object({
 })
 	.or("batches", "legs")
 	.or("waypointMode", "waypoint_mode")
+	.or("route_name", "routeName")
 	.messages({
 		"object.missing": "Provide batches (preferred) or legacy legs array",
 	})
 	.required();
 
 export const updateRouteSchema = Joi.object({
+	route_name: Joi.string().trim().min(1).max(100).optional(),
+	routeName: Joi.string().trim().min(1).max(100).optional(),
 	companyId: Joi.number().integer().min(1).messages({
 		"number.min": "Company id must be greater than 0",
 	}),

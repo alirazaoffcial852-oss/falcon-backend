@@ -517,6 +517,7 @@ async function main() {
     const city = lahoreLocations[i % lahoreLocations.length];
     const route = await prisma.route.create({
       data: {
+        route_name: `RO${String(i + 1).padStart(4, "0")}`,
         company_id: companies[i % companies.length].id,
         driver_id: drivers[i % drivers.length].id,
         office_address: `Office Hub ${i + 1}, ${city.name}`,

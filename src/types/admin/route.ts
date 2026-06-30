@@ -24,6 +24,8 @@ export interface RouteBatchInput {
 export type RouteWaypointMode = "auto" | "manual";
 
 export interface CreateRouteInput {
+	/** Unique route label, e.g. RO1234 */
+	route_name: string;
 	companyId: number;
 	driverId: number;
 	officeAddress: string;
@@ -49,6 +51,7 @@ export interface CreateRouteInput {
 }
 
 export interface UpdateRouteInput {
+	route_name?: string;
 	companyId?: number;
 	driverId?: number;
 	officeAddress?: string;

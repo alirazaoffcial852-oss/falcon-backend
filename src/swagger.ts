@@ -409,6 +409,7 @@ const swaggerDocument = {
 			CreateRouteBody: {
 				type: "object",
 				required: [
+					"route_name",
 					"companyId",
 					"driverId",
 					"officeAddress",
@@ -417,8 +418,22 @@ const swaggerDocument = {
 					"waypointMode",
 				],
 				description:
-					"Provide either batches (one or more pickup loads) or legacy legs (single batch). waypointMode is required ('auto' | 'manual'); you may send waypoint_mode instead of waypointMode.",
+					"Provide either batches (one or more pickup loads) or legacy legs (single batch). route_name must be unique (e.g. RO1234). waypointMode is required ('auto' | 'manual'); you may send waypoint_mode instead of waypointMode.",
 				properties: {
+					route_name: {
+						type: "string",
+						minLength: 1,
+						maxLength: 100,
+						example: "RO1234",
+						description: "Unique route name (required). Alias: routeName.",
+					},
+					routeName: {
+						type: "string",
+						minLength: 1,
+						maxLength: 100,
+						example: "RO1234",
+						description: "camelCase alias of route_name.",
+					},
 					companyId: { type: "integer", minimum: 1 },
 					driverId: { type: "integer", minimum: 1 },
 					officeAddress: { type: "string" },
@@ -478,6 +493,17 @@ const swaggerDocument = {
 				properties: {
 					companyId: { type: "integer", minimum: 1 },
 					driverId: { type: "integer", minimum: 1 },
+					route_name: {
+						type: "string",
+						minLength: 1,
+						maxLength: 100,
+						description: "Unique route name. Alias: routeName.",
+					},
+					routeName: {
+						type: "string",
+						minLength: 1,
+						maxLength: 100,
+					},
 					officeAddress: { type: "string" },
 					officeLat: { type: "number" },
 					officeLong: { type: "number" },
@@ -1323,7 +1349,10 @@ const swaggerDocument = {
 					{ name: "companyId", in: "query", schema: { type: "integer" } },
 				],
 				responses: {
-					"200": { description: "Paginated list of passengers" },
+					"200": {
+						description:
+							"Paginated list of passengers. Each item includes route_name and driver_name from route_legs → routes (null when not assigned to any route).",
+					},
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
 				},
