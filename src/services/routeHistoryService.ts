@@ -51,6 +51,7 @@ export class RouteHistoryService {
 				definition_route: {
 					select: {
 						id: true,
+						route_name: true,
 						waypointMode: true,
 						office_address: true,
 						route_price: true,
@@ -142,6 +143,7 @@ export class RouteHistoryService {
 				trip_completed: plan.status === "COMPLETED",
 				completed_at: plan.completed_at,
 				definition_route_id: plan.definition_route_id,
+				route_name: plan.definition_route.route_name,
 				waypoint_mode: waypointMode,
 				execution_route_id: plan.execution_route?.id ?? null,
 				office_address: plan.definition_route.office_address,
