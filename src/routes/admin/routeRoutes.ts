@@ -13,6 +13,7 @@ import {
 	generateDailyPreviewQuerySchema,
 	routeActiveStatusBodySchema,
 	planStatsQuerySchema,
+	listRoutesQuerySchema,
 } from "../../schemas/route/routeSchema";
 
 const router = express.Router();
@@ -29,7 +30,7 @@ router.get(
 	validate.query(routeHistoryQuerySchema),
 	RouteController.getHistoryReport,
 );
-router.get("/", RouteController.list);
+router.get("/", validate.query(listRoutesQuerySchema), RouteController.list);
 router.post(
 	"/generate-daily",
 	validate.body(generateDailyBodySchema),

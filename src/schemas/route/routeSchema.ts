@@ -136,7 +136,10 @@ export const updateRouteSchema = Joi.object({
 }).min(0);
 
 export const routeActiveStatusBodySchema = Joi.object({
-	is_active: Joi.boolean().required(),
+	is_active: Joi.boolean()
+		.truthy("true", "1", "TRUE", "True")
+		.falsy("false", "0", "FALSE", "False")
+		.required(),
 });
 
 export const listRoutesQuerySchema = Joi.object({
@@ -149,6 +152,13 @@ export const listRoutesQuerySchema = Joi.object({
 	driverId: Joi.string()
 		.pattern(/^[1-9]\d*$/)
 		.allow(""),
+	status: Joi.string()
+		.valid("PENDING", "ONGOING", "COMPLETED")
+		.optional(),
+	is_active: Joi.boolean()
+		.truthy("true", "1", "TRUE", "True")
+		.falsy("false", "0", "FALSE", "False")
+		.optional(),
 });
 
 /** Optional calendar day (YYYY-MM-DD); defaults to today. */

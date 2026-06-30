@@ -4,6 +4,7 @@ import { routeHistoryService } from "../../services/routeHistoryService";
 import { catchAsync } from "../../middleware/catchAsync";
 import { ResponseHandler } from "../../utils/responses/ResponseHandler";
 import { parseIdParam } from "../../utils/parseId";
+import { parseOptionalBoolean } from "../../utils/parseOptionalBoolean";
 const routeService = new RouteService();
 
 export const RouteController = {
@@ -37,16 +38,21 @@ export const RouteController = {
 
 	list: catchAsync(async (req: Request, res: Response) => {
 		const query = {
-			page: parseInt(req.query.page as string) || 1,
-			limit: parseInt(req.query.limit as string) || 20,
+			page: Number(req.query.page) || 1,
+			limit: Number(req.query.limit) || 20,
 			search: (req.query.search as string) || "",
 			companyId: req.query.companyId
-				? parseInt(req.query.companyId as string)
+				? parseInt(String(req.query.companyId), 10)
 				: undefined,
 			driverId: req.query.driverId
-				? parseInt(req.query.driverId as string)
+				? parseInt(String(req.query.driverId), 10)
 				: undefined,
-			status: req.query.status as 'PENDING' | 'ONGOING' | 'COMPLETED' | undefined,
+			status: req.query.status as
+				| "PENDING"
+				| "ONGOING"
+				| "COMPLETED"
+				| undefined,
+			is_active: parseOptionalBoolean(req.query.is_active),
 		};
 		const result = await routeService.list(query);
 		ResponseHandler.success(res, result, "Routes list");

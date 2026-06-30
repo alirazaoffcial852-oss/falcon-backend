@@ -75,4 +75,5 @@ export interface RouteListQuery {
 	companyId?: number;
 	driverId?: number;
 	status?: "PENDING" | "ONGOING" | "COMPLETED";
+	is_active?: boolean;
 }
