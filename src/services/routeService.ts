@@ -10,6 +10,7 @@ import type {
 	RouteWaypointMode,
 } from "../types/admin/route";
 import { buildWhereCondition } from "../utils/buildWhereCondition";
+import { parseOptionalBoolean } from "../utils/parseOptionalBoolean";
 import { fetchGoogleDirections, type LatLng } from "../utils/googleDirections";
 import { geocodeAddressToLatLng } from "../utils/geocodeAddress";
 import {
@@ -1070,6 +1071,7 @@ export class RouteService {
 		);
 		if (params.companyId !== undefined) where.company_id = params.companyId;
 		if (params.driverId !== undefined) where.driver_id = params.driverId;
+		if (params.is_active !== undefined) where.is_active = params.is_active;
 		if (params.status !== undefined) {
 			where.segments = {
 				some: {
@@ -1476,8 +1478,23 @@ export class RouteService {
 	}
 
 	async update(id: number, rawBody: UpdateRouteInput) {
-		await this.assertRouteTemplateEditable(id);
 		const data = this.sanitizeRoutePutBody(rawBody);
+
+		if (data.is_active !== undefined) {
+			await this.setActive(id, data.is_active);
+			delete data.is_active;
+		}
+
+		if (Object.keys(data).length === 0) {
+			const route = await this.getById(id);
+			return {
+				previous_route_id: id,
+				route,
+				update_mode: "in_place" as const,
+			};
+		}
+
+		await this.assertRouteTemplateEditable(id);
 		const existing = await this.getById(id);
 
 		if (!this.hasStructuralRoutePutChange(existing, data)) {
@@ -1998,11 +2015,15 @@ export class RouteService {
 		};
 	}
 
-	async setActive(id: number, isActive: boolean) {
+	async setActive(id: number, isActive: unknown) {
+		const active = parseOptionalBoolean(isActive);
+		if (active === undefined) {
+			throw ResponseHandler.badRequest("is_active must be true or false");
+		}
 		await this.getById(id);
 		await this.db.route.update({
 			where: { id },
-			data: { is_active: isActive },
+			data: { is_active: active },
 		});
 		return this.getById(id);
 	}

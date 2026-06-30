@@ -1911,6 +1911,13 @@ const swaggerDocument = {
 					},
 					{ name: "companyId", in: "query", schema: { type: "integer" } },
 					{ name: "driverId", in: "query", schema: { type: "integer" } },
+					{
+						name: "is_active",
+						in: "query",
+						schema: { type: "boolean" },
+						description:
+							"Filter by route active flag. true = active only, false = inactive only. Omit for both.",
+					},
 				],
 				responses: {
 					"200": { description: "Paginated list of routes" },
@@ -1965,7 +1972,7 @@ const swaggerDocument = {
 				tags: ["Routes"],
 				summary: "Update route in place",
 				description:
-					"Always updates the same route id (office, company, batches, driver, price, recurring, is_active, waypointMode). Returns 400 when route_daily_plan_id is set — use PATCH /routes/{id}/status or phase-driver reassign instead.",
+					"Always updates the same route id (office, company, batches, driver, price, recurring, waypointMode). `is_active` is always applied even when a daily plan is linked (same as PATCH /routes/{id}/status). Other fields return 400 when route_daily_plan_id is set — use phase-driver reassign for driver changes on an active plan.",
 				security: [{ bearerAuth: [] }],
 				parameters: [
 					{
