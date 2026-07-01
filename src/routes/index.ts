@@ -14,6 +14,7 @@ import scheduleRoutes from "./admin/scheduleRoutes";
 import adminRoutes from "./admin/adminRoutes";
 import fuelPriceRoutes from "./admin/fuelPriceRoutes";
 import payrollRoutes from "./admin/payrollRoutes";
+import extraRideRoutes from "./admin/extraRideRoutes";
 
 import {
 	authMiddleware,
@@ -46,6 +47,7 @@ export default function Routes(app: Express) {
 	router.use("/admins", ...admin, adminRoutes);
 	router.use("/fuel-prices", ...admin, fuelPriceRoutes);
 	router.use("/payroll", ...admin, payrollRoutes);
+	router.use("/extra-rides", ...admin, extraRideRoutes);
 	// Public for pre-login flows (e.g. driver self-registration image upload)
 	router.use("/uploads", uploadRoutes);
 
