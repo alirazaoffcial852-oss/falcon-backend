@@ -2601,14 +2601,25 @@ export const MobileDriverService = {
 			});
 		}
 
+		const autoTripPrice = route?.route_price ? route.route_price / 2 : 0;
+		const completionData: {
+			status: "COMPLETED";
+			trip_km: number;
+			trip_price?: number;
+			fuel_cost?: number | null;
+		} = {
+			status: "COMPLETED",
+			trip_km: tripKm,
+		};
+
+		if (!pd.is_extra_ride) {
+			completionData.trip_price = autoTripPrice;
+			completionData.fuel_cost = fuelCost;
+		}
+
 		await db.routeDailyPlanPhaseDriver.update({
 			where: { id: pd.id },
-			data: {
-				status: "COMPLETED",
-				trip_price: route?.route_price ? route.route_price / 2 : 0,
-				trip_km: tripKm,
-				fuel_cost: fuelCost,
-			},
+			data: completionData,
 		});
     
 		

@@ -155,6 +155,8 @@ model Driver {
   daily_plan_phase_drivers RouteDailyPlanPhaseDriver[]
   issue_reports            RouteIssueReport[]
   routes                   Route[]
+  extra_ride_history_previous RouteExtraRideHistory[] @relation("ExtraRidePreviousDriver")
+  extra_ride_history_new      RouteExtraRideHistory[] @relation("ExtraRideNewDriver")
 
   @@map("drivers")
 }
@@ -256,6 +258,7 @@ model Route {
   company              Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
   driver               Driver             @relation(fields: [driver_id], references: [id], onDelete: Cascade)
   daily_plan           RouteDailyPlan?    @relation("PlanExecutionRoute", fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  extra_ride_history   RouteExtraRideHistory[]
 
   @@index([driver_id])
   @@map("routes")
@@ -289,6 +292,7 @@ model RouteDailyPlan {
   phase_drivers       RouteDailyPlanPhaseDriver[]
   definition_route    Route                       @relation("RouteDefinitionPlans", fields: [definition_route_id], references: [id], onDelete: Cascade)
   execution_route     Route?                      @relation("PlanExecutionRoute")
+  extra_ride_history  RouteExtraRideHistory[]
 
   @@unique([definition_route_id, scheduled_date])
   @@index([scheduled_date])
@@ -404,6 +408,7 @@ model RouteDailyPlanPhaseDriver {
   fuel_payment_status               PaymentStatus                  @default(UNPAID)
   salary_paid_at                    DateTime?
   fuel_paid_at                      DateTime?
+  is_extra_ride                     Boolean                        @default(false)
   availability_missed_at            DateTime?
   availability_miss_notified_at     DateTime?
   availability_admin_override_until DateTime?
@@ -414,6 +419,7 @@ model RouteDailyPlanPhaseDriver {
   route_daily_plan                  RouteDailyPlan                 @relation(fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
   selected_car                      Car?                           @relation("SelectedTripCar", fields: [selected_car_id], references: [id])
   route_daily_plan_phase_passengers RouteDailyPlanPhasePassenger[]
+  extra_ride_history                RouteExtraRideHistory[]
 
   @@unique([route_daily_plan_id, phase])
   @@index([driver_id])
@@ -454,6 +460,37 @@ model RouteDailyPlanPhasePassenger {
   route_daily_plan_phase_driver    RouteDailyPlanPhaseDriver @relation(fields: [route_daily_plan_phase_driver_id], references: [id], onDelete: Cascade)
 
   @@map("route_daily_plan_phase_passengers")
+}
+
+model RouteExtraRideHistory {
+  id                    Int                   @id @default(autoincrement())
+  route_id              Int
+  route_daily_plan_id   Int
+  phase_driver_id       Int
+  phase                 RouteDailyPlanPhase
+  previous_driver_id    Int
+  new_driver_id         Int
+  trip_price            Float
+  fuel_cost             Float?
+  salary_payment_status PaymentStatus
+  fuel_payment_status   PaymentStatus         @default(UNPAID)
+  salary_paid_at        DateTime?
+  fuel_paid_at          DateTime?
+  reason                String?
+  note                  String?
+  created_by_user_id    Int?
+  created_at            DateTime              @default(now())
+  route                 Route                 @relation(fields: [route_id], references: [id], onDelete: Cascade)
+  route_daily_plan      RouteDailyPlan        @relation(fields: [route_daily_plan_id], references: [id], onDelete: Cascade)
+  phase_driver          RouteDailyPlanPhaseDriver @relation(fields: [phase_driver_id], references: [id], onDelete: Cascade)
+  previous_driver       Driver                @relation("ExtraRidePreviousDriver", fields: [previous_driver_id], references: [id], onDelete: Cascade)
+  new_driver            Driver                @relation("ExtraRideNewDriver", fields: [new_driver_id], references: [id], onDelete: Cascade)
+
+  @@index([route_daily_plan_id])
+  @@index([phase_driver_id])
+  @@index([route_id])
+  @@index([created_at])
+  @@map("route_extra_ride_history")
 }
 
 enum PhasePassengerStatus {

@@ -1859,6 +1859,114 @@ const swaggerDocument = {
 				},
 			},
 		},
+		// ----- Extra rides -----
+		"/f1/extra-rides": {
+			post: {
+				tags: ["Extra rides"],
+				summary: "Create extra ride on an existing trip phase",
+				description:
+					"Updates route_daily_plan_phase_drivers (driver_id, trip_price, fuel_cost, is_extra_ride, optional PAID flags). Writes route_extra_ride_history with previous/new driver. Mobile completeTrip preserves custom pricing when is_extra_ride is true.",
+				security: [{ bearerAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["phase_driver_id", "driver_id", "trip_price"],
+								properties: {
+									phase_driver_id: { type: "integer", example: 1201 },
+									driver_id: { type: "integer", example: 15 },
+									trip_price: { type: "number", example: 3500 },
+									fuel_cost: { type: "number", example: 800 },
+									mark_salary_paid: { type: "boolean", example: true },
+									mark_fuel_paid: { type: "boolean", example: false },
+									reset_phase: {
+										type: "boolean",
+										description:
+											"Reset ongoing phase state for the new driver (default: auto when phase was started)",
+									},
+									reason: { type: "string" },
+									note: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Extra ride created" },
+					"400": { description: "Validation error" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/f1/extra-rides/history": {
+			get: {
+				tags: ["Extra rides"],
+				summary: "List extra ride history",
+				security: [{ bearerAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "from",
+						in: "query",
+						schema: { type: "string", example: "2026-06-01" },
+						description:
+							"Trip scheduled_date start (YYYY-MM-DD). Alias: date_from",
+					},
+					{
+						name: "to",
+						in: "query",
+						schema: { type: "string", example: "2026-06-30" },
+						description:
+							"Trip scheduled_date end (YYYY-MM-DD). Alias: date_to",
+					},
+					{
+						name: "date_from",
+						in: "query",
+						schema: { type: "string", example: "2026-06-01" },
+					},
+					{
+						name: "date_to",
+						in: "query",
+						schema: { type: "string", example: "2026-06-30" },
+					},
+					{
+						name: "driverId",
+						in: "query",
+						schema: { type: "integer" },
+						description:
+							"Matches previous or new driver on the extra ride. Alias: driver_id",
+					},
+					{
+						name: "driver_id",
+						in: "query",
+						schema: { type: "integer" },
+					},
+					{
+						name: "routeDailyPlanId",
+						in: "query",
+						schema: { type: "integer" },
+					},
+					{ name: "routeId", in: "query", schema: { type: "integer" } },
+				],
+				responses: {
+					"200": { description: "Paginated extra ride history" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
 		// ----- Routes -----
 		"/f1/routes/history": {
 			get: {
